@@ -1,0 +1,112 @@
+{
+  "rewrites": [
+    {
+      "source": "/1%C2%B0%20medio/festival_worlds_2.html",
+      "destination": "/1%C2%B0%20MEDIO/Festival_Worlds_2.html"
+    },
+    {
+      "source": "/1%C2%B0%20medio/festival_worlds_2",
+      "destination": "/1%C2%B0%20MEDIO/Festival_Worlds_2.html"
+    },
+    {
+      "source": "/1%C2%B0%20MEDIO/Festival_Worlds_2",
+      "destination": "/1%C2%B0%20MEDIO/Festival_Worlds_2.html"
+    },
+    {
+      "source": "/1%C2%B0%20medio/mundo_unit4_festival_worlds.html",
+      "destination": "/1%C2%B0%20MEDIO/Mundo_Unit4_Festival_Worlds.html"
+    },
+    {
+      "source": "/1%C2%B0%20medio/mundo_unit4_festival_worlds",
+      "destination": "/1%C2%B0%20MEDIO/Mundo_Unit4_Festival_Worlds.html"
+    },
+    {
+      "source": "/1%C2%B0%20MEDIO/Mundo_Unit4_Festival_Worlds",
+      "destination": "/1%C2%B0%20MEDIO/Mundo_Unit4_Festival_Worlds.html"
+    },
+    {
+      "source": "/1%C2%B0%20medio/mundo_unit4_traditions_1.html",
+      "destination": "/1%C2%B0%20MEDIO/Mundo_Unit4_Traditions_1.html"
+    },
+    {
+      "source": "/1%C2%B0%20medio/mundo_unit4_traditions_1",
+      "destination": "/1%C2%B0%20MEDIO/Mundo_Unit4_Traditions_1.html"
+    },
+    {
+      "source": "/1%C2%B0%20MEDIO/Mundo_Unit4_Traditions_1",
+      "destination": "/1%C2%B0%20MEDIO/Mundo_Unit4_Traditions_1.html"
+    },
+    {
+      "source": "/3%C2%B0%20medio/mundo_unit4_tiktok_vs_vine.html",
+      "destination": "/3%C2%B0%20MEDIO/Mundo_Unit4_TikTok_vs_Vine.html"
+    },
+    {
+      "source": "/3%C2%B0%20medio/mundo_unit4_tiktok_vs_vine",
+      "destination": "/3%C2%B0%20MEDIO/Mundo_Unit4_TikTok_vs_Vine.html"
+    },
+    {
+      "source": "/3%C2%B0%20MEDIO/Mundo_Unit4_TikTok_vs_Vine",
+      "destination": "/3%C2%B0%20MEDIO/Mundo_Unit4_TikTok_vs_Vine.html"
+    },
+    {
+      "source": "/5%C2%B0%20basico/game_weather_worlds_unit4.html",
+      "destination": "/5%C2%B0%20BASICO/Game_Weather_Worlds_Unit4.html"
+    },
+    {
+      "source": "/5%C2%B0%20basico/game_weather_worlds_unit4",
+      "destination": "/5%C2%B0%20BASICO/Game_Weather_Worlds_Unit4.html"
+    },
+    {
+      "source": "/5%C2%B0%20BASICO/Game_Weather_Worlds_Unit4",
+      "destination": "/5%C2%B0%20BASICO/Game_Weather_Worlds_Unit4.html"
+    },
+    {
+      "source": "/6%C2%B0%20basico/lets_travel_city.html",
+      "destination": "/6%C2%B0%20BASICO/Lets_Travel_City.html"
+    },
+    {
+      "source": "/6%C2%B0%20basico/lets_travel_city",
+      "destination": "/6%C2%B0%20BASICO/Lets_Travel_City.html"
+    },
+    {
+      "source": "/6%C2%B0%20BASICO/Lets_Travel_City",
+      "destination": "/6%C2%B0%20BASICO/Lets_Travel_City.html"
+    },
+    {
+      "source": "/8%C2%B0%20basico/future_worlds.html",
+      "destination": "/8%C2%B0%20BASICO/Future_Worlds.html"
+    },
+    {
+      "source": "/8%C2%B0%20basico/future_worlds",
+      "destination": "/8%C2%B0%20BASICO/Future_Worlds.html"
+    },
+    {
+      "source": "/8%C2%B0%20BASICO/Future_Worlds",
+      "destination": "/8%C2%B0%20BASICO/Future_Worlds.html"
+    },
+    {
+      "source": "/english%20week%202026/english-week-2026-panel.html",
+      "destination": "/English%20Week%202026/english-week-2026-panel.html"
+    },
+    {
+      "source": "/english%20week%202026/english-week-2026-panel",
+      "destination": "/English%20Week%202026/english-week-2026-panel.html"
+    },
+    {
+      "source": "/English%20Week%202026/english-week-2026-panel",
+      "destination": "/English%20Week%202026/english-week-2026-panel.html"
+    },
+    {
+      "source": "/english%20week%202026/english-week-2026.html",
+      "destination": "/English%20Week%202026/english-week-2026.html"
+    },
+    {
+      "source": "/english%20week%202026/english-week-2026",
+      "destination": "/English%20Week%202026/english-week-2026.html"
+    },
+    {
+      "source": "/English%20Week%202026/english-week-2026",
+      "destination": "/English%20Week%202026/english-week-2026.html"
+    }
+  ]
+}
