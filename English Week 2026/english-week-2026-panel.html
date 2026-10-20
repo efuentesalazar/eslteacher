@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Panel docente · English Week 2026</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+/* ======================================================================
+   CONFIGURACIÓN: pega aquí la URL de tu Apps Script (termina en /exec)
+   ====================================================================== */
+window.EW_API = 'https://script.google.com/macros/s/AKfycbzlJJVNCGJfPWl3yveqTAxq2hLlcDnBn_YsZlEgvoC-2MUJHWQgm7bOsnIOHV_sq6veIA/exec';
+</script>
+<style>
+:root{--bg:#0d1120;--card:#161c33;--card2:#1d2442;--line:#2a3358;--text:#eef2fb;--mute:#9aa4c0;--gold:#ffc53d;--green:#3fcf6b;--red:#ff5a4e;--cyan:#3fd0ff;--violet:#a98bff;
+  --f:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;--fd:"Trebuchet MS","Segoe UI",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 600px at 10% -10%,#1d2a5a 0,transparent 60%),var(--bg);color:var(--text);font-family:var(--f);min-height:100vh}
+button{font:inherit;cursor:pointer;color:inherit}
+.hidden{display:none!important}
+.wrap{max-width:1500px;margin:0 auto;padding:18px 20px 40px}
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+header h1{margin:0;font-family:var(--fd);font-size:26px;letter-spacing:.01em}
+header h1 span{background:linear-gradient(90deg,#ffd25e,#ff7a59 45%,#3fd0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pill{padding:6px 12px;border-radius:999px;font-weight:800;font-size:13px;background:var(--card2);border:1px solid var(--line)}
+.pill.playing{background:#123f25;border-color:#2b8a4f;color:#9ff0b9}.pill.paused{background:#3a1f5a;border-color:#7a4ac0;color:#dac8ff}.pill.ended{background:#4a1d1a;border-color:#a0443a;color:#ffc2b8}.pill.lobby{background:#3d3010;border-color:#8a6a1a;color:#ffe08a}
+.spacer{flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.card h3{margin:0 0 12px;font-size:13px;letter-spacing:.12em;color:var(--mute);text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:11px;padding:11px 16px;font-weight:800;background:#2c3550;box-shadow:0 3px 0 rgba(0,0,0,.35);transition:filter .15s,transform .08s;white-space:nowrap}
+.btn:hover{filter:brightness(1.15)}.btn:active{transform:translateY(2px)}
+.btn.go{background:linear-gradient(#4fe07f,#23a653);color:#05290f}.btn.gold{background:linear-gradient(#ffd25e,#f0a91b);color:#3a2306}
+.btn.red{background:#a63a2c}.btn.violet{background:#5b3fb0}.btn.ghost{background:transparent;border:1px solid var(--line);box-shadow:none}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+select{font:inherit;font-weight:700;padding:10px 12px;border-radius:11px;background:#0b1020;color:#fff;border:1px solid var(--line)}
+.top{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;margin-bottom:16px}
+#addr{font-family:var(--fd);font-size:30px;font-weight:900;color:var(--gold);word-break:break-all;line-height:1.2}
+#addr small{display:block;font-size:14px;color:var(--mute);font-weight:600;font-family:var(--f);margin-top:6px}
+#timer{font-family:var(--fd);font-size:56px;font-weight:900;line-height:1;letter-spacing:.02em}
+#timer.low{color:#ff8c80}
+.stats{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap}
+.stat b{display:block;font-family:var(--fd);font-size:26px}.stat span{font-size:12px;color:var(--mute);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.main{display:grid;grid-template-columns:1fr 380px;gap:16px}
+table{width:100%;border-collapse:separate;border-spacing:0 6px}
+th{font-size:12px;letter-spacing:.08em;color:var(--mute);text-align:left;padding:4px 10px;text-transform:uppercase}
+td{background:var(--card2);padding:10px;font-weight:700}
+td:first-child{border-radius:10px 0 0 10px}td:last-child{border-radius:0 10px 10px 0}
+tr.p1 td{background:#3b3420}
+tr.p2 td{background:#2b3248}
+tr.p3 td{background:#382b25}
+.pos{font-family:var(--fd);font-size:22px;font-weight:900;text-align:center;width:52px}
+.nm{font-size:17px}.sc{font-family:var(--fd);font-size:26px;color:var(--gold);font-weight:900}
+.ok{color:#7cf29a}.bad{color:#ff8c80}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#5b6378;margin-right:8px;vertical-align:1px}.dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.bar{height:8px;border-radius:5px;background:#0b1020;overflow:hidden;min-width:90px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#3fd0ff,#7cf29a)}
+.kick{background:none;border:none;color:#5b6378;font-size:16px;padding:2px 6px;border-radius:6px}.kick:hover{color:var(--red);background:rgba(255,90,78,.12)}
+.kick.arm{color:#fff;background:var(--red);font-size:12px;font-weight:800}
+#feed{display:flex;flex-direction:column;gap:6px;max-height:380px;overflow:auto}
+#feed div{padding:8px 10px;border-radius:9px;background:var(--card2);font-size:14px;animation:fin .4s}
+@keyframes fin{from{opacity:0;transform:translateY(-6px)}}
+#hard div{padding:8px 10px;border-radius:9px;background:var(--card2);font-size:13.5px;margin-bottom:6px;line-height:1.4}
+#hard b{color:#ff8c80}
+.empty{color:var(--mute);font-size:14px;padding:10px}
+#login{max-width:420px;margin:12vh auto;text-align:center}
+#login input{width:100%;font-size:20px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:#0b1020;color:#fff;margin:14px 0;text-align:center;letter-spacing:.1em}
+#err{color:#ff8c80;font-weight:700;min-height:22px}
+body.proj .ctrls,body.proj #side,body.proj .kick,body.proj .hidep{display:none!important}
+body.proj .main{grid-template-columns:1fr}
+body.proj td{padding:14px}body.proj .nm{font-size:24px}body.proj .sc{font-size:34px}body.proj .pos{font-size:30px}
+@media (max-width:1100px){.top{grid-template-columns:1fr}.main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="login" class="card">
+    <h1 style="font-family:var(--fd);margin:0 0 6px">👩‍🏫 Panel docente</h1>
+    <div style="color:var(--mute)">English Week 2026 · Chest Quest</div>
+    <input id="code" placeholder="Código docente" autocomplete="off">
+    <button class="btn gold" id="enter" style="width:100%;justify-content:center">Entrar</button>
+    <div id="err"></div>
+    <div style="color:var(--mute);font-size:13px;margin-top:8px">El código está al comienzo del archivo Code.gs (CODIGO_DOCENTE).</div>
+  </div>
+
+  <div id="app" class="hidden">
+    <header>
+      <h1><span>ENGLISH WEEK 2026</span> · Panel docente</h1>
+      <span class="pill" id="phase">—</span>
+      <span class="pill" id="online">0 conectados</span>
+      <div class="spacer"></div>
+      
+      <button class="btn ghost" id="proj">🖥 Modo proyector</button>
+    </header>
+
+    <div class="top">
+      <div class="card"><h3>Enlace del juego</h3><div id="addr" style="font-size:15px;word-break:break-all">—</div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn gold" id="bSheet">📊 Abrir planilla de resultados</button><button class="btn ghost" id="bCopy">Copiar enlace</button></div></div>
+      <div class="card"><h3>Tiempo</h3><div id="timer">--:--</div>
+        <div class="stats"><div class="stat"><b id="stQ">0</b><span>respuestas</span></div><div class="stat"><b id="stPct" class="ok">–</b><span>acierto curso</span></div><div class="stat"><b id="stP">0</b><span>estudiantes</span></div></div></div>
+      <div class="card ctrls-card"><h3>Control de la ronda</h3>
+        <div class="ctrls">
+          <select id="mins"><option value="5">5 min</option><option value="10">10 min</option><option value="15" selected>15 min</option><option value="20">20 min</option><option value="25">25 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="0">Sin límite</option></select>
+          <button class="btn go" id="bStart">▶ Iniciar ronda</button>
+          <button class="btn" id="bPause">⏸ Pausar</button>
+          <button class="btn" id="bAdd">+2 min</button>
+          <button class="btn red" id="bEnd">■ Terminar</button>
+        </div>
+        <div class="ctrls" style="margin-top:10px">
+          
+          <button class="btn ghost" id="bReset">↺ Nueva ronda (borrar marcador)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="card">
+        <h3>🏆 Ranking en vivo</h3>
+        <table><thead><tr><th>#</th><th>Estudiante</th><th>Puntaje</th><th>✔ Correctas</th><th>✖ Incorrectas</th><th>💥 TNT</th><th class="hidep">% acierto</th><th>Cofres</th><th class="hidep">Avance</th><th>Curso</th><th class="hidep"></th></tr></thead>
+        <tbody id="rows"></tbody></table>
+        <div id="noRows" class="empty">Aún no hay estudiantes. Pídeles que escriban la dirección de arriba en Chrome.</div>
+      </div>
+      <div id="side" style="display:flex;flex-direction:column;gap:16px">
+        <div class="card"><h3>⚡ Respuestas en vivo</h3><div id="feed"><div class="empty">Aquí aparecerá cada respuesta.</div></div></div>
+        <div class="card"><h3>💣 Cofres con TNT esta ronda</h3><div id="tntList" class="empty">—</div><div style="color:var(--mute);font-size:12.5px;margin-top:8px">Cambian al azar en cada "Nueva ronda". Solo tú los ves.</div></div>
+        <div class="card"><h3>🧩 Preguntas más difíciles</h3><div id="hard"><div class="empty">Se calcula cuando haya respuestas.</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+let CODE = '', KEY = null, lastFeed = 0, armed = null, armT = 0;
+const W = { hub: '⛲ Plaza', uk: '🇬🇧 UK', usa: '🇺🇸 USA', aus: '🇦🇺 AUS' };
+try { $('code').value = localStorage.getItem('ew_tcode') || ''; } catch (e) {}
+
+function ewCall(fn, args) {
+  if (!/^https?:/.test(window.EW_API || '')) return Promise.reject(new Error('Falta configurar la URL del Apps Script (EW_API) en este archivo.'));
+  return fetch(window.EW_API, { method: 'POST', body: JSON.stringify({ fn, args }) })
+    .then(r => r.json()).then(j => { if (j.__error) throw new Error(j.__error); return j.v; });
+}
+function gs(fn, ...args) { return ewCall(fn, args); }
+async function get(u) {
+  try { return await gs(u === '/api/teacher/key' ? 'panelKey' : 'panelState', CODE); }
+  catch (e) { if (String(e && e.message || e).indexOf('Código') >= 0) return { error: 'Código incorrecto' }; throw e; }
+}
+async function post(action, extra) { extra = extra || {}; const j = await gs('panelControl', CODE, action, extra.minutes || 0, extra.id || ''); poll(true); return j; }
+async function enter() {
+  CODE = $('code').value.trim();
+  try { const r = await get('/api/teacher/state'); if (r.error) { $('err').textContent = 'Código incorrecto'; return; } }
+  catch (e) { $('err').textContent = /EW_API/.test(String(e && e.message)) ? e.message : 'No se pudo conectar con el servidor'; return; }
+  try { localStorage.setItem('ew_tcode', CODE); } catch (e) {}
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  try { KEY = await get('/api/teacher/key'); } catch (e) {}
+  poll(); setInterval(poll, 4000); setInterval(tickTimer, 1000);
+}
+$('enter').onclick = enter; $('code').addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
+if ($('code').value) enter();
+
+function arm(btn, label, fn) {
+  if (armed === btn) { armed = null; btn.textContent = btn.dataset.l; fn(); return; }
+  if (armed) armed.textContent = armed.dataset.l;
+  btn.dataset.l = btn.dataset.l || btn.textContent; armed = btn; btn.textContent = label; clearTimeout(armT);
+  armT = setTimeout(() => { if (armed === btn) { btn.textContent = btn.dataset.l; armed = null; } }, 3500);
+}
+$('bStart').onclick = () => { const go = () => post('start', { minutes: +$('mins').value }); if (S && (S.phase === 'playing' || S.phase === 'paused' || S.phase === 'ended') ) arm($('bStart'), '¿Reiniciar el reloj? Clic otra vez', go); else go(); };
+$('bPause').onclick = () => post(S && S.phase === 'paused' ? 'resume' : 'pause');
+$('bAdd').onclick = () => post('addtime', { minutes: 2 });
+$('bEnd').onclick = () => arm($('bEnd'), '¿Terminar? Clic otra vez', () => post('end'));
+$('bReset').onclick = () => arm($('bReset'), '¿Borrar marcador? (se guarda un respaldo) Clic otra vez', () => post('reset'));
+$('bSheet').onclick = () => { if (S) window.open(S.sheetUrl, '_blank'); };
+$('bCopy').onclick = () => { if (S) { const ta = document.createElement('textarea'); ta.value = S.appUrl; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); $('bCopy').textContent = '✔ Copiado'; } catch (e) {} ta.remove(); } };
+$('proj').onclick = () => { document.body.classList.toggle('proj'); $('proj').textContent = document.body.classList.contains('proj') ? '↩ Salir de modo proyector' : '🖥 Modo proyector'; };
+
+let S = null, rowsSig = '', sAt = 0;
+function tickTimer() { if (!S) return; let rem = S.remaining; if (S.phase === 'playing' && rem >= 0) rem -= (Date.now() - sAt) / 1000;
+  $('timer').textContent = S.phase === 'lobby' ? '--:--' : rem < 0 ? fmt(S.elapsed + (S.phase === 'playing' ? (Date.now() - sAt) / 1000 : 0)) + ' ↑' : fmt(rem); }
+function fmt(s) { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+async function poll(force) {
+  let r; try { r = await get('/api/teacher/state'); } catch (e) { $('phase').textContent = '⚠ Sin conexión con el servidor'; return; }
+  if (r.error) return; S = r; sAt = Date.now(); if ($('addr').dataset.u !== r.appUrl) { $('addr').dataset.u = r.appUrl; $('addr').textContent = r.appUrl; }
+  const ph = { lobby: '⏳ Esperando inicio', playing: '🟢 Ronda en curso', paused: '⏸ En pausa', ended: '🏁 Ronda terminada' }[r.phase];
+  $('phase').textContent = ph + ' · Ronda ' + r.round; $('phase').className = 'pill ' + r.phase;
+  const on = r.players.filter(p => p.online).length; $('online').textContent = on + ' conectados';
+  $('timer').textContent = r.phase === 'lobby' ? '--:--' : r.remaining < 0 ? fmt(r.elapsed) + ' ↑' : fmt(r.remaining);
+  $('timer').classList.toggle('low', r.remaining >= 0 && r.remaining < 60 && r.phase === 'playing');
+  $('bPause').textContent = r.phase === 'paused' ? '▶ Continuar' : '⏸ Pausar';
+  $('bPause').disabled = !(r.phase === 'playing' || r.phase === 'paused'); $('bAdd').disabled = !(r.duration > 0 && r.phase !== 'lobby'); $('bEnd').disabled = !(r.phase === 'playing' || r.phase === 'paused');
+  $('bStart').textContent = r.phase === 'lobby' ? '▶ Iniciar ronda' : '▶ Reiniciar reloj';
+  let c = 0, w = 0; r.players.forEach(p => { c += p.correct; w += p.wrong; });
+  $('stQ').textContent = c + w; $('stPct').textContent = c + w ? Math.round(c * 100 / (c + w)) + '%' : '–'; $('stP').textContent = r.players.length;
+  renderRows(r); renderFeed(r); renderHard(r); renderTnt(r);
+}
+function renderRows(r) {
+  const sig = r.players.map(p => [p.id, p.score, p.correct, p.wrong, p.chests, p.online, p.curso, p.tnt].join(',')).join(';') + (armed ? 'a' : '');
+  if (sig === rowsSig) return; rowsSig = sig;
+  const tb = $('rows'); tb.innerHTML = ''; $('noRows').classList.toggle('hidden', r.players.length > 0);
+  r.players.forEach((p, i) => {
+    const tr = document.createElement('tr'); if (i < 3) tr.className = 'p' + (i + 1);
+    const n = p.correct + p.wrong, pct = n ? Math.round(p.correct * 100 / n) : 0;
+    const cell = (html, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; if (html instanceof Node) td.appendChild(html); else td.textContent = html; tr.appendChild(td); return td; };
+    cell(['🥇', '🥈', '🥉'][i] || i + 1, 'pos');
+    const nm = document.createElement('span'); const d = document.createElement('span'); d.className = 'dot' + (p.online ? ' on' : ''); nm.append(d, document.createTextNode(p.name)); cell(nm, 'nm');
+    cell(p.score, 'sc'); cell(p.correct, 'ok'); cell(p.wrong, 'bad'); cell(p.tnt || 0, 'bad'); cell(n ? pct + '%' : '–', 'hidep');
+    cell(p.chests + ' / ' + r.totalChests);
+    const bar = document.createElement('div'); bar.className = 'bar'; const bi = document.createElement('i'); bi.style.width = (n / r.totalQuestions * 100) + '%'; bar.appendChild(bi); cell(bar, 'hidep');
+    cell(p.curso || '—');
+    const k = document.createElement('button'); k.className = 'kick'; k.title = 'Eliminar del marcador'; k.textContent = '✕';
+    k.onclick = () => arm(k, '¿Eliminar?', () => post('kick', { id: p.id })); cell(k, 'hidep');
+    tr.lastChild.style.width = '40px';
+    tb.appendChild(tr);
+  });
+}
+function renderFeed(r) {
+  const nf = (r.feed || []).filter(f => f.t > lastFeed); if (!nf.length) return;
+  const box = $('feed'); if (lastFeed === 0) box.innerHTML = '';
+  nf.forEach(f => {
+    lastFeed = Math.max(lastFeed, f.t);
+    const d = document.createElement('div'); const b = document.createElement('b'); b.className = f.correct ? 'ok' : 'bad'; f.tnt = String(f.res).indexOf('TNT') >= 0; f.correct = String(f.res).indexOf('✔') >= 0; b.className = f.correct ? 'ok' : 'bad'; b.textContent = f.tnt ? '💥 −10 ' : f.correct ? '✔ +10 ' : '✖ −5 ';
+    const t = new Date(f.t); const s = document.createElement('span'); s.textContent = `${f.name} (${f.curso}) · cofre ${String(f.chest).replace(/\D/g, '')} ${W[f.world] || ''}`;
+    const tm = document.createElement('span'); tm.style.cssText = 'float:right;color:#9aa4c0;font-size:12px'; tm.textContent = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    d.append(b, s, tm); box.prepend(d);
+  });
+  while (box.children.length > 40) box.removeChild(box.lastChild);
+}
+let tntSig = '';
+function renderTnt(r) {
+  const ids = Object.keys(r.tnt || {}).sort(); const sig = ids.join(','); if (sig === tntSig) return; tntSig = sig;
+  const box = $('tntList'); box.innerHTML = ''; box.className = '';
+  [['uk', '🇬🇧 UK'], ['usa', '🇺🇸 USA'], ['aus', '🇦🇺 AUS']].forEach(([w, n]) => {
+    const list = ids.filter(i => i.replace(/\d+/, '') === w).sort((a, b) => parseInt(a.replace(/\D/g, '')) - parseInt(b.replace(/\D/g, '')));
+    const d = document.createElement('div'); d.style.cssText = 'padding:6px 10px;border-radius:9px;background:var(--card2);margin-bottom:6px;font-size:14px';
+    const label = (id) => { let t = ''; if (KEY) KEY.forEach(W => W.chests.forEach(c => { if (c.id === id) t = c.title || (c.type === 'vocab' ? 'Vocabulary' : 'Grammar'); })); return 'cofre ' + id.replace(/\D/g, '') + (t ? ' (' + t + ')' : ''); };
+    d.textContent = n + ': ' + list.map(label).join(' · '); box.appendChild(d);
+  });
+}
+function renderHard(r) {
+  if (!KEY) return;
+  const list = [];
+  for (const k in r.qstats) { const [ok, bad] = r.qstats[k]; if (ok + bad < 2) continue; const [cid, qi] = k.split(':'); let q = null;
+    KEY.forEach(w => w.chests.forEach(c => { if (c.id === cid) q = c.qs[+qi]; })); if (q) list.push({ k, q, ok, bad, rate: ok / (ok + bad) }); }
+  list.sort((a, b) => a.rate - b.rate);
+  const box = $('hard'); box.innerHTML = '';
+  if (!list.length) { box.innerHTML = '<div class="empty">Se calcula cuando haya respuestas.</div>'; return; }
+  list.slice(0, 5).forEach(it => { const d = document.createElement('div'); const b = document.createElement('b'); b.textContent = Math.round(it.rate * 100) + '% acierto '; const s = document.createElement('span'); s.textContent = `(${it.ok + it.bad} resp.) · ${it.q.q} → ${it.q.opts[it.q.a]}`; d.append(b, s); box.appendChild(d); });
+}
+</script>
+</body>
+</html>
