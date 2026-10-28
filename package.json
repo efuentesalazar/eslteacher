@@ -1,9 +1,0 @@
-{
-  "name": "eslteacher",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@anthropic-ai/sdk": "^1.3.0",
-    "zod": "^4.0.0"
-  }
-}
