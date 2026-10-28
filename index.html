@@ -197,6 +197,10 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
 .steps h4{font-size:24px;font-weight:400;line-height:1.1;margin:14px 0 8px}
 .steps p{font-size:14px;line-height:1.45;color:rgba(255,255,255,.75)}
 @media (max-width:760px){.steps{grid-template-columns:1fr}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);z-index:40;max-width:min(520px,calc(100% - 32px));
+  background:rgba(0,0,0,.85);border:1px solid var(--frost);border-radius:10px;padding:12px 16px;font-size:14px;line-height:1.4;
+  opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
 .foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid rgba(226,226,226,.15);padding-top:16px;margin-top:20px}
 
 @media (prefers-reduced-motion:reduce){
@@ -645,12 +649,40 @@ renderCourses(); renderGames();
 /* =====================================================================
    VOZ (texto a voz)
    ===================================================================== */
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let voices = [];
+function loadVoices(){ try { voices = speechSynthesis.getVoices(); } catch(e){} }
+if ("speechSynthesis" in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function pickVoice(){
+  if (!voices.length) loadVoices();
+  const en = voices.filter(v => /^en[-_]/i.test(v.lang));
+  return en.find(v => /^en[-_]US/i.test(v.lang) && v.localService) || en.find(v => /^en[-_]US/i.test(v.lang)) || en[0];
+}
+function toast(msg){
+  let el = document.getElementById("toast");
+  if (!el){ el = document.createElement("div"); el.id = "toast"; el.className = "toast"; el.setAttribute("role", "status"); document.body.appendChild(el); }
+  el.textContent = msg; el.classList.add("on");
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), 7000);
+}
 function speak(t, rate = .9){
-  if (!("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(t); u.lang = "en-US"; u.rate = rate;
-  const v = speechSynthesis.getVoices().find(v => /^en(-|_)US/i.test(v.lang)); if (v) u.voice = v;
-  speechSynthesis.speak(u);
+  if (!("speechSynthesis" in window)){ toast("Este navegador no puede leer en voz alta."); return; }
+  if (listening && rec){ try { rec.abort(); } catch(e){} }
+  const u = new SpeechSynthesisUtterance(t); u.lang = "en-US"; u.rate = rate; u.volume = 1;
+  const v = pickVoice(); if (v) u.voice = v;
+  let started = false; u.onstart = () => { started = true; };
+  // En iPhone, cancel() justo antes de speak() puede tragarse la voz nueva:
+  // solo se cancela si algo está sonando, y se espera un momento antes de hablar.
+  if (speechSynthesis.speaking || speechSynthesis.pending){
+    speechSynthesis.cancel();
+    setTimeout(() => speechSynthesis.speak(u), 150);
+  } else {
+    speechSynthesis.resume();
+    speechSynthesis.speak(u);                 // directo dentro del toque (Safari lo exige)
+  }
+  if (isIOS){
+    if (!store.get("ttsTip", false)){ store.set("ttsTip", true); toast("🔊 ¿No se escucha? Desactiva el modo silencio del iPhone (interruptor lateral) y sube el volumen."); }
+    setTimeout(() => { if (!started) toast("🔊 No se escucha la voz: revisa que el iPhone no esté en modo silencio y que el volumen esté alto."); }, 1800);
+  }
 }
 
 /* =====================================================================
@@ -748,7 +780,7 @@ function setListening(on){
 $("rec").addEventListener("click", () => {
   if (listening){ rec && rec.stop(); return; }
   if (!target.text || mode === "own" && !$("own-in").value.trim() && target.text.startsWith("Write your own")){ $("own-in").focus(); return; }
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  if ("speechSynthesis" in window && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel();
   heardText = ""; alternatives = []; confidence = 0;
   rec = new SR(); rec.lang = "en-US"; rec.interimResults = true; rec.maxAlternatives = 3; rec.continuous = false;
   rec.onresult = e => {
