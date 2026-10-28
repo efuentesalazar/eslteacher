@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ESL Teacher · Play & Learn English</title>
-<meta name="description" content="Juegos para aprender inglés por curso, palabra del día, desafío rápido y práctica de pronunciación con IA.">
+<meta name="description" content="Juegos para aprender inglés por curso, palabra del día, desafío rápido y práctica de pronunciación.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
@@ -216,7 +216,7 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
     <a href="#worlds">Worlds</a>
     <a href="#word">Word of the day</a>
     <a href="#challenge">Quick challenge</a>
-    <a href="#speak">Speak with AI</a>
+    <a href="#speak">Speak</a>
     <a href="#how">How to play</a>
   </div>
   <a class="btn" href="#worlds">Play ▸</a>
@@ -229,10 +229,10 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
   <section id="hero" data-scene="isles" data-name="Sky Isles">
     <p class="cap reveal">ESL Teacher · English games · Juegos para aprender inglés</p>
     <h1 class="title"><span>Play.</span><span>Learn.</span><span>Speak.</span></h1>
-    <p class="lead reveal d1">Elige tu nivel, entra al mundo y gana puntos respondiendo en inglés. Ahora también puedes practicar tu pronunciación con un profesor de IA.</p>
+    <p class="lead reveal d1">Elige tu nivel, entra al mundo y gana puntos respondiendo en inglés. Ahora también puedes grabar tu voz y practicar tu pronunciación.</p>
     <div class="row reveal d2">
       <a class="btn" href="#worlds">Explore worlds ↓</a>
-      <a class="btn ghost" href="#speak">🎙 Speak with AI</a>
+      <a class="btn ghost" href="#speak">🎙 Practice speaking</a>
     </div>
     <span class="cap scroll">Scroll ↓ · 06 worlds</span>
   </section>
@@ -284,11 +284,11 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
     </div>
   </section>
 
-  <!-- 05 PRONUNCIACIÓN CON IA -->
+  <!-- 05 PRÁCTICA DE PRONUNCIACIÓN (gratis, funciona en el navegador) -->
   <section id="speak" data-scene="aurora" data-name="Aurora Lake">
-    <p class="cap reveal">New · Profe AI · Pronunciation coach</p>
-    <h2 class="title"><span>Speak</span><span>with AI</span></h2>
-    <p class="lead reveal d1">Escucha, graba tu voz y recibe retroalimentación de un profesor de inglés con IA: qué dijiste bien, qué sonidos mejorar y cómo hacerlo.</p>
+    <p class="cap reveal">New · Pronunciation practice · Práctica de pronunciación</p>
+    <h2 class="title"><span>Speak</span><span>& shine</span></h2>
+    <p class="lead reveal d1">Escucha, graba tu voz y descubre qué palabras dijiste bien, qué sonidos mejorar y cómo hacerlo.</p>
     <div class="panel trainer reveal d2">
       <div class="chips" id="modes">
         <button class="chip on" data-m="words" type="button">Words</button>
@@ -326,7 +326,7 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
     <div class="steps reveal d2">
       <div><b>01</b><h4>Choose your course</h4><p>Elige tu curso entre los mundos de arriba.</p></div>
       <div><b>02</b><h4>Pick a game, press Play</h4><p>Escoge un juego y entra al mundo.</p></div>
-      <div><b>03</b><h4>Read, listen, speak, win</h4><p>Lee, escucha y responde en inglés para ganar puntos. ¡Y practica tu pronunciación con Profe AI!</p></div>
+      <div><b>03</b><h4>Read, listen, speak, win</h4><p>Lee, escucha y responde en inglés para ganar puntos. ¡Y graba tu voz para practicar tu pronunciación!</p></div>
     </div>
     <div class="foot">
       <span class="cap">© eslteacher.cl · Made with ❤️ for my students</span>
@@ -416,8 +416,6 @@ const TWISTERS = [
   ["Six sticky skeletons.","Practica: s + consonante (sin 'e' al inicio)"]
 ];
 
-/* Dirección de la IA (función de Vercel en /api/pronunciation.js) */
-const AI_ENDPOINT = "/api/pronunciation";
 
 /* ====== De aquí hacia abajo no es necesario cambiar nada ====== */
 const $ = id => document.getElementById(id);
@@ -703,7 +701,7 @@ $("qz-best").textContent = best;
 newQuiz();
 
 /* =====================================================================
-   PROFE AI — entrenador de pronunciación
+   PRÁCTICA DE PRONUNCIACIÓN — todo se calcula en el navegador (gratis)
    ===================================================================== */
 let mode = "words", target = { text:"", meaning:"" }, attempts = store.get("attempts", []);
 
@@ -737,7 +735,7 @@ setTarget(WORDS[wIndex][1], WORDS[wIndex][2]);
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null, listening = false, heardText = "", alternatives = [], confidence = 0;
 if (!SR){
-  $("sr-note").textContent = "Tu navegador no permite grabar voz aquí. Usa Google Chrome o Microsoft Edge (computador o Android) para practicar con Profe AI.";
+  $("sr-note").textContent = "Tu navegador no permite grabar voz aquí. Usa Google Chrome o Microsoft Edge (computador o Android) para practicar tu pronunciación.";
   $("rec").disabled = true;
 } else {
   $("sr-note").textContent = "Consejo: habla claro, cerca del micrófono y en un lugar sin ruido. El navegador pedirá permiso para usar el micrófono.";
@@ -835,27 +833,16 @@ function localFeedback(text, heard, conf){
   const tips = problems.length
     ? ["Escucha el modelo en 🐢 lento, repite primero las palabras marcadas y luego la frase completa."]
     : ["Ahora intenta decirlo un poco más rápido y con más entonación, como en una conversación real."];
-  return { score, level, summary_es, summary_en, words: wordsOut, tips_es: tips, next_phrase: "", source:"local" };
+  // Sugerir un trabalenguas que practique el sonido que más costó
+  const practice = { "th":"th", "s + consonante":"s + consonante", "v":"v / w", "w":"v / w", "sh":"sh / s", "r":"r / l / y", "y":"r / l / y" };
+  const need = problems.map(p => practice[p.sound_hint]).find(Boolean);
+  const next = need ? TWISTERS.find(t => t[1].startsWith("Practica: " + need)) : null;
+  return { score, level, summary_es, summary_en, words: wordsOut, tips_es: tips, next_phrase: next && next[0] !== text ? next[0] : "" };
 }
 
-async function aiFeedback(text, heard, alts, conf){
-  const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 20000);
-  try {
-    const r = await fetch(AI_ENDPOINT, { method:"POST", headers:{ "Content-Type":"application/json" }, signal: ctrl.signal,
-      body: JSON.stringify({ target:text, heard, alternatives:alts, confidence:conf, mode }) });
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const data = await r.json(); if (typeof data.score !== "number") throw new Error("bad");
-    return { ...data, source:"ai" };
-  } finally { clearTimeout(t); }
-}
-
-async function evaluate(){
-  const text = target.text, heard = heardText, alts = alternatives, conf = confidence;
+function evaluate(){
   const fb = $("fb"); fb.classList.remove("hidden");
-  fb.innerHTML = `<p class="loading">Profe AI is listening to your answer · Revisando tu pronunciación</p>`;
-  let data;
-  try { data = await aiFeedback(text, heard, alts, conf); }
-  catch(e){ data = localFeedback(text, heard, conf); }
+  const data = localFeedback(target.text, heardText, confidence);
   renderFeedback(data);
   attempts = [...attempts, data.score].slice(-8); store.set("attempts", attempts);
   $("history").textContent = "Your last scores · Tus últimos puntajes: " + attempts.join(" · ");
@@ -866,7 +853,7 @@ function renderFeedback(d){
   const problems = (d.words || []).filter(w => w.status !== "ok" && w.tip_es);
   $("fb").innerHTML = `
     <div class="score"><b>${d.score}</b><div style="flex:1"><span class="cap">${label} · /100</span><div class="meter"><i style="width:0"></i></div></div></div>
-    <div class="teacher"><span class="avatar">AI</span><div><p>${esc(d.summary_es)}</p>${d.summary_en ? `<p class="en">${esc(d.summary_en)}</p>` : ""}</div></div>
+    <div class="teacher"><span class="avatar">★</span><div><p>${esc(d.summary_es)}</p>${d.summary_en ? `<p class="en">${esc(d.summary_en)}</p>` : ""}</div></div>
     <div class="wchips">${(d.words || []).map(w => `<span class="wc ${w.status}" title="${w.heard ? "Escuché: " + esc(w.heard) : ""}">${w.status === "ok" ? "✓" : w.status === "unclear" ? "~" : "✕"} ${esc(w.word)}${w.status === "unclear" && w.heard ? ` → ${esc(w.heard)}` : ""}</span>`).join("")}</div>
     ${problems.length ? `<ul class="tips">${problems.slice(0,4).map(w => `<li><span><b>${esc(w.word)}</b> <span class="hint">${esc(w.sound_hint || "")}</span><br>${esc(w.tip_es)}</span></li>`).join("")}</ul>` : ""}
     ${(d.tips_es || []).length ? `<div><span class="cap">Profe tips · Consejos</span><ul class="tips" style="margin-top:10px">${d.tips_es.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul></div>` : ""}
@@ -875,11 +862,11 @@ function renderFeedback(d){
       <button class="btn ghost" id="fb-hear" type="button">🔊 Hear model</button>
       ${d.next_phrase ? `<button class="btn ghost" id="fb-next" type="button">Next: “${esc(d.next_phrase)}” →</button>` : ""}
     </div>
-    ${d.source === "local" ? `<p class="note">Modo sin conexión a la IA: retroalimentación automática básica.</p>` : `<p class="note">Retroalimentación generada por IA. El reconocimiento de voz del navegador puede equivocarse a veces.</p>`}`;
+    <p class="note">El reconocimiento de voz del navegador puede equivocarse a veces. Si crees que lo dijiste bien, ¡inténtalo otra vez!</p>`;
   requestAnimationFrame(() => { const m = $("fb").querySelector(".meter i"); if (m) m.style.width = d.score + "%"; });
   $("fb-again").addEventListener("click", () => $("rec").click());
   $("fb-hear").addEventListener("click", () => speak(target.text, .8));
-  const nx = $("fb-next"); if (nx) nx.addEventListener("click", () => { setTarget(d.next_phrase, "Sugerida por Profe AI"); });
+  const nx = $("fb-next"); if (nx) nx.addEventListener("click", () => { setTarget(d.next_phrase, "Trabalenguas para practicar ese sonido"); });
 }
 if (attempts.length) $("history").textContent = "Your last scores · Tus últimos puntajes: " + attempts.join(" · ");
 </script>
