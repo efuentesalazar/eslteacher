@@ -143,6 +143,14 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
 .stat b{display:block;font-size:30px;line-height:1;font-weight:400}
 .q{font-size:clamp(22px,3vw,30px);line-height:1.15;margin-bottom:16px}
 .q em{font-style:normal;border-bottom:1px solid var(--frost)}
+.btn.sm{padding:8px 12px;font-size:11px}
+.wp{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
+.wp .hint{font-size:13px;color:var(--ash);font-family:var(--mono);letter-spacing:-.02em;margin-top:4px}
+.gap{font-size:clamp(18px,2.4vw,22px);line-height:1.35;margin:10px 0 12px}
+.gap b{display:inline-block;min-width:90px;border-bottom:1px dashed var(--frost);font-weight:400;color:var(--frost);text-align:center}
+.wp-msg{min-height:22px;font-size:15px;line-height:1.45;margin-top:10px}
+.wp-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.qtag{font-family:var(--mono);font-size:10px;letter-spacing:-.02em;text-transform:uppercase;border:1px solid var(--frost);border-radius:2px;padding:3px 7px;margin-right:8px;vertical-align:middle;white-space:nowrap}
 .opts{display:grid;gap:8px;margin-bottom:16px}
 .opt{display:flex;gap:14px;align-items:center;text-align:left;padding:14px 16px;border:1px solid var(--line);border-radius:2px;font-size:17px;transition:.2s}
 .opt i{font-style:normal;font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-radius:2px;width:24px;height:24px;display:grid;place-items:center;flex:none}
@@ -257,6 +265,14 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
     <p class="cap reveal">Word of the day · Palabra del día</p>
     <h2 class="title"><span>Word of</span><span>the day</span></h2>
     <div class="panel reveal d1">
+      <div class="head">
+        <span class="cap" id="w-day">Day 1 · 365</span>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost sm" id="w-prev" type="button" aria-label="Previous word">←</button>
+          <button class="btn ghost sm hidden" id="w-today" type="button">Today · Hoy</button>
+          <button class="btn ghost sm" id="w-next" type="button" aria-label="Next word">→</button>
+        </div>
+      </div>
       <div class="word">
         <div class="em" id="w-emoji">🌈</div>
         <div><div class="w" id="w-word">rainbow</div><div class="es" id="w-es">arcoíris</div></div>
@@ -264,8 +280,43 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
       <p class="ex" id="w-ex"></p>
       <div class="row">
         <button class="btn" id="w-say" type="button">🔊 Listen</button>
-        <button class="btn ghost" id="w-practice" type="button">🎙 Practice it</button>
-        <button class="btn ghost" id="w-next" type="button">Another word →</button>
+      </div>
+
+      <!-- Practicar la palabra del día -->
+      <div class="wp">
+        <span class="cap">Practice the word · Practica la palabra</span>
+        <div class="chips" id="wp-tabs" style="margin-top:10px">
+          <button class="chip on" data-p="complete" type="button">1 · Complete</button>
+          <button class="chip" data-p="write" type="button">2 · Write</button>
+          <button class="chip" data-p="say" type="button">3 · Say it</button>
+        </div>
+        <div class="wp-pane" data-p="complete">
+          <p class="hint">Complete the sentence · Completa la oración</p>
+          <p class="gap" id="wp-gap"></p>
+          <div class="own"><input id="wp-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the missing word…"><button class="btn" id="wp-check" type="button">Check</button></div>
+          <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="wp-hint" type="button">💡 Hint · Pista</button></div>
+          <p class="wp-msg" id="wp-msg1" aria-live="polite"></p>
+        </div>
+        <div class="wp-pane hidden" data-p="write">
+          <p class="hint">Write your own sentence with <b id="wp-word2"></b> · Escribe tu propia oración</p>
+          <div class="own"><input id="wp-sent" maxlength="160" autocomplete="off" placeholder="Example: I like…"><button class="btn" id="wp-check2" type="button">Check</button></div>
+          <p class="wp-msg" id="wp-msg2" aria-live="polite"></p>
+          <div class="row hidden" id="wp-sent-actions" style="margin-top:10px">
+            <button class="btn ghost sm" id="wp-sent-listen" type="button">🔊 Listen to it</button>
+            <button class="btn ghost sm" id="wp-sent-say" type="button">🎙 Say it</button>
+          </div>
+        </div>
+        <div class="wp-pane hidden" data-p="say">
+          <p class="hint">Say it out loud and get your score · Dilo en voz alta y recibe tu puntaje</p>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="wp-say-word" type="button">🎙 Say the word</button>
+            <button class="btn ghost" id="wp-say-ex" type="button">🎙 Say the example</button>
+          </div>
+        </div>
+        <div class="wp-foot">
+          <span class="cap" id="wp-progress"></span>
+          <button class="btn ghost sm" id="w-challenge" type="button">⚡ Quick challenge →</button>
+        </div>
       </div>
     </div>
   </section>
@@ -275,8 +326,12 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
     <p class="cap reveal">Quick challenge · Desafío rápido</p>
     <h2 class="title"><span>Quick</span><span>challenge</span></h2>
     <div class="panel reveal d1">
+      <div class="chips" id="qz-modes">
+        <button class="chip on" data-q="recent" type="button">Recent words · Últimos 30 días</button>
+        <button class="chip" data-q="all" type="button">All 365 words</button>
+      </div>
       <div class="head">
-        <span class="cap">What does it mean? · ¿Qué significa?</span>
+        <span class="cap" id="qz-type">What does it mean? · ¿Qué significa?</span>
         <div class="stats">
           <div class="stat"><b id="qz-streak">0</b><span class="cap">Streak · racha</span></div>
           <div class="stat"><b id="qz-best">0</b><span class="cap">Best · récord</span></div>
@@ -339,6 +394,7 @@ section{position:relative;min-height:100vh;padding:120px var(--pad) 90px;display
   </section>
 </main>
 
+<script src="palabras.js"></script>
 <script>
 /* =====================================================================
    DATOS — edita aquí tus cursos, juegos y palabras (igual que antes)
@@ -376,38 +432,7 @@ const COURSES = [
     ]}
 ];
 
-const WORDS = [
-  ["🌈","rainbow","arcoíris","After the rain, we saw a rainbow."],
-  ["☔","umbrella","paraguas","Take your umbrella, it's raining!"],
-  ["🧳","suitcase","maleta","My suitcase is ready for the trip."],
-  ["🗺️","map","mapa","Let's check the map to find the museum."],
-  ["🎉","celebrate","celebrar","We celebrate my birthday in June."],
-  ["🌍","planet","planeta","We must take care of our planet."],
-  ["♻️","recycle","reciclar","I recycle bottles and paper."],
-  ["🏙️","city","ciudad","Santiago is a big city."],
-  ["🍎","healthy","saludable","Fruit is a healthy snack."],
-  ["🎒","backpack","mochila","My backpack is very heavy today."],
-  ["🚲","ride","andar (en bici)","I ride my bike to school."],
-  ["🔥","hot","caluroso","It's very hot in summer."],
-  ["❄️","freezing","helado / muy frío","It's freezing outside!"],
-  ["🎭","tradition","tradición","Fiestas Patrias is a Chilean tradition."],
-  ["📚","library","biblioteca","I borrow books from the library."],
-  ["🏆","win","ganar","Our team wants to win the game."],
-  ["🤝","friendly","amigable","My classmates are very friendly."],
-  ["🌊","ocean","océano","The Pacific Ocean is huge."],
-  ["⏰","early","temprano","I wake up early on Mondays."],
-  ["🎶","sing","cantar","We sing songs in English class."],
-  ["🌱","grow","crecer","Plants grow with water and sun."],
-  ["✈️","travel","viajar","I want to travel to London."],
-  ["😮","surprised","sorprendido","She was surprised by the gift."],
-  ["🧠","remember","recordar","Can you remember the new words?"],
-  ["🍕","delicious","delicioso","This pizza is delicious!"],
-  ["🏔️","mountain","montaña","The Andes are tall mountains."],
-  ["💡","idea","idea","That's a great idea!"],
-  ["🐶","pet","mascota","My pet is a small dog."],
-  ["🎨","draw","dibujar","I like to draw animals."],
-  ["⭐","amazing","increíble","Your work is amazing!"]
-];
+/* Las 365 palabras del día están en palabras.js */
 
 const TWISTERS = [
   ["She sells seashells by the seashore.","Practica: sh / s"],
@@ -688,34 +713,170 @@ function speak(t, rate = .9){
 /* =====================================================================
    PALABRA DEL DÍA
    ===================================================================== */
-let wIndex = Math.floor((Date.now() - new Date().getTimezoneOffset()*60000) / 86400000) % WORDS.length;
+// Una palabra por día: el 1 de enero es la palabra 1, el 31 de diciembre la 365
+function dayOfYear(d = new Date()){
+  return Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / 86400000);
+}
+const todayIndex = (dayOfYear() - 1) % WORDS.length;
+const todayKey = new Date().toLocaleDateString("en-CA");      // AAAA-MM-DD
+let wIndex = todayIndex;
+const wordRe = (w, suffix = "") => new RegExp("\\b" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + suffix + "\\b", "i");
+const dateOf = i => new Date(new Date().getFullYear(), 0, i + 1).toLocaleDateString("es-CL", { day:"numeric", month:"long" });
+
+// Progreso: qué pasos se hicieron con cada palabra, y qué días se completó la palabra del día
+let wpDone = store.get("wpDone", {});            // { indice: { complete:1, write:1, say:1 } }
+let daysDone = store.get("daysDone", []);        // ["2026-10-28", ...]
+const STEPS = ["complete", "write", "say"];
+function markStep(i, step){
+  wpDone[i] = { ...(wpDone[i] || {}), [step]: 1 }; store.set("wpDone", wpDone);
+  if (i === todayIndex && STEPS.every(s => wpDone[i][s]) && !daysDone.includes(todayKey)){
+    daysDone = [...daysDone, todayKey].slice(-400); store.set("daysDone", daysDone);
+    toast("🏆 ¡Completaste la palabra del día! Racha: " + dayStreak() + (dayStreak() === 1 ? " día" : " días"));
+  }
+  renderProgress();
+}
+function dayStreak(){
+  let n = 0; const d = new Date();
+  if (!daysDone.includes(d.toLocaleDateString("en-CA"))) d.setDate(d.getDate() - 1);   // la racha sigue viva si hoy aún no practicas
+  while (daysDone.includes(d.toLocaleDateString("en-CA"))){ n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function renderProgress(){
+  const p = wpDone[wIndex] || {};
+  const labels = { complete:"1 · Complete", write:"2 · Write", say:"3 · Say it" };
+  $("wp-tabs").querySelectorAll(".chip").forEach(c => { c.textContent = labels[c.dataset.p] + (p[c.dataset.p] ? " ✓" : ""); });
+  const done = STEPS.filter(s => p[s]).length, st = dayStreak();
+  $("wp-progress").textContent = `${done}/3 completado` + (st ? ` · 🔥 Racha: ${st} ${st === 1 ? "día" : "días"}` : "");
+}
+
 function showWord(){
-  const [e,w,es,ex] = WORDS[wIndex];
+  const [e, w, es, ex] = WORDS[wIndex];
   $("w-emoji").textContent = e; $("w-word").textContent = w;
   $("w-es").textContent = es; $("w-ex").textContent = "“" + ex + "”";
+  const isToday = wIndex === todayIndex;
+  $("w-day").textContent = (isToday ? "⭐ Today · " : "") + `Day ${wIndex + 1} · 365 · ${dateOf(wIndex)}`;
+  $("w-today").classList.toggle("hidden", isToday);
+  // Ejercicio 1: completar la oración
+  $("wp-gap").innerHTML = esc(ex).replace(wordRe(esc(w)), "<b>_____</b>");
+  $("wp-in").value = ""; $("wp-msg1").textContent = ""; hintLevel = 0;
+  // Ejercicio 2: oración propia
+  $("wp-word2").textContent = "“" + w + "”";
+  $("wp-sent").value = ""; $("wp-msg2").textContent = ""; $("wp-sent-actions").classList.add("hidden");
+  renderProgress();
 }
 $("w-next").addEventListener("click", () => { wIndex = (wIndex + 1) % WORDS.length; showWord(); });
+$("w-prev").addEventListener("click", () => { wIndex = (wIndex - 1 + WORDS.length) % WORDS.length; showWord(); });
+$("w-today").addEventListener("click", () => { wIndex = todayIndex; showWord(); });
 $("w-say").addEventListener("click", () => { const [,w,,ex] = WORDS[wIndex]; speak(w + ". " + ex, .85); });
-$("w-practice").addEventListener("click", () => {
-  const [,w,es] = WORDS[wIndex];
-  setMode("words", false); setTarget(w, es);
-  $("speak").scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
-});
 if (!("speechSynthesis" in window)) $("w-say").classList.add("hidden");
+
+// Pestañas de práctica
+function showPane(p){
+  $("wp-tabs").querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.p === p));
+  document.querySelectorAll(".wp-pane").forEach(el => el.classList.toggle("hidden", el.dataset.p !== p));
+}
+$("wp-tabs").querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => showPane(c.dataset.p)));
+
+// 1 · Completar
+let hintLevel = 0;
+function checkGap(){
+  const w = WORDS[wIndex][1], v = norm($("wp-in").value.trim()).replace(/[^a-z' -]/g, "");
+  if (!v){ $("wp-msg1").textContent = "Escribe la palabra que falta."; return; }
+  if (v === norm(w)){
+    $("wp-msg1").textContent = "✅ ¡Correcto! “" + WORDS[wIndex][3] + "”";
+    speak(WORDS[wIndex][3], .9); markStep(wIndex, "complete");
+    setTimeout(() => showPane("write"), 1600);
+  } else {
+    $("wp-msg1").textContent = "❌ Casi. Mira la palabra de arriba o usa la pista 💡 e inténtalo otra vez.";
+  }
+}
+$("wp-check").addEventListener("click", checkGap);
+$("wp-in").addEventListener("keydown", e => { if (e.key === "Enter") checkGap(); });
+$("wp-hint").addEventListener("click", () => {
+  const w = WORDS[wIndex][1]; hintLevel = Math.min(hintLevel + 1, w.length);
+  $("wp-msg1").textContent = "💡 Empieza con: " + w.slice(0, hintLevel) + "_".repeat(w.length - hintLevel) + `  (${w.length} letras)`;
+});
+
+// 2 · Escribir una oración propia
+function checkSentence(){
+  const [, w, , ex] = WORDS[wIndex], s = $("wp-sent").value.trim();
+  const n = s.split(/\s+/).filter(Boolean).length;
+  $("wp-sent-actions").classList.add("hidden");
+  if (!s){ $("wp-msg2").textContent = "Escribe una oración en inglés."; return; }
+  if (!wordRe(w, "(s|es|ed|d|ing|'s)?").test(s)){ $("wp-msg2").textContent = `Tu oración debe usar la palabra “${w}”. ¡Inténtalo!`; return; }
+  if (n < 4){ $("wp-msg2").textContent = "Escribe una oración un poco más larga (mínimo 4 palabras)."; return; }
+  if (norm(s).replace(/[^a-z ]/g, "") === norm(ex).replace(/[^a-z ]/g, "")){ $("wp-msg2").textContent = "Esa es la oración de ejemplo 😉 Crea una distinta, sobre ti o tu día."; return; }
+  const tips = [];
+  if (!/^[A-Z¿¡"“]/.test(s)) tips.push("empieza con mayúscula");
+  if (!/[.!?]["”]?$/.test(s)) tips.push("termina con un punto (.), ! o ?");
+  $("wp-msg2").textContent = "✅ ¡Muy bien! Usaste “" + w + "” en tu propia oración." + (tips.length ? " Tip: " + tips.join(" y ") + "." : "");
+  $("wp-sent-actions").classList.remove("hidden");
+  store.set("lastSentence", { i: wIndex, s });
+  markStep(wIndex, "write");
+}
+$("wp-check2").addEventListener("click", checkSentence);
+$("wp-sent").addEventListener("keydown", e => { if (e.key === "Enter") checkSentence(); });
+$("wp-sent-listen").addEventListener("click", () => speak($("wp-sent").value.trim(), .9));
+
+// 3 · Decirlo en voz alta (usa la sección Speak)
+let wpSay = null;   // recuerda qué frase se envió desde la palabra del día
+function goSpeak(text, meaning, m){
+  wpSay = { i: wIndex, text };
+  setMode(m, false); if (m === "own") $("own-in").value = text;
+  setTarget(text, meaning);
+  $("speak").scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+}
+$("wp-say-word").addEventListener("click", () => { const [, w, es] = WORDS[wIndex]; goSpeak(w, "⭐ Word of the day · " + es, "words"); });
+$("wp-say-ex").addEventListener("click", () => { const [, w, es, ex] = WORDS[wIndex]; goSpeak(ex, "⭐ Word of the day: " + w + " (" + es + ")", "sentences"); });
+$("wp-sent-say").addEventListener("click", () => goSpeak($("wp-sent").value.trim(), "⭐ Tu oración con “" + WORDS[wIndex][1] + "”", "own"));
+$("w-challenge").addEventListener("click", () => {
+  qzForce = wIndex; newQuiz();
+  $("challenge").scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+});
 showWord();
 
 /* =====================================================================
-   DESAFÍO RÁPIDO
+   DESAFÍO RÁPIDO — conectado con la palabra del día
+   Preguntas sobre las palabras de los últimos 30 días (o las 365),
+   y la palabra de hoy aparece al inicio y cada 4 preguntas.
    ===================================================================== */
-let qz = null, streak = 0, best = store.get("best", 0);
+let qz = null, streak = 0, best = store.get("best", 0), qzMode = "recent", qzCount = 0, qzForce = null;
+const rnd1 = n => Math.floor(Math.random() * n);
+function quizPool(){
+  if (qzMode === "all") return WORDS.map((_, i) => i);
+  return Array.from({ length: 30 }, (_, k) => (todayIndex - k + WORDS.length) % WORDS.length);
+}
+function distractors(a, field, n = 2){
+  const used = new Set([norm(WORDS[a][field])]), out = [];
+  while (out.length < n){
+    const i = rnd1(WORDS.length), v = norm(WORDS[i][field]);
+    if (i !== a && !used.has(v)){ used.add(v); out.push(i); }
+  }
+  return out;
+}
 function newQuiz(){
-  const pick = () => Math.floor(Math.random() * WORDS.length);
-  let a = pick(); if (qz && a === qz.a) a = (a + 1) % WORDS.length;
-  const opts = new Set([a]); while (opts.size < 3) opts.add(pick());
-  qz = { a, opts: [...opts].sort(() => Math.random() - .5), done: false };
-  const [e, w] = WORDS[a];
-  $("qz-q").innerHTML = `${e} What does <em>${esc(w)}</em> mean?`;
-  $("qz-opts").innerHTML = qz.opts.map((i, k) => `<button class="opt" type="button" data-i="${i}"><i>${"ABC"[k]}</i>${esc(WORDS[i][2])}</button>`).join("");
+  qzCount++;
+  let a;
+  if (qzForce !== null){ a = qzForce; qzForce = null; }
+  else if (qzCount === 1 || qzCount % 4 === 0) a = todayIndex;
+  else { const pool = quizPool().filter(i => !qz || i !== qz.a); a = pool[rnd1(pool.length)]; }
+  const [e, w, es, ex] = WORDS[a];
+  const type = ["meaning", "reverse", "gap"][rnd1(3)];
+  const field = type === "meaning" ? 2 : 1;            // opciones en español o en inglés
+  const opts = [a, ...distractors(a, field)].sort(() => Math.random() - .5);
+  qz = { a, opts, done: false };
+  const tag = a === todayIndex ? `<span class="qtag">⭐ Word of the day</span>` : "";
+  if (type === "meaning"){
+    $("qz-type").textContent = "What does it mean? · ¿Qué significa?";
+    $("qz-q").innerHTML = `${tag}${e} What does <em>${esc(w)}</em> mean?`;
+  } else if (type === "reverse"){
+    $("qz-type").textContent = "Say it in English · ¿Cómo se dice en inglés?";
+    $("qz-q").innerHTML = `${tag}${e} How do you say <em>${esc(es)}</em> in English?`;
+  } else {
+    $("qz-type").textContent = "Complete the sentence · Completa la oración";
+    $("qz-q").innerHTML = `${tag}${esc(ex).replace(wordRe(esc(w)), "<em>_____</em>")}`;
+  }
+  $("qz-opts").innerHTML = opts.map((i, k) => `<button class="opt" type="button" data-i="${i}"><i>${"ABC"[k]}</i>${esc(WORDS[i][field])}</button>`).join("");
   $("qz-opts").querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => answer(b)));
 }
 function answer(b){
@@ -726,8 +887,13 @@ function answer(b){
   streak = ok ? streak + 1 : 0; if (streak > best){ best = streak; store.set("best", best); }
   $("qz-streak").textContent = streak; $("qz-best").textContent = best;
   if (ok) speak(WORDS[qz.a][1]);
-  setTimeout(() => { if (qz.done) newQuiz(); }, ok ? 1100 : 1900);
+  setTimeout(() => { if (qz.done) newQuiz(); }, ok ? 1100 : 2200);
 }
+$("qz-modes").querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+  qzMode = c.dataset.q;
+  $("qz-modes").querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c));
+  newQuiz();
+}));
 $("qz-next").addEventListener("click", newQuiz);
 $("qz-best").textContent = best;
 newQuiz();
@@ -878,6 +1044,12 @@ function evaluate(){
   renderFeedback(data);
   attempts = [...attempts, data.score].slice(-8); store.set("attempts", attempts);
   $("history").textContent = "Your last scores · Tus últimos puntajes: " + attempts.join(" · ");
+  // Si la frase venía de la palabra del día y salió bien, se marca el paso 3
+  if (wpSay && wpSay.text === target.text && data.score >= 60){
+    const already = (wpDone[wpSay.i] || {}).say;
+    markStep(wpSay.i, "say");
+    if (!already) toast("⭐ ¡Paso 3 listo! Dijiste la palabra del día en voz alta.");
+  }
 }
 
 function renderFeedback(d){
