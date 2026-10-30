@@ -32,6 +32,15 @@ En `index.html`, busca `DATOS`: ahí están `COURSES` (cursos y juegos) y `TWIST
 - **Vista previa al compartir** el enlace por WhatsApp (`assets/og-image.jpg`) e íconos (`favicon.ico`, `assets/icons/`).
 - Si cambias una imagen de `assets/mundos/`, cambia también su versión chica en `assets/mundos/m/` (mismo nombre).
 
+## Novedades (30-10-2026)
+- **Capturas de los juegos** en `assets/games/` (800x450). Cada juego en `COURSES` tiene `shot:"nombre"`. Al presionar un juego, su captura crece hasta llenar la pantalla y luego se abre.
+- **Ingreso de alumnos**: en Mi perfil eligen su curso (5°A … 3°B HC), escriben su RUT y su clave de 4 dígitos.
+- **Reporte al profe**: el botón "Enviar reporte al profe" guarda el progreso en la base de datos.
+- **Panel del profe**: `eslteacher.cl/profe.html` (con tu clave). Filtros por curso, búsqueda, historial y descarga a Excel.
+- Base de datos: Supabase, proyecto `reinos-del-saber-8basico`, esquema privado `eslt` (separado del juego). El RUT se guarda cifrado (no se puede leer) y las claves con bcrypt. Máx. 8 intentos fallidos cada 15 minutos por RUT.
+- **Carpeta privada** `Documents\Salesianos\eslteacher-PRIVADO` (NO subir a GitHub): listas de claves por curso para repartir y la clave del panel.
+- Si llega un alumno nuevo o cambia la nómina: pídele a Claude que vuelva a importar `NÓMINAS DE CURSOS.xlsx` (las claves existentes no cambian).
+
 ## Publicar cambios
 Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Add file → Upload files → Commit changes). Vercel publica eslteacher.cl solo en 1–2 minutos.
 

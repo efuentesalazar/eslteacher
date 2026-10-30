@@ -197,6 +197,29 @@ section{position:relative;min-height:100vh;min-height:100svh;padding:120px var(-
 .game:hover{transform:translateY(-3px);border-color:var(--accent);background:rgba(255,255,255,.07);box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 4px color-mix(in srgb,var(--accent) 25%,transparent)}
 .game .ic{font-size:30px;width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.1);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
 .game:hover .ic{transform:rotate(-8deg) scale(1.12)}
+/* Tarjeta con captura del juego */
+.game.has-shot{grid-template-columns:minmax(150px,210px) 1fr auto;padding:10px 16px 10px 10px}
+.thumb{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#111;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.01);transition:transform .6s cubic-bezier(.2,.7,.1,1),filter .3s}
+.game:hover .thumb img{transform:scale(1.1)}
+.thumb .ic{position:absolute;left:6px;bottom:6px;width:36px;height:36px;font-size:20px;border-radius:10px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.thumb::after{content:"▶";position:absolute;inset:0;display:grid;place-items:center;font-size:34px;color:#fff;background:rgba(0,0,0,.35);opacity:0;transition:opacity .25s;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.game:hover .thumb::after{opacity:1}
+@media (max-width:640px){
+  .game.has-shot{grid-template-columns:1fr;padding:10px}
+  .game.has-shot .btn{grid-column:auto}
+}
+/* Transición al entrar a un juego: la captura crece hasta llenar la pantalla */
+.launch{position:fixed;z-index:80;border-radius:12px;overflow:hidden;background:#000 center/cover no-repeat;
+  transition:left .6s cubic-bezier(.7,0,.2,1),top .6s cubic-bezier(.7,0,.2,1),width .6s cubic-bezier(.7,0,.2,1),height .6s cubic-bezier(.7,0,.2,1),border-radius .6s;
+  box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.launch.full{left:0!important;top:0!important;width:100vw!important;height:100vh!important;border-radius:0}
+.launch::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.15),rgba(0,0,0,.65));opacity:0;transition:opacity .5s .3s}
+.launch.full::before{opacity:1}
+.launch b{position:absolute;left:50%;top:50%;transform:translate(-50%,-30%);opacity:0;transition:opacity .4s .45s,transform .5s .45s;
+  font-family:var(--display);font-weight:600;font-size:clamp(28px,5vw,64px);text-align:center;text-shadow:0 4px 24px rgba(0,0,0,.7);width:90%}
+.launch b small{display:block;font-family:var(--body);font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin-top:10px;opacity:.85}
+.launch.full b{opacity:1;transform:translate(-50%,-50%)}
 .game h4{font-family:var(--display);font-size:22px;font-weight:600;line-height:1.1;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .game p{font-size:14px;color:rgba(255,255,255,.75);margin-top:4px;line-height:1.4}
 .game .cap{color:var(--accent);margin-top:6px;display:block}
@@ -338,6 +361,14 @@ section{position:relative;min-height:100vh;min-height:100svh;padding:120px var(-
 .badge i{display:block;font-style:normal;font-size:30px;margin-bottom:6px;filter:grayscale(1);opacity:.4}
 .badge.got{border:2px solid var(--yellow);background:rgba(255,200,0,.1);color:#fff}
 .badge.got i{filter:none;opacity:1}
+.login{margin-top:10px;padding:16px;border-radius:18px;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1)}
+.login label:first-of-type{margin-top:10px}
+.login .btn{width:100%;margin-top:4px}
+.login #l-pin{letter-spacing:.5em;font-family:var(--mono);font-size:20px}
+.who{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin-top:12px;padding:12px 14px;border-radius:18px;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);border:2px solid color-mix(in srgb,var(--accent) 50%,transparent)}
+.who .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--accent)}
+.who b{display:block;font-family:var(--display);font-weight:600;font-size:20px;line-height:1.1}
 .hardlist{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .hardlist span{font-size:13px;padding:4px 10px;border-radius:999px;background:rgba(255,75,75,.18);border:1px solid rgba(255,75,75,.5)}
 
@@ -404,11 +435,26 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
   <div class="box">
     <button class="icon-btn x" id="p-close" type="button" aria-label="Cerrar">✕</button>
     <h3 id="p-title">My profile · Mi perfil</h3>
-    <p class="hint">Se guarda solo en este dispositivo. No necesitas cuenta.</p>
-    <label class="cap" for="p-name">Nickname · Apodo</label>
-    <input id="p-name" maxlength="24" placeholder="Ej: Cata 7°B" autocomplete="off">
-    <label class="cap" for="p-course">Course · Curso</label>
-    <select id="p-course"></select>
+
+    <!-- Ingreso con curso + RUT + clave -->
+    <form id="login" class="login" autocomplete="off" novalidate>
+      <p class="hint">Ingresa para que tu profe reciba tus reportes.</p>
+      <label class="cap" for="l-section">Course · Curso</label>
+      <select id="l-section" required></select>
+      <label class="cap" for="l-rut">RUT</label>
+      <input id="l-rut" inputmode="text" maxlength="12" placeholder="Ej: 12345678-9" autocapitalize="characters" spellcheck="false">
+      <label class="cap" for="l-pin">Clave · 4 dígitos</label>
+      <input id="l-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••" autocomplete="off">
+      <p class="wp-msg" id="l-msg" aria-live="polite"></p>
+      <button class="btn play" id="l-go" type="submit">→ Entrar · Log in</button>
+      <p class="note" style="margin-top:10px">Tu clave te la entrega tu profesor. Tu RUT no se guarda en este dispositivo.</p>
+    </form>
+    <div id="who" class="who hidden">
+      <span class="av" id="who-av">🙂</span>
+      <div><b id="who-name"></b><span class="cap" id="who-sec"></span></div>
+      <button class="btn ghost sm" id="logout" type="button">Salir</button>
+    </div>
+
     <label class="cap">Avatar</label>
     <div class="avatars" id="p-avatars"></div>
     <div class="pstats">
@@ -424,9 +470,9 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
     </div>
     <div class="row" style="margin-top:20px">
       <button class="btn play" id="p-save" type="button">✓ Save · Guardar</button>
-      <button class="btn ghost" id="p-report" type="button">📋 Reporte para el profe</button>
+      <button class="btn talk" id="p-report" type="button">📤 Enviar reporte al profe</button>
     </div>
-    <p class="note" style="margin-top:12px">“Reporte para el profe” copia un resumen de tu progreso. Pégalo en Classroom o donde te indique tu profesor.</p>
+    <p class="note" id="p-report-note" style="margin-top:12px">“Enviar reporte al profe” manda tu progreso directo a tu profesor. Necesitas ingresar con tu RUT.</p>
   </div>
 </div>
 
@@ -608,39 +654,54 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
 const COURSES = [
   { id:"5basico", num:"5°", level:"Básico", folder:"5° BASICO", icon:"☀️",
     games:[
-      { title:"Weather Worlds", desc:"Explore the worlds and learn weather words.", icon:"🌦️", unit:"Unit 4", file:"Game_Weather_Worlds_Unit4.html", isNew:true }
+      { title:"Weather Worlds", desc:"Explore the worlds and learn weather words.", icon:"🌦️", unit:"Unit 4", file:"Game_Weather_Worlds_Unit4.html", shot:"weather-worlds", isNew:true }
     ]},
   { id:"6basico", num:"6°", level:"Básico", folder:"6° BASICO", icon:"✈️",
     games:[
-      { title:"Let's Travel City", desc:"Travel around the city and describe places.", icon:"🏙️", unit:"Unit 4", file:"Lets_Travel_City.html", isNew:true },
-      { title:"Ludo World Tour", desc:"3D Ludo online! Answer in English to roll the dice.", icon:"🎲", unit:"Unit 4", file:"Travel_Tycoon.html", isNew:true }
+      { title:"Let's Travel City", desc:"Travel around the city and describe places.", icon:"🏙️", unit:"Unit 4", file:"Lets_Travel_City.html", shot:"lets-travel-city", isNew:true },
+      { title:"Ludo World Tour", desc:"3D Ludo online! Answer in English to roll the dice.", icon:"🎲", unit:"Unit 4", file:"Travel_Tycoon.html", shot:"ludo-world-tour", isNew:true }
     ]},
   { id:"7basico", num:"7°", level:"Básico", folder:"7° BASICO", icon:"🌱",
     games:[
-      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", isNew:true }
+      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
     ]},
   { id:"8basico", num:"8°", level:"Básico", folder:"8° BASICO", icon:"🌍",
     games:[
-      { title:"Future Worlds", desc:"Explore Neo City, Green Valley and Fossil Valley!", icon:"🚀", file:"Future_Worlds.html", isNew:true },
-      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English!", icon:"🗡️", file:"Realms_of_Knowledge.html", isNew:true }
+      { title:"Future Worlds", desc:"Explore Neo City, Green Valley and Fossil Valley!", icon:"🚀", file:"Future_Worlds.html", shot:"future-worlds", isNew:true },
+      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English!", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
     ]},
   { id:"1medio", num:"1°", level:"Medio", folder:"1° MEDIO", icon:"🎉",
     games:[
-      { title:"Festival Worlds", desc:"Discover festivals around the world.", icon:"🎪", unit:"Unit 4", file:"Mundo_Unit4_Festival_Worlds.html" },
-      { title:"Festival Worlds 2", desc:"More festivals, more challenges!", icon:"🎆", unit:"Unit 4", file:"Festival_Worlds_2.html", isNew:true },
-      { title:"Traditions", desc:"Learn about traditions from different cultures.", icon:"🏮", unit:"Unit 4", file:"Mundo_Unit4_Traditions_1.html" },
-      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", isNew:true }
+      { title:"Festival Worlds", desc:"Discover festivals around the world.", icon:"🎪", unit:"Unit 4", file:"Mundo_Unit4_Festival_Worlds.html", shot:"festival-worlds" },
+      { title:"Festival Worlds 2", desc:"More festivals, more challenges!", icon:"🎆", unit:"Unit 4", file:"Festival_Worlds_2.html", shot:"festival-worlds-2", isNew:true },
+      { title:"Traditions", desc:"Learn about traditions from different cultures.", icon:"🏮", unit:"Unit 4", file:"Mundo_Unit4_Traditions_1.html", shot:"traditions" },
+      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
     ]},
   { id:"3medio", num:"3°", level:"Medio", folder:"3° MEDIO", icon:"💬",
     games:[
-      { title:"TikTok vs. Vine", desc:"Compare social media apps and share your opinions in English.", icon:"📱", unit:"Unit 4", file:"Mundo_Unit4_TikTok_vs_Vine.html", isNew:true },
-      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", isNew:true }
+      { title:"TikTok vs. Vine", desc:"Compare social media apps and share your opinions in English.", icon:"📱", unit:"Unit 4", file:"Mundo_Unit4_TikTok_vs_Vine.html", shot:"tiktok-vs-vine", isNew:true },
+      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
     ]},
   { id:"englishweek", num:"English Week", level:"2026", folder:"English Week 2026", icon:"🏆",
     games:[
-      { title:"Chest Quest", desc:"Explore the UK, the USA and Australia. Open chests and answer in English!", icon:"🗝️", unit:"English Week", file:"english-week-2026.html", isNew:true }
+      { title:"Chest Quest", desc:"Explore the UK, the USA and Australia. Open chests and answer in English!", icon:"🗝️", unit:"English Week", file:"english-week-2026.html", shot:"chest-quest", isNew:true }
     ]}
 ];
+/* Capturas de los juegos: assets/games/<shot>.webp (800x450). Para un juego nuevo, agrega su captura ahí. */
+
+/* Cursos del colegio (para ingresar con RUT). "course" conecta cada curso con sus juegos. */
+const SECTIONS = [
+  { id:"5°A", course:"5basico" }, { id:"5°B", course:"5basico" },
+  { id:"6°A", course:"6basico" }, { id:"6°B", course:"6basico" },
+  { id:"7°A", course:"7basico" }, { id:"7°B", course:"7basico" },
+  { id:"8°A", course:"8basico" }, { id:"8°B", course:"8basico" },
+  { id:"1°A HC", course:"1medio" }, { id:"1°B HC", course:"1medio" },
+  { id:"3°B HC", course:"3medio" }
+];
+/* Base de datos (Supabase). La clave "publishable" es pública por diseño: solo permite llamar
+   las funciones eslt_* (ingresar, enviar reporte), nunca leer la nómina. */
+const DB_URL = "https://tlihbmgokuhvppbchvrz.supabase.co";
+const DB_KEY = "sb_publishable_nGgOCuUUuXKK7gx957LYhg_Jf2V4TJC";
 
 /* Las 365 palabras del día están en palabras.js */
 
@@ -739,8 +800,9 @@ function addXP(n){
   xp += n; store.set("xp", xp); renderMe(); replay($("me-xp"), "bump");
 }
 function renderMe(){
-  const av = (store.get("profile", {}).avatar) || "🙂";
+  const av = (store.get("profile", {}).avatar) || "🙂", sess = store.get("session", null);
   $("me-av").textContent = av; $("tab-av").textContent = av;
+  $("me").title = sess ? `${sess.first_name} · ${sess.section}` : "Mi perfil · Ingresa con tu RUT";
   $("me-streak").lastElementChild.textContent = dayStreak();
   $("me-xp").lastElementChild.textContent = xp;
 }
@@ -988,8 +1050,10 @@ sections.forEach(s => io.observe(s));
 let currentCourse = COURSES.find(c => c.games.length)?.id || COURSES[0].id;
 function gameRow(c, g, showCourse){
   const href = encodeURI(c.folder + "/" + g.file);
-  return `<a class="game" href="${href}">
-      <span class="ic" aria-hidden="true">${g.icon}</span>
+  const shot = g.shot ? `assets/games/${g.shot}.webp` : "";
+  return `<a class="game ${shot ? "has-shot" : ""}" href="${href}" data-shot="${shot}" data-title="${esc(g.title)}">
+      ${shot ? `<span class="thumb"><img src="${shot}" alt="${esc(g.title)}" loading="lazy" decoding="async"><span class="ic" aria-hidden="true">${g.icon}</span></span>`
+             : `<span class="ic" aria-hidden="true">${g.icon}</span>`}
       <span><h4>${esc(g.title)} ${g.isNew ? `<span class="tag">New</span>` : ""}</h4>
         <p>${esc(g.desc)}</p>
         <span class="cap">${showCourse ? esc(c.num + " " + c.level) + " · " : ""}${g.unit ? esc(g.unit) : ""}</span></span>
@@ -1007,8 +1071,8 @@ function renderCourses(){
     currentCourse = b.dataset.id; $("q").value = ""; renderCourses(); renderGames();
   }));
 }
-// Si el alumno guardó su curso en el perfil, se abre ese curso
-{ const pc = store.get("profile", {}).course; if (pc && COURSES.some(c => c.id === pc && c.games.length)) currentCourse = pc; }
+// Si el alumno ingresó con su RUT, se abren los juegos de su curso
+{ const pc = (store.get("session", null) || {}).course; if (pc && COURSES.some(c => c.id === pc && c.games.length)) currentCourse = pc; }
 function renderGames(){
   const q = norm($("q").value.trim());
   if (q){
@@ -1023,6 +1087,24 @@ function renderGames(){
     : `<div class="empty">🚧 New games coming soon · ¡Pronto habrá juegos nuevos!</div>`;
 }
 $("q").addEventListener("input", renderGames);
+
+/* Al presionar un juego: su captura crece hasta llenar la pantalla y luego se abre el juego */
+$("games").addEventListener("click", e => {
+  const a = e.target.closest("a.game");
+  if (!a || !a.dataset.shot || reduced || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+  e.preventDefault();
+  const r = a.querySelector(".thumb").getBoundingClientRect();
+  const el = document.createElement("div");
+  el.className = "launch";
+  el.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background-image:url("${a.dataset.shot}")`;
+  el.innerHTML = `<b>${a.dataset.title}<small>Loading world… · Cargando…</small></b>`;
+  document.body.appendChild(el);
+  sfx("badge");
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("full")));
+  setTimeout(() => { location.href = a.href; }, 900);
+});
+// Si el alumno vuelve con el botón "atrás", se quita la transición
+addEventListener("pageshow", () => document.querySelectorAll(".launch").forEach(x => x.remove()));
 renderCourses(); renderGames();
 
 /* =====================================================================
@@ -1467,12 +1549,77 @@ if (attempts.length) $("history").textContent = "Your last scores · Tus último
    ===================================================================== */
 const AVATARS = ["🙂","😎","🤖","🦊","🐼","🐸","🦄","🐱","🐶","🐲","👾","🧙","🦸","🥷","🧑‍🚀","⚽"];
 let pickAv = "🙂", lastFocus = null;
+
+/* ---- Base de datos: llamadas a las funciones eslt_* ---- */
+async function db(fn, args){
+  const r = await fetch(`${DB_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST", headers: { "apikey": DB_KEY, "Content-Type": "application/json" }, body: JSON.stringify(args) });
+  if (!r.ok) throw new Error("http " + r.status);
+  return r.json();
+}
+const getSession = () => store.get("session", null);
+// RUT chileno: valida el dígito verificador (módulo 11) antes de enviarlo
+function rutOk(rut){
+  const s = String(rut).toUpperCase().replace(/[^0-9K]/g, "");
+  if (s.length < 8 || s.length > 10) return false;
+  const body = s.slice(0, -1), dv = s.slice(-1);
+  if (!/^\d+$/.test(body)) return false;
+  let sum = 0, m = 2;
+  for (let i = body.length - 1; i >= 0; i--){ sum += +body[i] * m; m = m === 7 ? 2 : m + 1; }
+  const r = 11 - (sum % 11), exp = r === 11 ? "0" : r === 10 ? "K" : String(r);
+  return dv === exp;
+}
+function renderLogin(){
+  const s = getSession();
+  $("login").classList.toggle("hidden", !!s);
+  $("who").classList.toggle("hidden", !s);
+  if (s){
+    $("who-name").textContent = s.name; $("who-sec").textContent = s.section;
+    $("who-av").textContent = pickAv;
+  } else {
+    $("l-section").innerHTML = `<option value="">— Elige tu curso —</option>` + SECTIONS.map(x => `<option>${x.id}</option>`).join("");
+    const last = store.get("lastSection", ""); if (last) $("l-section").value = last;
+  }
+  $("p-report-note").textContent = s ? "“Enviar reporte al profe” manda tu progreso directo a tu profesor."
+                                     : "Para enviar tu reporte, primero ingresa con tu curso, RUT y clave.";
+}
+$("login").addEventListener("submit", async e => {
+  e.preventDefault();
+  const section = $("l-section").value, rut = $("l-rut").value.trim(), pin = $("l-pin").value.trim(), msg = $("l-msg");
+  if (!section){ msg.textContent = "Elige tu curso."; shake($("l-section")); return; }
+  if (!rutOk(rut)){ msg.textContent = "Revisa tu RUT. Escríbelo con guion, ej: 12345678-9"; shake($("l-rut")); return; }
+  if (!/^\d{4}$/.test(pin)){ msg.textContent = "La clave tiene 4 números."; shake($("l-pin")); return; }
+  $("l-go").disabled = true; msg.textContent = "Entrando…";
+  try {
+    const r = await db("eslt_login", { p_section: section, p_rut: rut, p_pin: pin });
+    if (r.ok){
+      store.set("session", { token: r.token, name: r.name, first_name: r.first_name, section: r.section, course: r.course });
+      store.set("lastSection", section);
+      $("l-rut").value = ""; $("l-pin").value = ""; msg.textContent = "";
+      sfx("correct"); confetti(80);
+      toast(`👋 ¡Hola, ${r.first_name}! Ya estás conectado/a a ${r.section}.`);
+      if (COURSES.some(c => c.id === r.course && c.games.length)){ currentCourse = r.course; $("q").value = ""; renderCourses(); renderGames(); }
+      renderLogin(); renderMe();
+    } else {
+      sfx("wrong"); shake($("login"));
+      msg.textContent = r.error === "locked" ? "Demasiados intentos. Espera 15 minutos o pide ayuda a tu profe."
+                                             : "Curso, RUT o clave incorrectos. Revisa e inténtalo otra vez.";
+    }
+  } catch (err){
+    msg.textContent = "No se pudo conectar. Revisa tu internet e inténtalo otra vez.";
+  } finally { $("l-go").disabled = false; }
+});
+$("logout").addEventListener("click", () => {
+  const s = getSession();
+  if (s) db("eslt_logout", { p_token: s.token }).catch(() => {});
+  store.set("session", null); renderLogin(); renderMe();
+  toast("Sesión cerrada. Tu progreso sigue guardado en este dispositivo.");
+});
+
 function openProfile(){
   const profile = store.get("profile", {});
   pickAv = profile.avatar || "🙂";
-  $("p-name").value = profile.name || "";
-  $("p-course").innerHTML = `<option value="">— Elige tu curso —</option>` +
-    COURSES.map(c => `<option value="${c.id}" ${c.id === profile.course ? "selected" : ""}>${c.icon} ${esc(c.num + " " + c.level)}</option>`).join("");
+  renderLogin();
   $("p-avatars").innerHTML = AVATARS.map(a => `<button type="button" class="${a === pickAv ? "on" : ""}" data-a="${a}" aria-label="Avatar ${a}">${a}</button>`).join("");
   $("p-avatars").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
     pickAv = b.dataset.a; $("p-avatars").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
@@ -1485,7 +1632,7 @@ function openProfile(){
   $("p-hard").innerHTML = hl.map(i => `<span>${WORDS[i][0]} ${esc(WORDS[i][1])}</span>`).join("");
   lastFocus = document.activeElement;
   $("profile").classList.add("on");
-  setTimeout(() => $("p-name").focus(), 60);
+  setTimeout(() => (getSession() ? $("p-close") : $("l-section")).focus(), 60);
 }
 function closeProfile(){
   if (!$("profile").classList.contains("on")) return;
@@ -1497,33 +1644,34 @@ $("tab-me").addEventListener("click", openProfile);
 $("p-close").addEventListener("click", closeProfile);
 $("profile").addEventListener("click", e => { if (e.target.id === "profile") closeProfile(); });
 $("p-save").addEventListener("click", () => {
-  const profile = { name: $("p-name").value.trim(), avatar: pickAv, course: $("p-course").value };
-  store.set("profile", profile); renderMe();
-  if (COURSES.some(c => c.id === profile.course && c.games.length)){ currentCourse = profile.course; $("q").value = ""; renderCourses(); renderGames(); }
-  sfx("correct"); toast("✅ ¡Perfil guardado" + (profile.name ? ", " + profile.name : "") + "!");
+  store.set("profile", { ...store.get("profile", {}), avatar: pickAv }); renderMe();
+  sfx("correct"); toast("✅ ¡Perfil guardado!");
   closeProfile();
 });
-$("p-report").addEventListener("click", () => {
-  const profile = store.get("profile", {}), s = badgeStats(), c = COURSES.find(x => x.id === profile.course);
-  const avg = stats.pronCount ? Math.round(stats.pronSum / stats.pronCount) : "—";
-  const txt = [
-    "📋 ESL Teacher · Reporte de progreso",
-    "Alumno/a: " + (profile.name || "(sin apodo)"),
-    "Curso: " + (c ? c.num + " " + c.level : "(sin curso)"),
-    "Fecha: " + new Date().toLocaleDateString("es-CL"),
-    "",
-    "⭐ XP: " + xp,
-    `🔥 Racha palabra del día: ${s.streak} días (${daysDone.length} días completados en total)`,
-    "📒 Palabras completas (3 pasos): " + s.words,
-    `⚡ Mejor racha en desafío: ${best} · Respuestas correctas: ${s.correct}`,
-    `🎙 Pronunciación: mejor ${stats.pronBest || "—"} · promedio ${avg} (${stats.pronCount || 0} intentos)`,
-    `🏅 Medallas: ${gotBadges.length} de ${BADGES.length}`,
-    "🎯 Palabras difíciles: " + (hardList().map(i => WORDS[i][1]).join(", ") || "ninguna")
-  ].join("\n");
-  const fallback = () => window.prompt("Copia este reporte y envíalo a tu profe:", txt);
-  if (navigator.clipboard && window.isSecureContext)
-    navigator.clipboard.writeText(txt).then(() => toast("📋 Reporte copiado. Pégalo en Classroom o envíalo a tu profe."), fallback);
-  else fallback();
+// Envía el reporte a la base de datos del profe
+$("p-report").addEventListener("click", async () => {
+  const sess = getSession();
+  if (!sess){ toast("🔑 Primero ingresa con tu curso, RUT y clave (arriba)."); shake($("login")); $("l-section").focus(); return; }
+  const s = badgeStats();
+  const report = {
+    xp, streak: s.streak, days_total: daysDone.length, words: s.words, best, correct: s.correct,
+    pron_best: stats.pronBest || 0, pron_avg: stats.pronCount ? Math.round(stats.pronSum / stats.pronCount) : 0,
+    pron_count: stats.pronCount || 0, badges: gotBadges.length,
+    hard_words: hardList().map(i => WORDS[i][1]).join(", ")
+  };
+  const b = $("p-report"); b.disabled = true; const label = b.textContent; b.textContent = "Enviando…";
+  try {
+    const r = await db("eslt_submit_report", { p_token: sess.token, p_report: report });
+    if (r.ok){ sfx("badge"); confetti(140); toast("📤 ¡Reporte enviado! Tu profe ya puede verlo."); }
+    else if (r.error === "session"){
+      store.set("session", null); renderLogin(); renderMe();
+      toast("🔑 Tu sesión expiró. Ingresa otra vez con tu RUT y clave.");
+    }
+    else if (r.error === "wait") toast("⏳ Ya enviaste un reporte hace un momento. Espera unos segundos.");
+    else toast("No se pudo enviar el reporte. Inténtalo otra vez.");
+  } catch (err){
+    toast("📶 Sin conexión: no se pudo enviar el reporte. Inténtalo cuando tengas internet.");
+  } finally { b.disabled = false; b.textContent = label; }
 });
 
 /* =====================================================================
