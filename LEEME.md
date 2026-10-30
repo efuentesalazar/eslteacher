@@ -39,6 +39,8 @@ En `index.html`, busca `DATOS`: ahí están `COURSES` (cursos y juegos) y `TWIST
 - **Panel del profe**: `eslteacher.cl/profe.html` (con tu clave). Filtros por curso, búsqueda, historial y descarga a Excel.
 - Base de datos: Supabase, proyecto `reinos-del-saber-8basico`, esquema privado `eslt` (separado del juego). El RUT se guarda cifrado (no se puede leer) y las claves con bcrypt. Máx. 8 intentos fallidos cada 15 minutos por RUT.
 - **Carpeta privada** `Documents\Salesianos\eslteacher-PRIVADO` (NO subir a GitHub): listas de claves por curso para repartir y la clave del panel.
+- **Progreso en la nube** (30-10-2026): con sesión iniciada, cada avance se guarda solo a los pocos segundos. Si el alumno usa otro dispositivo, al ingresar se combina lo mejor de ambos. Al presionar "Salir" se borra el progreso de ese equipo (queda en la nube), para que en computadores compartidos no se mezclen alumnos.
+- **Reporte automático**: cada guardado actualiza un reporte por alumno por día. En el panel aparecen como "🔄 Automático"; los del botón como "📤 Enviado". La columna "Días activos" cuenta los días con práctica.
 - Si llega un alumno nuevo o cambia la nómina: pídele a Claude que vuelva a importar `NÓMINAS DE CURSOS.xlsx` (las claves existentes no cambian).
 
 ## Publicar cambios

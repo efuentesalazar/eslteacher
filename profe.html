@@ -95,7 +95,7 @@ tr:hover td{background:rgba(255,255,255,.04)}
     <label><input type="checkbox" id="f-only"> Solo con reportes</label>
   </div>
   <div class="tabs">
-    <button class="tab on" data-v="students" type="button">Alumnos (último reporte)</button>
+    <button class="tab on" data-v="students" type="button">Alumnos (lo más reciente)</button>
     <button class="tab" data-v="history" type="button">Historial de reportes</button>
   </div>
   <div class="table"><table id="tbl"></table></div>
@@ -152,12 +152,12 @@ document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () =>
 
 const COLS = {
   students: [
-    ["section","Curso"],["n","N°",1],["name","Nombre"],["reports","Reportes",1],["created_at","Último reporte"],
+    ["section","Curso"],["n","N°",1],["name","Nombre"],["active_days","Días activos",1],["created_at","Última actividad"],
     ["xp","XP",1],["streak","Racha",1],["days_total","Días",1],["words","Palabras",1],["best","Mejor desafío",1],
     ["correct","Correctas",1],["pron_best","Pron. mejor",1],["pron_avg","Pron. prom.",1],["badges","Medallas",1],["hard_words","Palabras difíciles"]
   ],
   history: [
-    ["created_at","Fecha"],["section","Curso"],["name","Nombre"],["xp","XP",1],["streak","Racha",1],["days_total","Días",1],
+    ["created_at","Fecha"],["auto","Tipo"],["section","Curso"],["name","Nombre"],["xp","XP",1],["streak","Racha",1],["days_total","Días",1],
     ["words","Palabras",1],["best","Mejor desafío",1],["correct","Correctas",1],["pron_best","Pron. mejor",1],["pron_avg","Pron. prom.",1],
     ["badges","Medallas",1],["hard_words","Palabras difíciles"]
   ]
@@ -165,7 +165,7 @@ const COLS = {
 function rows(){
   const sec = $("f-sec").value, q = $("f-q").value.trim().toLowerCase(), only = $("f-only").checked;
   let out = view === "students"
-    ? data.students.map(s => ({ section: s.section, n: s.n, name: s.name, reports: s.reports, ...(s.last || {}) }))
+    ? data.students.map(s => ({ section: s.section, n: s.n, name: s.name, reports: s.reports, active_days: s.active_days, ...(s.last || {}) }))
     : data.reports.slice();
   out = out.filter(r => (!sec || r.section === sec) && (!q || r.name.toLowerCase().includes(q)) && (!only || view === "history" || r.reports > 0));
   if (sortKey) out.sort((a, b) => { const x = a[sortKey] ?? -1, y = b[sortKey] ?? -1; return (x > y ? 1 : x < y ? -1 : 0) * sortDir; });
@@ -177,19 +177,20 @@ function render(){
   const sec = $("f-sec").value;
   const st = data.students.filter(s => !sec || s.section === sec);
   const withR = st.filter(s => s.reports > 0).length;
-  const week = data.reports.filter(r => (!sec || r.section === sec) && Date.now() - new Date(r.created_at) < 7 * 864e5).length;
+  const week = new Set(data.reports.filter(r => (!sec || r.section === sec) && Date.now() - new Date(r.created_at) < 7 * 864e5).map(r => r.name + r.section)).size;
   const xs = st.filter(s => s.last).map(s => s.last.xp || 0);
   $("cards").innerHTML = `
     <div class="card"><b>${st.length}</b><span>Alumnos ${sec ? "en " + esc(sec) : "en total"}</span></div>
-    <div class="card"><b>${withR}</b><span>Han enviado al menos 1 reporte (${st.length ? Math.round(withR / st.length * 100) : 0}%)</span></div>
-    <div class="card"><b>${week}</b><span>Reportes en los últimos 7 días</span></div>
-    <div class="card"><b>${xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0}</b><span>XP promedio (último reporte)</span></div>`;
+    <div class="card"><b>${withR}</b><span>Han practicado alguna vez (${st.length ? Math.round(withR / st.length * 100) : 0}%)</span></div>
+    <div class="card"><b>${week}</b><span>Alumnos activos en los últimos 7 días</span></div>
+    <div class="card"><b>${xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0}</b><span>XP promedio</span></div>`;
   // Tabla
   const cols = COLS[view], list = rows();
   $("tbl").innerHTML = `<thead><tr>${cols.map(([k, l]) => `<th data-k="${k}">${l}${sortKey === k ? (sortDir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr></thead>
     <tbody>${list.length ? list.map(r => `<tr class="${view === "students" && !r.reports ? "none" : ""}">${cols.map(([k, , isNum]) => {
       if (k === "created_at") return `<td>${r[k] ? `${fmtDate(r[k])} <span class="pill ${Date.now() - new Date(r[k]) < 7 * 864e5 ? "new" : "old"}">${ago(r[k])}</span>` : "—"}</td>`;
       if (k === "hard_words") return `<td class="wrapcell">${esc(r[k] || "")}</td>`;
+      if (k === "auto") return `<td>${r.auto ? `<span class="pill">🔄 Automático</span>` : `<span class="pill new">📤 Enviado</span>`}</td>`;
       return `<td class="${isNum ? "num" : ""}">${r[k] ?? (isNum ? "—" : "")}</td>`; }).join("")}</tr>`).join("")
       : `<tr><td class="empty" colspan="${cols.length}">${view === "history" ? "Aún no hay reportes." : "No hay alumnos con esos filtros."}</td></tr>`}</tbody>`;
   $("tbl").querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
@@ -203,7 +204,8 @@ $("export").addEventListener("click", () => {
   const cols = COLS[view], list = rows();
   const cell = v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const csv = [cols.map(c => c[1]).join(";"),
-    ...list.map(r => cols.map(([k]) => cell(k === "created_at" && r[k] ? new Date(r[k]).toLocaleString("es-CL") : r[k])).join(";"))].join("\r\n");
+    ...list.map(r => cols.map(([k]) => cell(k === "created_at" && r[k] ? new Date(r[k]).toLocaleString("es-CL")
+                                       : k === "auto" ? (r.auto ? "Automático" : "Enviado") : r[k])).join(";"))].join("\r\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
   a.download = `reportes-eslteacher-${view === "students" ? "alumnos" : "historial"}${$("f-sec").value ? "-" + $("f-sec").value.replace(/[°\s]/g, "") : ""}-${new Date().toISOString().slice(0, 10)}.csv`;

@@ -369,6 +369,8 @@ section{position:relative;min-height:100vh;min-height:100svh;padding:120px var(-
   background:color-mix(in srgb,var(--accent) 16%,transparent);border:2px solid color-mix(in srgb,var(--accent) 50%,transparent)}
 .who .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--accent)}
 .who b{display:block;font-family:var(--display);font-weight:600;font-size:20px;line-height:1.1}
+.who .sync{display:block;font-size:12px;color:rgba(255,255,255,.75);margin-top:4px}
+.who .sync.warn{color:var(--yellow)}
 .hardlist{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .hardlist span{font-size:13px;padding:4px 10px;border-radius:999px;background:rgba(255,75,75,.18);border:1px solid rgba(255,75,75,.5)}
 
@@ -451,7 +453,7 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
     </form>
     <div id="who" class="who hidden">
       <span class="av" id="who-av">🙂</span>
-      <div><b id="who-name"></b><span class="cap" id="who-sec"></span></div>
+      <div><b id="who-name"></b><span class="cap" id="who-sec"></span><span class="sync" id="sync">☁️ Guardado en la nube</span></div>
       <button class="btn ghost sm" id="logout" type="button">Salir</button>
     </div>
 
@@ -1593,13 +1595,18 @@ $("login").addEventListener("submit", async e => {
   try {
     const r = await db("eslt_login", { p_section: section, p_rut: rut, p_pin: pin });
     if (r.ok){
-      store.set("session", { token: r.token, name: r.name, first_name: r.first_name, section: r.section, course: r.course });
+      // Si el progreso de este dispositivo es de OTRO alumno, no se mezcla
+      const owner = store.get("owner", null);
+      if (owner && owner !== r.sid) resetLocalProgress();
+      store.set("owner", r.sid); store.set("rev", 0);
+      store.set("session", { token: r.token, sid: r.sid, name: r.name, first_name: r.first_name, section: r.section, course: r.course });
       store.set("lastSection", section);
       $("l-rut").value = ""; $("l-pin").value = ""; msg.textContent = "";
       sfx("correct"); confetti(80);
-      toast(`👋 ¡Hola, ${r.first_name}! Ya estás conectado/a a ${r.section}.`);
+      toast(`👋 ¡Hola, ${r.first_name}! Tu progreso se guardará en la nube.`);
       if (COURSES.some(c => c.id === r.course && c.games.length)){ currentCourse = r.course; $("q").value = ""; renderCourses(); renderGames(); }
       renderLogin(); renderMe();
+      pullProgress();
     } else {
       sfx("wrong"); shake($("login"));
       msg.textContent = r.error === "locked" ? "Demasiados intentos. Espera 15 minutos o pide ayuda a tu profe."
@@ -1609,11 +1616,18 @@ $("login").addEventListener("submit", async e => {
     msg.textContent = "No se pudo conectar. Revisa tu internet e inténtalo otra vez.";
   } finally { $("l-go").disabled = false; }
 });
-$("logout").addEventListener("click", () => {
-  const s = getSession();
-  if (s) db("eslt_logout", { p_token: s.token }).catch(() => {});
-  store.set("session", null); renderLogin(); renderMe();
-  toast("Sesión cerrada. Tu progreso sigue guardado en este dispositivo.");
+// Al salir: se guarda lo último en la nube y se borra el progreso de este dispositivo
+// (así, en un computador compartido, el siguiente alumno parte desde su propio progreso)
+$("logout").addEventListener("click", async () => {
+  const s = getSession(); if (!s) return;
+  const b = $("logout"); b.disabled = true; b.textContent = "Guardando…";
+  const saved = await pushProgress(true);
+  if (!saved && !confirm("No se pudo guardar tu último avance en la nube (¿sin internet?). Si sales ahora, se perderá lo de hoy en este dispositivo. ¿Salir igual?")){
+    b.disabled = false; b.textContent = "Salir"; return;
+  }
+  db("eslt_logout", { p_token: s.token }).catch(() => {});
+  resetLocalProgress(); store.set("session", null); store.set("owner", null); store.set("rev", 0);
+  location.reload();
 });
 
 function openProfile(){
@@ -1652,13 +1666,7 @@ $("p-save").addEventListener("click", () => {
 $("p-report").addEventListener("click", async () => {
   const sess = getSession();
   if (!sess){ toast("🔑 Primero ingresa con tu curso, RUT y clave (arriba)."); shake($("login")); $("l-section").focus(); return; }
-  const s = badgeStats();
-  const report = {
-    xp, streak: s.streak, days_total: daysDone.length, words: s.words, best, correct: s.correct,
-    pron_best: stats.pronBest || 0, pron_avg: stats.pronCount ? Math.round(stats.pronSum / stats.pronCount) : 0,
-    pron_count: stats.pronCount || 0, badges: gotBadges.length,
-    hard_words: hardList().map(i => WORDS[i][1]).join(", ")
-  };
+  const report = reportSummary();
   const b = $("p-report"); b.disabled = true; const label = b.textContent; b.textContent = "Enviando…";
   try {
     const r = await db("eslt_submit_report", { p_token: sess.token, p_report: report });
@@ -1721,7 +1729,120 @@ $("install").addEventListener("click", async () => {
 });
 addEventListener("appinstalled", () => { $("install").classList.add("hidden"); toast("🎉 ¡App instalada! Búscala en tu pantalla de inicio."); });
 
+/* =====================================================================
+   PROGRESO EN LA NUBE + REPORTE AUTOMÁTICO
+   - Con sesión iniciada, cada avance se guarda solo unos segundos después.
+   - Cada guardado actualiza el reporte del día en el panel del profe.
+   - Si el alumno usa dos dispositivos, se combinan (se queda lo mejor de cada uno).
+   ===================================================================== */
+const SYNC_KEYS = ["xp", "stats", "hard", "badges", "wpDone", "daysDone", "best", "attempts", "profile"];
+let applying = false, syncTimer = null, syncing = false, syncPending = false;
+
+function reportSummary(){
+  const s = badgeStats();
+  return { xp, streak: s.streak, days_total: daysDone.length, words: s.words, best, correct: s.correct,
+    pron_best: stats.pronBest || 0, pron_avg: stats.pronCount ? Math.round(stats.pronSum / stats.pronCount) : 0,
+    pron_count: stats.pronCount || 0, badges: gotBadges.length, hard_words: hardList().map(i => WORDS[i][1]).join(", ") };
+}
+const localData = () => ({ v: 1, xp, stats, hard, badges: gotBadges, wpDone, daysDone, best, attempts,
+  avatar: store.get("profile", {}).avatar || null });
+
+// Combina dos progresos quedándose con lo mejor de cada uno
+function mergeData(a, b){
+  if (!b) return a; if (!a) return b;
+  const n = v => +v || 0, sa = a.stats || {}, sb = b.stats || {};
+  const pron = n(sa.pronCount) >= n(sb.pronCount) ? sa : sb;          // el promedio debe venir de un mismo lado
+  const wp = { ...(b.wpDone || {}) };
+  Object.entries(a.wpDone || {}).forEach(([i, steps]) => { wp[i] = { ...(wp[i] || {}), ...steps }; });
+  const hd = { ...(b.hard || {}) };
+  Object.entries(a.hard || {}).forEach(([i, c]) => { hd[i] = Math.max(n(hd[i]), n(c)); });
+  return {
+    v: 1, xp: Math.max(n(a.xp), n(b.xp)), best: Math.max(n(a.best), n(b.best)),
+    stats: { correct: Math.max(n(sa.correct), n(sb.correct)), pronBest: Math.max(n(sa.pronBest), n(sb.pronBest)),
+             pronCount: n(pron.pronCount), pronSum: n(pron.pronSum), hardCleared: Math.max(n(sa.hardCleared), n(sb.hardCleared)) },
+    badges: [...new Set([...(a.badges || []), ...(b.badges || [])])],
+    daysDone: [...new Set([...(a.daysDone || []), ...(b.daysDone || [])])].sort().slice(-400),
+    wpDone: wp, hard: hd,
+    attempts: (a.attempts || []).length ? a.attempts : (b.attempts || []),
+    avatar: a.avatar || b.avatar || null
+  };
+}
+// Aplica un progreso a la página (variables, almacenamiento y pantalla)
+function applyData(d){
+  applying = true;
+  xp = d.xp || 0; stats = d.stats || {}; hard = d.hard || {}; gotBadges = d.badges || [];
+  wpDone = d.wpDone || {}; daysDone = d.daysDone || []; best = d.best || 0; attempts = d.attempts || [];
+  store.set("xp", xp); store.set("stats", stats); store.set("hard", hard); store.set("badges", gotBadges);
+  store.set("wpDone", wpDone); store.set("daysDone", daysDone); store.set("best", best); store.set("attempts", attempts);
+  if (d.avatar) store.set("profile", { ...store.get("profile", {}), avatar: d.avatar });
+  applying = false;
+  renderMe(); renderProgress(); updHardN();
+  $("qz-best").textContent = best;
+  $("history").textContent = attempts.length ? "Your last scores · Tus últimos puntajes: " + attempts.join(" · ") : "";
+}
+function resetLocalProgress(){
+  applyData({ xp: 0, stats: {}, hard: {}, badges: [], wpDone: {}, daysDone: [], best: 0, attempts: [] });
+  store.set("profile", {});
+}
+function setSync(text, warn){ const el = $("sync"); if (el){ el.textContent = text; el.classList.toggle("warn", !!warn); } }
+
+// Cada vez que cambia algo del progreso, se programa un guardado
+const rawSet = store.set;
+store.set = (k, v) => { rawSet(k, v); if (!applying && SYNC_KEYS.includes(k)) scheduleSync(); };
+function scheduleSync(delay = 4000){
+  if (!getSession()) return;
+  syncPending = true; setSync("⏳ Guardando…");
+  clearTimeout(syncTimer); syncTimer = setTimeout(() => pushProgress(), delay);
+}
+function endSession(){
+  store.set("session", null); renderLogin(); renderMe();
+  toast("🔑 Tu sesión expiró. Ingresa otra vez con tu RUT y clave para seguir guardando en la nube.");
+}
+// Envía el progreso a la nube. Devuelve true si quedó guardado.
+async function pushProgress(final = false){
+  const sess = getSession(); if (!sess) return false;
+  if (syncing){ if (!final) scheduleSync(2000); return false; }
+  syncing = true; clearTimeout(syncTimer);
+  try {
+    for (let tries = 0; tries < 4; tries++){
+      const r = await db("eslt_save_progress", { p_token: sess.token, p_data: localData(), p_summary: reportSummary(), p_rev: store.get("rev", 0) });
+      if (r.ok){ rawSet("rev", r.rev); syncPending = false; setSync("☁️ Guardado en la nube · " + new Date().toLocaleTimeString("es-CL", { hour:"2-digit", minute:"2-digit" })); return true; }
+      if (r.error === "conflict"){ applyData(mergeData(localData(), r.data)); rawSet("rev", r.rev); continue; }   // otro dispositivo guardó antes: combinar y reintentar
+      if (r.error === "wait"){ await new Promise(res => setTimeout(res, 3500)); continue; }
+      if (r.error === "session"){ endSession(); return false; }
+      break;
+    }
+    setSync("⚠️ No se pudo guardar. Se reintentará.", true); if (!final) scheduleSync(20000); return false;
+  } catch (e){
+    setSync("📶 Sin conexión: se guardará cuando vuelva internet.", true); if (!final) scheduleSync(30000); return false;
+  } finally { syncing = false; }
+}
+// Trae el progreso de la nube y lo combina con el de este dispositivo
+async function pullProgress(){
+  const sess = getSession(); if (!sess) return;
+  setSync("⏳ Sincronizando…");
+  try {
+    const r = await db("eslt_load_progress", { p_token: sess.token });
+    if (!r.ok){ if (r.error === "session") endSession(); return; }
+    // Misma forma y mismo orden de claves para poder comparar (la base de datos reordena las claves)
+    const stable = v => Array.isArray(v) ? v.map(stable) : v && typeof v === "object"
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = stable(v[k]), o), {}) : v;
+    const canon = d => JSON.stringify(stable(mergeData(d, d)));
+    const local = localData(), merged = r.data ? mergeData(local, r.data) : local;
+    if (r.data) applyData(merged);
+    rawSet("rev", r.rev || 0);
+    const hasLocal = local.xp > 0 || local.daysDone.length > 0 || Object.keys(local.wpDone).length > 0;
+    // Se sube solo si este dispositivo aportó algo que la nube no tenía
+    if (r.data ? canon(merged) !== canon(r.data) : hasLocal) pushProgress();
+    else setSync("☁️ Guardado en la nube");
+    checkBadges();
+  } catch (e){ setSync("📶 Sin conexión: se sincronizará después.", true); }
+}
+addEventListener("online", () => { if (syncPending) pushProgress(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && syncPending) pushProgress(true); });
+
 renderMute(); renderMe(); updHardN(); checkBadges();
+if (getSession()) pullProgress();
 </script>
 </body>
 </html>
