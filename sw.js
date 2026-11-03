@@ -3,9 +3,9 @@
    - Si no hay internet, muestra la última versión guardada: la palabra del día,
      el desafío y la portada funcionan sin conexión.
    Si algún día cambias mucho la página, sube el número de VERSION. */
-const VERSION = "eslt-v1";
+const VERSION = "eslt-v2";
 const SHELL = [
-  "/", "/index.html", "/palabras.js", "/manifest.webmanifest",
+  "/", "/index.html", "/palabras.js", "/ejercicios.js", "/manifest.webmanifest",
   "/assets/icons/icon-192.png", "/assets/icons/icon-512.png",
   "/assets/sfx/click.ogg", "/assets/sfx/select.ogg", "/assets/sfx/correct.ogg", "/assets/sfx/wrong.ogg", "/assets/sfx/badge.ogg"
 ];
