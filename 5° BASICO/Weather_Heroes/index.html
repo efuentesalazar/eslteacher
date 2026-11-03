@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Weather Heroes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1f2a44; --paper:#fffdf7; --line:#1f2a44; --sky:#4aa8ff; --sun:#ffc93c; --leaf:#38b26a; --red:#ef5a4c; --snow:#e9f4ff;
+  --shadow:0 5px 0 rgba(31,42,68,.9);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;background:#87c8ff;font-family:Fredoka,system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none}
+canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+button{font-family:inherit;cursor:pointer}
+.hidden{display:none!important}
+
+/* blocky buttons and panels */
+.btn{border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-weight:600;font-size:18px;padding:10px 18px;box-shadow:var(--shadow);transition:transform .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(31,42,68,.9)}
+.btn.primary{background:var(--sun)} .btn.blue{background:var(--sky);color:#fff} .btn.green{background:var(--leaf);color:#fff} .btn.red{background:var(--red);color:#fff}
+.btn.small{font-size:15px;padding:6px 12px;border-radius:10px}
+.panel{background:var(--paper);border:3px solid var(--line);border-radius:18px;box-shadow:0 7px 0 rgba(31,42,68,.9)}
+
+/* full screens */
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:40;background:linear-gradient(#5fb6ff,#bfe6ff 60%,#9fdc8a 60%,#7cc56c)}
+#title,#setup,#info{background:linear-gradient(rgba(95,182,255,.25),rgba(20,40,90,.45))}
+.screen .box{width:min(560px,100%);max-height:100%;overflow:auto;touch-action:pan-y;overscroll-behavior:contain;padding:24px;text-align:center}
+.logo{font-size:clamp(38px,8vw,64px);font-weight:700;line-height:1;margin:6px 0 4px;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 6px 0 var(--ink)}
+.subtitle{font-size:18px;margin-bottom:18px}
+.menu{display:grid;gap:12px;margin-top:12px}
+.menu .btn{font-size:21px;padding:14px}
+.weather-strip{font-size:34px;letter-spacing:6px;margin:4px 0 8px}
+.field{display:grid;gap:6px;text-align:left;margin:10px 0}
+.field input{font:inherit;font-size:18px;padding:10px 12px;border:3px solid var(--line);border-radius:12px}
+.skins{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.skins button{aspect-ratio:1;border:3px solid var(--line);border-radius:12px;font-size:12px;font-weight:600;background:#fff;padding:0;overflow:hidden}
+.skins button.sel{background:var(--sun);transform:scale(1.06)}
+.skins img{width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+.btn{-webkit-touch-callout:none}
+#setup .btn{white-space:nowrap}
+.note{font-size:14px;opacity:.8;margin-top:8px}
+#loading .bar{height:22px;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;margin-top:14px}
+#loading .bar div{height:100%;width:0;background:var(--leaf);transition:width .2s}
+
+/* HUD */
+#hud{position:fixed;inset:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);pointer-events:none;z-index:10}
+#hud > *{pointer-events:auto}
+#zoneCard{position:absolute;left:12px;top:12px;padding:10px 14px;min-width:220px;max-width:min(330px,60vw)}
+#zoneCard .zn{font-weight:700;font-size:19px}
+#zoneCard .zw{font-size:15px;margin-top:2px}
+#zoneCard .row{display:flex;gap:10px;align-items:center;margin-top:6px;font-size:14px}
+.meter{flex:1;height:12px;border:2px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.meter div{height:100%;background:var(--leaf);transition:width .2s}
+#topRight{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#minimap{width:170px;height:170px;border-radius:50%;border:3px solid var(--line);box-shadow:0 5px 0 rgba(31,42,68,.9);background:#9fdc8a}
+#stats{padding:6px 12px;font-weight:600;font-size:17px;display:flex;gap:12px}
+#quest{position:absolute;left:12px;top:140px;padding:10px 14px;max-width:min(330px,62vw);font-size:15px}
+#quest b{display:block;font-size:13px;text-transform:uppercase;letter-spacing:1px;opacity:.7}
+#prompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);padding:8px 16px;font-weight:600;font-size:18px;white-space:nowrap}
+#toast{position:absolute;left:50%;top:16px;transform:translateX(-50%);padding:10px 18px;font-weight:600;font-size:18px;max-width:90vw;text-align:center;transition:opacity .3s}
+#bottomBar{position:absolute;right:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#feel{position:absolute;left:50%;top:40%;transform:translateX(-50%);font-size:32px;pointer-events:none;filter:drop-shadow(0 3px 0 #0005)}
+#callBox{position:absolute;left:50%;top:70px;transform:translateX(-50%);padding:10px 16px;font-size:17px;font-weight:600;text-align:center;max-width:92vw;background:#fff4c9}
+#board{position:absolute;right:12px;top:240px;padding:8px 12px;font-size:14px;min-width:170px;max-height:40vh;overflow:auto}
+#board b{display:block;margin-bottom:4px}
+#chatLog{position:absolute;left:12px;bottom:12px;width:min(320px,55vw);font-size:14px;display:flex;flex-direction:column;gap:4px;pointer-events:none}
+#chatLog div{background:#fffdf7e6;border:2px solid var(--line);border-radius:10px;padding:4px 8px}
+
+/* dialog */
+#dialog{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(720px,calc(100% - 32px));padding:16px 18px 14px;z-index:30}
+#dialog .who{font-weight:700;font-size:18px;color:#2a63c9}
+#dialog .txt{font-size:20px;margin:6px 0 10px;line-height:1.35}
+#dialog .es{font-size:14px;opacity:.75;margin:-4px 0 10px}
+#dialog .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+
+/* modal (exercises, wardrobe) */
+#modal{position:fixed;inset:0;z-index:35;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(20,30,60,.45)}
+#modal .box{width:min(760px,100%);max-height:100%;overflow:auto;touch-action:pan-y;overscroll-behavior:contain;padding:20px 22px}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.mhead .kind{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;background:var(--sun);border:2px solid var(--line);border-radius:8px;padding:2px 8px}
+.mhead h2{margin:0;font-size:22px}
+.progress{display:flex;gap:4px;margin:6px 0 12px}
+.progress span{flex:1;height:8px;border-radius:5px;background:#dde3ee;border:1px solid #0002}
+.progress span.on{background:var(--leaf)}
+.q{font-size:22px;font-weight:600;margin:8px 0 12px}
+.pic{font-size:64px;text-align:center;margin:4px 0}
+.opts{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+.opts .btn{text-align:left;font-size:18px;font-weight:500}
+.opts .btn.ok{background:var(--leaf);color:#fff} .opts .btn.no{background:#f3b1aa;opacity:.6}
+.reading{background:#fff;border:2px dashed #8aa;border-radius:12px;padding:12px 16px;font-size:18px;line-height:1.5;margin-bottom:10px}
+.reading p{margin:0 0 8px}
+.feedback{margin-top:12px;font-size:17px;min-height:24px;font-weight:500}
+.feedback.good{color:#1f8a4c} .feedback.bad{color:#b8382c}
+.bank,.built{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;padding:8px;border-radius:12px}
+.built{border:3px dashed #9ab;background:#fff;margin-bottom:10px}
+.chip{border:3px solid var(--line);border-radius:10px;background:#fff;font-size:19px;font-weight:600;padding:6px 12px;box-shadow:0 3px 0 rgba(31,42,68,.9)}
+.chip.used{visibility:hidden}
+.gaptext{font-size:20px;line-height:2.1;background:#fff;border-radius:12px;padding:10px 14px;border:2px solid #cbd}
+.slot{display:inline-block;min-width:90px;border-bottom:3px solid var(--ink);text-align:center;font-weight:700;color:#2a63c9;padding:0 6px;cursor:pointer}
+.slot.cur{background:#fff4c9}
+.slot.ok{color:#1f8a4c;border-color:#1f8a4c} .slot.bad{color:#b8382c;border-color:#b8382c}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.match .col{display:grid;gap:8px}
+.match .chip{text-align:center;width:100%}
+.match .chip.sel{background:var(--sun)} .match .chip.done{background:var(--leaf);color:#fff;opacity:.7}
+.match .emo{font-size:30px;padding:2px}
+.mfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.hint{font-size:14px;opacity:.8}
+.stars{font-size:44px;letter-spacing:6px;text-align:center;margin:10px 0}
+.wardrobe{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.wardrobe .chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;font-size:16px}
+.wardrobe .chip .e{font-size:34px}
+.wardrobe .chip.on{background:var(--leaf);color:#fff}
+.need{background:#fff;border:2px solid #cbd;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:16px}
+.cert{border:6px double var(--ink);border-radius:16px;padding:20px;text-align:center;background:#fffbe6}
+.cert h1{margin:0;font-size:34px}
+.cert .nm{font-size:30px;font-weight:700;color:#2a63c9;margin:10px 0}
+.phr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* touch controls */
+#touch{position:fixed;inset:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);pointer-events:none;z-index:12}
+#joy{position:absolute;left:24px;bottom:24px;width:130px;height:130px;border-radius:50%;background:#ffffff55;border:3px solid #1f2a4488;pointer-events:auto}
+#joy .k{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#fff;border:3px solid var(--line)}
+#tbtns{position:absolute;right:20px;bottom:90px;display:grid;grid-template-columns:repeat(2,64px);gap:10px;pointer-events:auto}
+#tbtns button{width:64px;height:64px;border-radius:50%;border:3px solid var(--line);background:#fffd;font-size:24px;font-weight:700}
+@media (max-width:700px){
+  #minimap{width:120px;height:120px}
+  #zoneCard{min-width:0}
+  #quest{top:150px;font-size:14px}
+  .opts{grid-template-columns:1fr}
+  #board{top:190px;min-width:0;width:150px;font-size:12px;padding:6px 8px}
+  #callBox{top:auto;bottom:240px;width:calc(100% - 24px);font-size:15px}
+  #hud:has(#board:not(.hidden)) #quest{max-width:calc(100% - 190px)}
+  .q{font-size:19px}
+  #dialog .txt{font-size:18px}
+}
+
+/* phone in landscape: short screen, keep HUD and touch buttons apart */
+@media (max-height:500px){
+  #zoneCard{left:8px;top:8px;padding:6px 10px;min-width:0;max-width:40vw}
+  #zoneCard .zn{font-size:16px} #zoneCard .zw{font-size:13px} #zoneCard .row{font-size:13px;margin-top:3px}
+  #quest{left:8px;top:96px;padding:6px 10px;font-size:13px;max-width:40vw}
+  #quest b{font-size:11px}
+  #topRight{right:8px;top:8px;gap:6px}
+  #minimap{width:92px;height:92px}
+  #stats{font-size:14px;padding:4px 8px;gap:8px}
+  #board{top:8px;right:112px;max-height:45vh;min-width:140px;font-size:13px}
+  #joy{left:16px;bottom:14px;width:110px;height:110px}
+  #joy .k{left:30px;top:30px}
+  #tbtns{right:12px;bottom:58px;grid-template-columns:repeat(2,52px);gap:8px}
+  #tbtns button{width:52px;height:52px;font-size:20px}
+  #tbtns #tAct{width:112px!important;height:46px}
+  #bottomBar{right:8px;bottom:8px}
+  #bottomBar .btn.small{padding:4px 10px;font-size:14px}
+  #callBox{top:8px;font-size:14px;max-width:46vw;padding:6px 10px}
+  #toast{font-size:15px;padding:6px 12px}
+  #prompt{bottom:18%;font-size:15px}
+  #chatLog{left:140px;bottom:8px;width:min(260px,34vw);font-size:12px}
+  #dialog{bottom:8px;padding:10px 14px 10px}
+  #dialog .txt{font-size:16px;margin:4px 0 6px} #dialog .who{font-size:15px}
+  #modal{padding:8px} #modal .box{padding:12px 16px}
+  .q{font-size:17px;margin:4px 0 8px} .pic{font-size:40px} .stars{font-size:32px}
+  .reading{font-size:15px;padding:8px 12px} .gaptext{font-size:16px;line-height:1.9}
+  .opts .btn{font-size:16px;padding:7px 12px} .chip{font-size:16px;padding:4px 10px}
+  .screen{padding:8px} .screen .box{padding:14px 18px}
+  .logo{font-size:36px} .weather-strip{font-size:24px;margin:0} .menu{grid-template-columns:1fr 1fr;gap:8px} .menu .btn{font-size:17px;padding:10px}
+  .skins{grid-template-columns:repeat(9,1fr);gap:6px}
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- LOADING -->
+<div id="loading" class="screen"><div class="box panel">
+  <div class="weather-strip">☀️🌧️❄️🌬️</div>
+  <div class="logo">Weather Heroes</div>
+  <div>Loading the world…</div>
+  <div class="bar"><div id="loadBar"></div></div>
+</div></div>
+
+<!-- TITLE -->
+<div id="title" class="screen hidden"><div class="box panel">
+  <div class="weather-strip">☀️🌧️❄️🌬️</div>
+  <div class="logo">Weather Heroes</div>
+  <div class="subtitle">Unit 4 · What's the weather like?</div>
+  <div class="menu">
+    <button class="btn primary" id="bStory">📖 Story Mode</button>
+    <button class="btn blue" id="bOnline">🌐 Play Online</button>
+    <button class="btn" id="bHow">🎮 How to play</button>
+    <button class="btn small" id="bCredits">Credits</button>
+  </div>
+  <div class="note" id="saveNote"></div>
+</div></div>
+
+<!-- SETUP (name + skin, room for online) -->
+<div id="setup" class="screen hidden"><div class="box panel">
+  <h2 id="setupTitle" style="margin:0 0 6px">Create your hero</h2>
+  <div class="field"><label for="inName"><b>What's your name?</b></label><input id="inName" maxlength="14" placeholder="Your name" autocomplete="off"></div>
+  <div class="field" id="roomField"><label for="inRoom"><b>Room code</b> <span class="hint">(your teacher gives you the code)</span></label><input id="inRoom" maxlength="12" placeholder="5A" autocomplete="off"></div>
+  <div class="field"><b>Choose your character</b><div class="skins" id="skins"></div></div>
+  <div class="menu" style="grid-template-columns:1fr 2fr">
+    <button class="btn" id="bBack">⬅ Back</button>
+    <button class="btn primary" id="bGo">Let's go! ▶</button>
+  </div>
+  <div class="note" id="setupNote"></div>
+</div></div>
+
+<!-- HOW TO PLAY / CREDITS -->
+<div id="info" class="screen hidden"><div class="box panel" style="text-align:left">
+  <div id="infoBody"></div>
+  <div style="text-align:center;margin-top:14px"><button class="btn primary" id="bInfoOk">OK</button></div>
+</div></div>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="zoneCard" class="panel">
+    <div class="zn" id="zName">Sunnyvale Town</div>
+    <div class="zw" id="zWeather">It's sunny and warm.</div>
+    <div class="row"><span id="zTemp">🌡️ 20°C</span><span title="Comfort">😊</span><div class="meter"><div id="comfort" style="width:100%"></div></div></div>
+  </div>
+  <div id="quest" class="panel"><b id="qHead">Quest</b><span id="qText"></span></div>
+  <div id="topRight">
+    <canvas id="minimap" width="340" height="340"></canvas>
+    <div id="stats" class="panel"><span id="sStars">⭐ 0</span><span id="sCrys">💎 0/4</span><span id="sScore" class="hidden">🏆 0</span></div>
+  </div>
+  <div id="board" class="panel hidden"></div>
+  <div id="callBox" class="panel hidden"></div>
+  <div id="prompt" class="panel hidden"></div>
+  <div id="toast" class="panel hidden"></div>
+  <div id="feel" class="hidden"></div>
+  <div id="chatLog"></div>
+  <div id="bottomBar">
+    <button class="btn small hidden" id="bChat">💬 Say</button>
+    <button class="btn small" id="bListen" title="Listen to the weather">🔊</button>
+    <button class="btn small" id="bMenu">☰ Menu</button>
+  </div>
+</div>
+
+<div id="touch" class="hidden">
+  <div id="joy"><div class="k"></div></div>
+  <div id="tbtns"><button id="tRun">🏃</button><button id="tJump">⤒</button><button id="tAct" style="grid-column:span 2;width:138px;border-radius:32px">E · Talk</button></div>
+</div>
+
+<div id="dialog" class="panel hidden">
+  <div class="who" id="dWho"></div>
+  <div class="txt" id="dTxt"></div>
+  <div class="es hidden" id="dEs"></div>
+  <div class="acts" id="dActs"></div>
+</div>
+
+<div id="modal" class="hidden"><div class="box panel" id="mBox"></div></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script type="module" src="js/game.js"></script>
+</body>
+</html>
