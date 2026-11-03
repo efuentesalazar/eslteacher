@@ -154,12 +154,12 @@ const COLS = {
   students: [
     ["section","Curso"],["n","N°",1],["name","Nombre"],["active_days","Días activos",1],["created_at","Última actividad"],
     ["xp","XP",1],["streak","Racha",1],["days_total","Días",1],["words","Palabras",1],["best","Mejor desafío",1],
-    ["correct","Correctas",1],["pron_best","Pron. mejor",1],["pron_avg","Pron. prom.",1],["badges","Medallas",1],["sound_issues","Sonidos a mejorar"],["hard_words","Palabras difíciles"]
+    ["correct","Correctas",1],["pron_best","Pron. mejor",1],["pron_avg","Pron. prom.",1],["badges","Medallas",1],["zone_summary","Challenge Zone"],["sound_issues","Sonidos a mejorar"],["hard_words","Palabras difíciles"]
   ],
   history: [
     ["created_at","Fecha"],["auto","Tipo"],["section","Curso"],["name","Nombre"],["xp","XP",1],["streak","Racha",1],["days_total","Días",1],
     ["words","Palabras",1],["best","Mejor desafío",1],["correct","Correctas",1],["pron_best","Pron. mejor",1],["pron_avg","Pron. prom.",1],
-    ["badges","Medallas",1],["sound_issues","Sonidos a mejorar"],["hard_words","Palabras difíciles"]
+    ["badges","Medallas",1],["zone_summary","Challenge Zone"],["sound_issues","Sonidos a mejorar"],["hard_words","Palabras difíciles"]
   ]
 };
 function rows(){
@@ -189,7 +189,7 @@ function render(){
   $("tbl").innerHTML = `<thead><tr>${cols.map(([k, l]) => `<th data-k="${k}">${l}${sortKey === k ? (sortDir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr></thead>
     <tbody>${list.length ? list.map(r => `<tr class="${view === "students" && !r.reports ? "none" : ""}">${cols.map(([k, , isNum]) => {
       if (k === "created_at") return `<td>${r[k] ? `${fmtDate(r[k])} <span class="pill ${Date.now() - new Date(r[k]) < 7 * 864e5 ? "new" : "old"}">${ago(r[k])}</span>` : "—"}</td>`;
-      if (k === "hard_words" || k === "sound_issues") return `<td class="wrapcell">${esc(r[k] || "")}</td>`;
+      if (k === "hard_words" || k === "sound_issues" || k === "zone_summary") return `<td class="wrapcell">${esc(r[k] || "")}</td>`;
       if (k === "auto") return `<td>${r.auto ? `<span class="pill">🔄 Automático</span>` : `<span class="pill new">📤 Enviado</span>`}</td>`;
       return `<td class="${isNum ? "num" : ""}">${r[k] ?? (isNum ? "—" : "")}</td>`; }).join("")}</tr>`).join("")
       : `<tr><td class="empty" colspan="${cols.length}">${view === "history" ? "Aún no hay reportes." : "No hay alumnos con esos filtros."}</td></tr>`}</tbody>`;
