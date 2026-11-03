@@ -44,6 +44,7 @@ En `index.html`, busca `DATOS`: ahí están `COURSES` (cursos y juegos) y `TWIST
 - **Voz natural** (02-11-2026): la página elige la voz más natural del navegador (Edge: "Aria/Jenny Online (Natural)", Chrome: "Google US English", iPhone: voces "Enhanced"). En "Speak & shine" hay un selector "🗣 Voice" para cambiarla.
 - **Retroalimentación técnica de pronunciación**: compara lo que había que decir con lo que entendió el reconocedor y detecta el sonido que falló (th, v/b, s inicial, h, y/j, sh, ch, z, r/l, w, ng, consonante final, -s, -ed, i corta/larga, æ, ʌ, palabras cortas). Muestra símbolo fonético, cómo poner boca y lengua, un par mínimo para escuchar y un trabalenguas del sonido. Los sonidos con más errores aparecen en el perfil del alumno y en el panel ("Sonidos a mejorar").
 - **Challenge Zone** (02-11-2026): sección nueva con 7 tipos de ejercicio (Sentence scramble, Language in use, Vocabulary in context, Find the mistake, Word formation, Dictation, Mini reading) en 3 niveles según el currículum: A1 (5°–6°), A2 (7°–8°), B1 (1°–3° Medio). El nivel se elige solo según el curso del alumno, y puede cambiarse. Cada ronda da XP, estrellas y puede dar 2 medallas nuevas. El panel muestra el logro por habilidad (Gramática, Vocabulario, Audición, Lectura).
+- Fondo de la Challenge Zone: imagen de laser tag de bloques creada con Canva (`assets/mundos/zone.webp` y `assets/mundos/m/zone.webp`), con disparos láser, chispas y letreros de neón animados encima (`ZONE_SHOTS` y `ZONE_NEON` en index.html).
 - Los ejercicios están en `ejercicios.js` (105 por nivel). Al inicio del archivo se explica cómo agregar más: se copia una línea y se cambia el contenido.
 - Si llega un alumno nuevo o cambia la nómina: pídele a Claude que vuelva a importar `NÓMINAS DE CURSOS.xlsx` (las claves existentes no cambian).
 
@@ -54,3 +55,6 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - Grabar la voz funciona en Google Chrome y Microsoft Edge (computador y Android). Safari en iPhone puede fallar; Firefox no lo permite.
 - El respaldo de la página anterior está en `Documents\Salesianos\respaldo-eslteacher-2026-10-28`.
 - El respaldo de antes de las novedades del 29-10-2026 está en `Documents\Salesianos\respaldo-eslteacher-2026-10-29`.
+
+## Novedades (03-11-2026)
+- **Weather Heroes** (5° básico, Unit 4): juego 3D en `5° BASICO/Weather_Heroes/` con modo historia y modo online por salas. Los ejercicios se editan en `5° BASICO/Weather_Heroes/js/content.js`. Captura en `assets/games/weather-heroes.webp`.
