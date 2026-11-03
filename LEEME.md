@@ -41,6 +41,8 @@ En `index.html`, busca `DATOS`: ahí están `COURSES` (cursos y juegos) y `TWIST
 - **Carpeta privada** `Documents\Salesianos\eslteacher-PRIVADO` (NO subir a GitHub): listas de claves por curso para repartir y la clave del panel.
 - **Progreso en la nube** (30-10-2026): con sesión iniciada, cada avance se guarda solo a los pocos segundos. Si el alumno usa otro dispositivo, al ingresar se combina lo mejor de ambos. Al presionar "Salir" se borra el progreso de ese equipo (queda en la nube), para que en computadores compartidos no se mezclen alumnos.
 - **Reporte automático**: cada guardado actualiza un reporte por alumno por día. En el panel aparecen como "🔄 Automático"; los del botón como "📤 Enviado". La columna "Días activos" cuenta los días con práctica.
+- **Voz natural** (02-11-2026): la página elige la voz más natural del navegador (Edge: "Aria/Jenny Online (Natural)", Chrome: "Google US English", iPhone: voces "Enhanced"). En "Speak & shine" hay un selector "🗣 Voice" para cambiarla.
+- **Retroalimentación técnica de pronunciación**: compara lo que había que decir con lo que entendió el reconocedor y detecta el sonido que falló (th, v/b, s inicial, h, y/j, sh, ch, z, r/l, w, ng, consonante final, -s, -ed, i corta/larga, æ, ʌ, palabras cortas). Muestra símbolo fonético, cómo poner boca y lengua, un par mínimo para escuchar y un trabalenguas del sonido. Los sonidos con más errores aparecen en el perfil del alumno y en el panel ("Sonidos a mejorar").
 - Si llega un alumno nuevo o cambia la nómina: pídele a Claude que vuelva a importar `NÓMINAS DE CURSOS.xlsx` (las claves existentes no cambian).
 
 ## Publicar cambios
