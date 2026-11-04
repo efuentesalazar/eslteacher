@@ -64,3 +64,6 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 
 ## Novedades (04-11-2026)
 - **Festival Quest** (1° medio, Unit 4 "Traditions and festivities"): juego 3D en `1° MEDIO/Festival_Quest/` con modo historia (5 festivales: Day of the Dead, Lunar New Year, Fiestas Patrias, Holi y We Tripantu) y modo online sin salas (se entra solo, máximo 6 por sala; código de curso opcional). Lecturas B1 con preguntas explícitas e implícitas, vocabulary in context, language in use y question tags. Los contenidos se editan en `1° MEDIO/Festival_Quest/js/content.js`. Captura en `assets/games/festival-quest.webp`.
+
+## Novedades (04-11-2026)
+- **Green Quest** (7° básico, Unit 4 "Green Issues"): juego 3D en `7° BASICO/Green_Quest/` con modo historia (5 zonas: Whispering Forest, Blue Bay, Recycle City, Sunny Farm y Windy Hills; jefe final Captain Smog) y modo online sin salas (máximo 6 por sala; código de curso opcional). Lecturas A2 con preguntas explícitas e implícitas, modales (should / shouldn't / could / must / mustn't / have to / don't have to) y zero conditional. Los contenidos se editan en `7° BASICO/Green_Quest/js/content.js`. Captura en `assets/games/green-quest.webp`. Código original en `Documents\Salesianos\Green Quest 7 basico`.
