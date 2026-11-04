@@ -461,8 +461,8 @@ async function createRoom() {
 async function dash() {
   const { data: room } = await SB.from("rooms").select("*").eq("code", T.code).maybeSingle(); if (!room) { store.del("ludo_teacher"); T = null; return show("tSetup"); }
   ROOM = room; show("tDash"); homeSpin = true;
-  $("#tUrl").textContent = location.host; $("#tCode").textContent = T.code; $("#tQr").innerHTML = "";
-  try { new QRCode($("#tQr"), { text: location.origin + "/?code=" + T.code, width: 180, height: 180 }); } catch (e) {}
+  $("#tUrl").textContent = location.host + " → 6° básico → Ludo World Tour"; $("#tCode").textContent = T.code; $("#tQr").innerHTML = "";
+  try { new QRCode($("#tQr"), { text: location.origin + location.pathname + "?code=" + T.code, width: 180, height: 180 }); } catch (e) {}
   const { data: pl } = await SB.from("players").select("*").eq("room_code", T.code); tPl = new Map((pl || []).map((p) => [p.id, p])); renderDash();
   if (tChan) SB.removeChannel(tChan);
   tChan = SB.channel("d" + T.code).on("postgres_changes", { event: "*", schema: "public", table: "players", filter: "room_code=eq." + T.code }, (m) => { if (m.eventType === "DELETE") tPl.delete(m.old.id); else tPl.set(m.new.id, m.new); renderDash(); })
@@ -494,7 +494,7 @@ function init() {
   $("#code").onkeydown = (e) => { if (e.key === "Enter") $("#joinBtn").click(); };
   $("#rollBtn").onclick = () => { $("#rollBtn").hidden = true; doRoll(); };
   $("#sndBtn").onclick = () => { Snd.init(); Snd.toggle(); };
-  $("#leaveBtn").onclick = $("#homeBtn").onclick = () => { store.del("ludo_me"); location.href = "/"; };
+  $("#leaveBtn").onclick = $("#homeBtn").onclick = () => { store.del("ludo_me"); location.href = location.pathname; };
   $("#againBtn").onclick = () => join("FREE");
   $("#teachBtn").onclick = () => { const t = store.get("ludo_teacher"); if (t) { T = t; dash(); } else show("tSetup"); };
   $("#tBack").onclick = () => show("home");

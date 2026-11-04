@@ -100,3 +100,10 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - Las direcciones antiguas (pastquest6basico.eslteacher.cl y juego.eslteacher.cl) redirigen a las nuevas. Past Quest trae el avance de la historia guardado en el navegador del alumno (`#pqsave=`), solo si en la nueva dirección aún no hay avance.
 - `6° BASICO/Past_Quest.html` y `Travel_Tycoon.html` quedan como redirecciones a las nuevas carpetas.
 - Regla desde ahora: **todo juego nuevo se publica dentro de eslteacher.cl** (ver `Documents\Salesianos\CLAUDE.md`).
+
+## Qué datos se guardan (04-11-2026)
+- **Solo se guardan las respuestas de alumnos con sesión iniciada** en eslteacher.cl (RUT + clave). Si un alumno juega sin sesión, el juego no envía nada y la base rechaza cualquier envío sin sesión válida.
+- **Ludo World Tour** necesita guardar a los jugadores mientras dura la partida (nombre escrito, puntaje). Esos datos se **borran solos al día siguiente** (tarea diaria `limpiar-partidas-ludo` a las 03:00 en el proyecto Supabase `travel-tycoon-6basico`; nunca borra la sala permanente FREE). Si usas el modo clase, descarga el CSV el mismo día.
+- **Chest Quest** (English Week) mantiene su servidor y panel propios, con los datos de quienes juegan el evento.
+- **Realms of Knowledge** tiene cuentas propias (pendiente de unir a la sesión de eslteacher.cl).
+- Corrección: en Ludo World Tour el código QR y el botón de salir apuntaban a la portada tras la mudanza; ahora apuntan al juego.
