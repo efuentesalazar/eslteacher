@@ -58,3 +58,6 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 
 ## Novedades (03-11-2026)
 - **Weather Heroes** (5° básico, Unit 4): juego 3D en `5° BASICO/Weather_Heroes/` con modo historia y modo online por salas. Los ejercicios se editan en `5° BASICO/Weather_Heroes/js/content.js`. Captura en `assets/games/weather-heroes.webp`.
+
+## Novedades (04-11-2026)
+- **Past Quest** (6° básico, pasado simple): aventura 3D con modo historia (6 capítulos) y modo online por salas. Publicado como proyecto Vercel aparte (`past-quest-6basico`, https://past-quest-6basico.vercel.app). En el sitio solo hay un acceso: `6° BASICO/Past_Quest.html` (redirige) y la captura `assets/games/past-quest.webp`. El código del juego está en `Documents\Salesianos\Past Quest 6 basico`.
