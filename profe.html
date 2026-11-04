@@ -60,6 +60,29 @@ tr:hover td{background:rgba(255,255,255,.04)}
 .pill.old{background:rgba(255,200,0,.2);color:var(--yellow)}
 .empty{padding:30px;text-align:center;color:var(--mut)}
 .foot{margin-top:14px;font-size:12px;color:var(--mut)}
+/* análisis de juegos */
+.tabs{flex-wrap:wrap}
+.an{display:grid;gap:16px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:18px;min-width:0}
+.box h2{font-family:var(--display);font-weight:600;font-size:21px;margin-bottom:4px}
+.box .sub{color:var(--mut);font-size:13px;line-height:1.5;margin-bottom:12px}
+.box .table{max-height:60vh;border-radius:12px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin-bottom:10px}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+td.c{text-align:center;font-family:var(--mono);font-weight:700;min-width:84px;box-shadow:inset 0 0 0 2px var(--card)}
+.lv0{background:#6a2130;color:#ffdbe0}.lv1{background:#5e4c10;color:#ffeaa6}.lv2{background:#22521c;color:#cff7bd}.lvn{color:rgba(255,255,255,.3)}
+.meter{display:flex;align-items:center;gap:8px}.meter b{font-family:var(--mono);min-width:42px;text-align:right}
+.bar{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.08);min-width:90px}.bar i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+td.q{white-space:normal;min-width:260px;max-width:460px;line-height:1.4}
+.skill{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:rgba(95,211,255,.15);color:var(--accent);margin-bottom:3px}
+.actions{display:grid;gap:10px}
+.actions li{list-style:none;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.05);line-height:1.5;font-size:14px}
+.actions li b{color:#fff}.actions li .why{display:block;color:var(--mut);font-size:13px}
+.days{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:6px;overflow-x:auto}
+.days .d{flex:1 0 34px;max-width:48px;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;font-size:11px;color:var(--mut)}
+.days .d i{width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px}
+.days .d:hover i{background:#9fe6ff}
+.days .d b{font-family:var(--mono);color:#fff;font-size:11px}
 </style>
 </head>
 <body>
@@ -92,13 +115,19 @@ tr:hover td{background:rgba(255,255,255,.04)}
   <div class="tools">
     <select id="f-sec" aria-label="Curso"><option value="">Todos los cursos</option></select>
     <input id="f-q" type="search" placeholder="Buscar alumno…" aria-label="Buscar alumno">
-    <label><input type="checkbox" id="f-only"> Solo con reportes</label>
+    <label id="only-wrap"><input type="checkbox" id="f-only"> Solo con reportes</label>
+    <select id="f-game" class="hidden" aria-label="Juego"></select>
+    <select id="f-days" class="hidden" aria-label="Período">
+      <option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="120" selected>Últimos 4 meses</option><option value="400">Todo el año</option>
+    </select>
   </div>
   <div class="tabs">
     <button class="tab on" data-v="students" type="button">Alumnos (lo más reciente)</button>
     <button class="tab" data-v="history" type="button">Historial de reportes</button>
+    <button class="tab" data-v="analysis" type="button">📊 Análisis de juegos</button>
   </div>
   <div class="table"><table id="tbl"></table></div>
+  <div class="an hidden" id="analysis"></div>
   <p class="foot" id="foot"></p>
 </div>
 
@@ -141,14 +170,123 @@ async function load(){
     data = r; $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); render();
   } catch(err){ alert("No se pudieron cargar los datos. Revisa tu internet."); }
 }
-$("refresh").addEventListener("click", load);
+$("refresh").addEventListener("click", () => view === "analysis" ? loadAnalysis() : load());
 
 /* Filtros y vistas */
 $("f-sec").innerHTML += SECTIONS.map(s => `<option>${s}</option>`).join("");
-["f-sec","f-q","f-only"].forEach(id => $(id).addEventListener("input", render));
+["f-q","f-only"].forEach(id => $(id).addEventListener("input", () => view === "analysis" ? renderAnalysis() : render()));
+["f-sec","f-game","f-days"].forEach(id => $(id).addEventListener("input", () => view === "analysis" ? loadAnalysis() : render()));
 document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
-  view = b.dataset.v; sortKey = null; document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b)); render();
+  view = b.dataset.v; sortKey = null; document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
+  const isAn = view === "analysis";
+  ["f-game","f-days","analysis"].forEach(id => $(id).classList.toggle("hidden", !isAn));
+  [$("tbl").parentElement, $("cards"), $("foot"), $("only-wrap")].forEach(el => el.classList.toggle("hidden", isAn));
+  if (isAn) loadAnalysis(); else render();
 }));
+
+/* =====================================================================
+   ANÁLISIS DE JUEGOS: cada respuesta que dan los alumnos en los juegos
+   ===================================================================== */
+// Para agregar un juego: su id (el mismo GAME del juego), nombre, cursos y nombres de habilidades.
+const GAMES = {
+  "festival-quest-1m": { name: "Festival Quest · 1° medio", sections: ["1°A HC","1°B HC"],
+    skills: { E: "Lectura explícita", I: "Lectura inferencial", V: "Vocabulario en contexto", L: "Uso del lenguaje", Q: "Question tags" } }
+};
+$("f-game").innerHTML = Object.entries(GAMES).map(([id, g]) => `<option value="${id}">${esc(g.name)}</option>`).join("");
+let an = null;
+const pct = (ok, t) => t ? Math.round(ok / t * 100) : null;
+const lv = p => p == null ? "lvn" : p < 50 ? "lv0" : p < 75 ? "lv1" : "lv2";
+const LV_TXT = ["Necesita apoyo", "En proceso", "Logrado"];
+const secs = s => Math.round((s || 0) / 1000);
+
+async function loadAnalysis(){
+  const t = ss.get("eslt_teacher"); if (!t) return;
+  $("analysis").innerHTML = `<div class="box empty">Cargando análisis…</div>`;
+  const req = loadAnalysis.n = (loadAnalysis.n || 0) + 1; // si cambias el filtro rápido, solo vale la última respuesta
+  try {
+    const r = await db("eslt_teacher_analysis", { p_token: t, p_game: $("f-game").value, p_section: $("f-sec").value || null, p_days: +$("f-days").value });
+    if (req !== loadAnalysis.n) return;
+    if (!r.ok){ ss.set("eslt_teacher", null); $("gate").classList.remove("hidden"); $("app").classList.add("hidden"); $("gate-msg").textContent = "Tu sesión expiró. Ingresa otra vez."; return; }
+    an = r; renderAnalysis();
+  } catch(err){ $("analysis").innerHTML = `<div class="box empty">No se pudo cargar el análisis. Revisa tu internet y presiona ↻ Actualizar.</div>`; }
+}
+
+function renderAnalysis(){
+  if (!an) return;
+  const gid = $("f-game").value, g = GAMES[gid] || { name: gid, skills: {} }, sec = $("f-sec").value;
+  const q = $("f-q").value.trim().toLowerCase();
+  const keys = [...new Set([...Object.keys(g.skills), ...an.items.map(i => i.skill).filter(Boolean)])];
+  const skName = k => g.skills[k] || k;
+  const st = an.students.filter(s => !q || s.name.toLowerCase().includes(q));
+  const played = st.filter(s => s.total > 0), idle = st.filter(s => !s.total);
+  const sum = played.reduce((a, s) => [a[0] + s.ok, a[1] + s.total], [0, 0]);
+  const firstVals = an.items.filter(i => i.pct_first != null);
+  const firstAvg = firstVals.length ? Math.round(firstVals.reduce((a, i) => a + i.pct_first, 0) / firstVals.length) : null;
+  // logro del grupo por habilidad
+  const bySkill = keys.map(k => { let ok = 0, t = 0; played.forEach(s => { const v = s.skills && s.skills[k]; if (v){ ok += v[0]; t += v[1]; } }); return { k, ok, t, p: pct(ok, t) }; });
+
+  if (!an.students.length || !played.length && !sec){
+    $("analysis").innerHTML = `<div class="box"><h2>Aún no hay respuestas de ${esc(g.name)}</h2>
+      <p class="sub">Cuando los alumnos jueguen <b>con su sesión iniciada en eslteacher.cl</b>, aquí aparecerá cada respuesta. Elige un curso (${esc((g.sections || []).join(", "))}) para ver también quiénes no han jugado.</p></div>`;
+    return;
+  }
+
+  // ---- Acciones sugeridas ----
+  const acts = [];
+  const weak = bySkill.filter(s => s.t >= 10 && s.p < 75).sort((a, b) => a.p - b.p);
+  weak.slice(0, 2).forEach(s => {
+    const it = an.items.filter(i => i.skill === s.k && i.pct_first != null && i.students >= 3).sort((a, b) => a.pct_first - b.pct_first)[0];
+    const w = it && it.wrong && it.wrong[0];
+    acts.push(`<li>🔁 <b>Volver a enseñar: ${esc(skName(s.k))}</b> (${s.p}% de logro del grupo).
+      ${it ? `<span class="why">Pregunta más difícil: “${esc(it.question)}” — solo ${it.pct_first}% acertó al primer intento.${w ? ` Error más elegido: “${esc(w.c)}” (${w.n} veces); la correcta es “${esc(it.right_answer)}”.` : ""}</span>` : ""}</li>`);
+  });
+  keys.forEach(k => {
+    const need = played.filter(s => { const v = s.skills && s.skills[k]; return v && v[1] >= 4 && pct(v[0], v[1]) < 50; });
+    if (need.length >= 2) acts.push(`<li>👥 <b>Grupo de apoyo en ${esc(skName(k))}</b> (${need.length} alumnos bajo 50%)
+      <span class="why">${need.map(s => esc(s.name)).join(" · ")}</span></li>`);
+  });
+  if (sec && idle.length) acts.push(`<li>📣 <b>${idle.length} alumno${idle.length > 1 ? "s" : ""} de ${esc(sec)} no ha${idle.length > 1 ? "n" : ""} jugado</b> (o jugó sin iniciar sesión)
+      <span class="why">${idle.map(s => esc(s.name)).join(" · ")}</span></li>`);
+  const strong = bySkill.filter(s => s.t >= 10 && s.p >= 85);
+  if (strong.length) acts.push(`<li>🌟 <b>Fortaleza del grupo: ${strong.map(s => esc(skName(s.k))).join(", ")}</b><span class="why">Puedes avanzar o usar a estos alumnos como monitores.</span></li>`);
+  if (!acts.length) acts.push(`<li>Aún hay pocos datos para sugerir acciones. Con unas 10 respuestas por habilidad aparecerán sugerencias.</li>`);
+
+  // ---- Mapa de calor alumno × habilidad ----
+  const heatRows = st.slice().sort((a, b) => (pct(a.ok, a.total) ?? 999) - (pct(b.ok, b.total) ?? 999) || (a.n ?? 99) - (b.n ?? 99));
+  const cell = v => { const p = v ? pct(v[0], v[1]) : null; return `<td class="c ${lv(p)}" title="${p == null ? "Sin respuestas" : `${v[0]} de ${v[1]} correctas · ${LV_TXT[p < 50 ? 0 : p < 75 ? 1 : 2]}`}">${p == null ? "—" : p + "%"}</td>`; };
+  const heat = `<table><thead><tr><th>Curso</th><th>N°</th><th>Alumno</th><th>Logro total</th>${keys.map(k => `<th>${esc(skName(k))}</th>`).join("")}<th>Respuestas</th><th>Días</th><th>Última vez</th></tr></thead><tbody>
+    ${heatRows.map(s => `<tr class="${s.total ? "" : "none"}"><td>${esc(s.section)}</td><td class="num">${s.n ?? ""}</td><td>${esc(s.name)}</td>${cell(s.total ? [s.ok, s.total] : null)}
+      ${keys.map(k => cell(s.skills && s.skills[k])).join("")}<td class="num">${s.total}</td><td class="num">${s.days}</td><td>${s.last ? `${ago(s.last)}` : "—"}</td></tr>`).join("")}</tbody></table>`;
+
+  // ---- Preguntas más difíciles ----
+  const items = an.items.filter(i => !q).slice(0, 25);
+  const itemTbl = `<table><thead><tr><th>Pregunta</th><th>Acierto al 1er intento</th><th>Alumnos</th><th>Error más elegido</th><th>Tiempo prom.</th></tr></thead><tbody>
+    ${items.map(i => { const w = i.wrong && i.wrong[0]; return `<tr><td class="q"><span class="skill">${esc(skName(i.skill))}</span><br>${esc(i.question)}<br><span style="color:var(--mut);font-size:12px">✔ ${esc(i.right_answer)}</span></td>
+      <td><div class="meter"><b>${i.pct_first ?? "—"}%</b><div class="bar"><i style="width:${i.pct_first || 0}%"></i></div></div></td>
+      <td class="num">${i.students}</td><td class="wrapcell">${w ? `“${esc(w.c)}” <span class="pill">${w.n}×</span>` : "—"}</td><td class="num">${secs(i.avg_ms)} s</td></tr>`; }).join("")}</tbody></table>`;
+
+  // ---- Logro por día ----
+  const daily = an.daily.slice(-30);
+  const days = daily.length ? `<div class="days" role="img" aria-label="Porcentaje de respuestas correctas por día">${daily.map(d => { const p = pct(d.ok, d.total);
+      return `<div class="d" title="${new Date(d.day + "T12:00").toLocaleDateString("es-CL", { weekday: "short", day: "numeric", month: "short" })}: ${p}% correctas · ${d.total} respuestas · ${d.students} alumnos"><b>${p}%</b><i style="height:${Math.max(2, p)}%"></i><span>${d.day.slice(8, 10)}/${d.day.slice(5, 7)}</span></div>`; }).join("")}</div>` : `<div class="empty">Sin datos en este período.</div>`;
+
+  $("analysis").innerHTML = `
+    <div class="cards" style="margin:0">
+      <div class="card"><b>${played.length}<span style="font-size:16px;color:var(--mut)">/${st.length}</span></b><span>Alumnos que han jugado${sec ? " en " + esc(sec) : ""}</span></div>
+      <div class="card"><b>${pct(sum[0], sum[1]) ?? "—"}%</b><span>Respuestas correctas (${sum[1]} en total)</span></div>
+      <div class="card"><b>${firstAvg ?? "—"}%</b><span>Acierto al primer intento (lo que sabían antes de reintentar)</span></div>
+      <div class="card"><b>${sec ? idle.length : "—"}</b><span>${sec ? "Aún no han jugado" : "Elige un curso para ver quién no ha jugado"}</span></div>
+    </div>
+    <div class="box"><h2>Qué hacer esta semana</h2><p class="sub">Sugerencias calculadas con las respuestas de ${esc(g.name)}${sec ? " en " + esc(sec) : ""}.</p><ul class="actions">${acts.join("")}</ul></div>
+    <div class="box"><h2>Logro por alumno y habilidad</h2>
+      <p class="sub">Porcentaje de respuestas correctas. Primero aparecen quienes más apoyo necesitan. Pasa el mouse por una celda para ver el detalle.</p>
+      <div class="legend"><span style="--c:#6a2130">Necesita apoyo (menos de 50%)</span><span style="--c:#5e4c10">En proceso (50–74%)</span><span style="--c:#22521c">Logrado (75% o más)</span></div>
+      <div class="table">${heat}</div></div>
+    <div class="box"><h2>Preguntas más difíciles</h2>
+      <p class="sub">Ordenadas por acierto al primer intento. El error más elegido muestra la <b>idea equivocada</b> que tiene el grupo: es lo que conviene aclarar en clase.</p>
+      ${items.length ? `<div class="table">${itemTbl}</div>` : `<div class="empty">${q ? "Borra la búsqueda para ver las preguntas." : "Sin datos todavía."}</div>`}</div>
+    <div class="box"><h2>Logro por día</h2><p class="sub">Porcentaje de respuestas correctas cada día (últimos 30 días con actividad).</p>${days}</div>`;
+}
 
 const COLS = {
   students: [
@@ -201,8 +339,23 @@ function render(){
 
 /* Descargar lo que se ve como planilla (Excel en español usa ";") */
 $("export").addEventListener("click", () => {
-  const cols = COLS[view], list = rows();
   const cell = v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  if (view === "analysis"){
+    if (!an) return;
+    const g = GAMES[$("f-game").value] || { skills: {} }, keys = [...new Set([...Object.keys(g.skills), ...an.items.map(i => i.skill).filter(Boolean)])];
+    const p = (v) => v && v[1] ? Math.round(v[0] / v[1] * 100) + "%" : "";
+    const csv = [["Curso","N°","Alumno","Logro total",...keys.map(k => g.skills[k] || k),"Respuestas","Días","Última vez"].join(";"),
+      ...an.students.map(s => [s.section, s.n, s.name, p([s.ok, s.total]), ...keys.map(k => p(s.skills && s.skills[k])), s.total, s.days,
+        s.last ? new Date(s.last).toLocaleString("es-CL") : ""].map(cell).join(";")),
+      "", ["Pregunta","Habilidad","Respuesta correcta","Acierto 1er intento","Alumnos","Error más elegido","Veces"].join(";"),
+      ...an.items.map(i => [i.question, g.skills[i.skill] || i.skill, i.right_answer, (i.pct_first ?? "") + "%", i.students,
+        i.wrong && i.wrong[0] ? i.wrong[0].c : "", i.wrong && i.wrong[0] ? i.wrong[0].n : ""].map(cell).join(";"))].join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
+    a.download = `analisis-${$("f-game").value}${$("f-sec").value ? "-" + $("f-sec").value.replace(/[°\s]/g, "") : ""}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); return;
+  }
+  const cols = COLS[view], list = rows();
   const csv = [cols.map(c => c[1]).join(";"),
     ...list.map(r => cols.map(([k]) => cell(k === "created_at" && r[k] ? new Date(r[k]).toLocaleString("es-CL")
                                        : k === "auto" ? (r.auto ? "Automático" : "Enviado") : r[k])).join(";"))].join("\r\n");

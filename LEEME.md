@@ -69,3 +69,14 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Green Quest** (7° básico, Unit 4 "Green Issues"): juego 3D en `7° BASICO/Green_Quest/` con modo historia (5 zonas: Whispering Forest, Blue Bay, Recycle City, Sunny Farm y Windy Hills; jefe final Captain Smog) y modo online sin salas (máximo 6 por sala; código de curso opcional). Lecturas A2 con preguntas explícitas e implícitas, modales (should / shouldn't / could / must / mustn't / have to / don't have to) y zero conditional. Los contenidos se editan en `7° BASICO/Green_Quest/js/content.js`. Captura en `assets/games/green-quest.webp`. Código original en `Documents\Salesianos\Green Quest 7 basico`. Versión 2 (04-11-2026): mundo abierto mucho más grande, minimapa y 10 misiones secundarias en los caminos (`SIDE` en content.js).
 
 - **Festival Quest v2** (04-11-2026): isla más grande con caminos, 6 lugares para explorar, minimapa (tecla M) y 10 misiones secundarias "Festival friends" (lecturas B1 cortas). Las misiones se editan en `1° MEDIO/Festival_Quest/js/side.js`.
+
+## Novedades (04-11-2026): Análisis de juegos
+- **Cada respuesta queda guardada**: en Festival Quest (1° medio), cada pregunta que responde un alumno con sesión iniciada en eslteacher.cl se guarda con la pregunta, la opción elegida, si acertó, la habilidad y el tiempo que tardó. Si se corta internet, las respuestas esperan en el equipo y se envían después.
+- En el menú del juego aparece si el alumno tiene sesión iniciada ("Tu profe verá tu avance") o un aviso para que entre primero en eslteacher.cl → Mi perfil.
+- **Panel del profe → pestaña "📊 Análisis de juegos"**: elige juego, curso y período. Muestra:
+  - Qué hacer esta semana: habilidades que conviene volver a enseñar (con la pregunta más difícil y el error más elegido), grupos de apoyo por habilidad, quiénes no han jugado y fortalezas del grupo.
+  - Mapa de calor alumno × habilidad (Necesita apoyo < 50% · En proceso 50–74% · Logrado ≥ 75%).
+  - Preguntas más difíciles según el acierto al primer intento, con la respuesta errónea más elegida (la idea equivocada del grupo).
+  - Logro por día. "⬇ Descargar Excel" baja el mapa de calor y las preguntas.
+- Base de datos: tabla `eslt.answers` y funciones `eslt_log_answers` (juego) y `eslt_teacher_analysis` (panel).
+- **Agregar otro juego**: copia `assets/js/eslt-track.js` dentro del juego, importa `logAnswer` y llámalo cada vez que el alumno responde (ver `1° MEDIO/Festival_Quest/js/main.js`, función `record`). Luego agrega el juego a `GAMES` en `profe.html` (id, nombre, cursos y nombres de las habilidades). El juego debe publicarse dentro de eslteacher.cl para usar la sesión del alumno.
