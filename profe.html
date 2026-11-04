@@ -202,7 +202,9 @@ const GAMES = {
   "festival-worlds-1m": { name: "Festival Worlds · 1° medio", sections: ["1°A HC","1°B HC"], skills: LECTURA("Vocabulario (cofres)") },
   "festival-worlds2-1m": { name: "Festival Worlds 2 · 1° medio", sections: ["1°A HC","1°B HC"], skills: LECTURA("Vocabulario (cofres)") },
   "traditions-1m": { name: "Traditions · 1° medio", sections: ["1°A HC","1°B HC"], skills: LECTURA("Vocabulario (cofres)") },
-  "tiktok-vine-3m": { name: "TikTok vs. Vine · 3° medio", sections: ["3°B HC"], skills: LECTURA("Vocabulario (cofres)") }
+  "tiktok-vine-3m": { name: "TikTok vs. Vine · 3° medio", sections: ["3°B HC"], skills: LECTURA("Vocabulario (cofres)") },
+  "chest-quest-ew": { name: "Chest Quest · English Week (todos los cursos)", sections: SECTIONS,
+    skills: { V: "Vocabulario", G: "Gramática", R: "Lectura" } }
 };
 // Juegos "Worlds": lectura en 3 niveles (como el Simce) + lo que practican los cofres
 function LECTURA(cofres){ return { L: "Lectura: localizar", I: "Lectura: interpretar", R: "Lectura: reflexionar", C: cofres }; }

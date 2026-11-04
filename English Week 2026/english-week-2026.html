@@ -209,6 +209,7 @@ html.touch #help{cursor:pointer}
   #hudL{max-width:58vw} #pcard .nm{max-width:100%} #wcard{flex-wrap:wrap;row-gap:0}
 }
 </style>
+<script src="../assets/js/eslt-log.js"></script>
 </head>
 <body>
 <canvas id="c" tabindex="0"></canvas>
@@ -1816,6 +1817,8 @@ async function answer(i) {
   const fb = $('fb'); fb.className = r.correct ? 'ok' : 'bad';
   fb.innerHTML = ''; const b = document.createElement('b'); b.textContent = r.already ? 'Ya respondida. ' : r.correct ? '¡Correcto! +10  ' : 'Incorrecto  −5  ';
   const sp = document.createElement('span'); sp.textContent = r.ex || ''; fb.append(b, sp);
+  // Registro para el Panel del profe (eslteacher.cl → Análisis de juegos)
+  if (!r.already && window.eslLog) { const q_ = mc.info.qs[mq]; eslLog('chest-quest-ew', { activity: 'English Week · ' + (TYPE_NAME[mc.info.type] || ''), item: { id: mc.id + '-' + mq, q: q_.q, k: { vocab: 'V', grammar: 'G', reading: 'R' }[mc.info.type] || 'V' }, chosen: q_.opts[i], right: q_.opts[r.answer], ok: !!r.correct }); }
   if (!r.already) {
     myScore = r.score; updateScore();
     floatPts(r.correct ? '+10' : '−5', r.correct ? '#7cf29a' : '#ff8c80');
