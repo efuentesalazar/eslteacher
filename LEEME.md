@@ -67,3 +67,5 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 
 ## Novedades (04-11-2026)
 - **Green Quest** (7° básico, Unit 4 "Green Issues"): juego 3D en `7° BASICO/Green_Quest/` con modo historia (5 zonas: Whispering Forest, Blue Bay, Recycle City, Sunny Farm y Windy Hills; jefe final Captain Smog) y modo online sin salas (máximo 6 por sala; código de curso opcional). Lecturas A2 con preguntas explícitas e implícitas, modales (should / shouldn't / could / must / mustn't / have to / don't have to) y zero conditional. Los contenidos se editan en `7° BASICO/Green_Quest/js/content.js`. Captura en `assets/games/green-quest.webp`. Código original en `Documents\Salesianos\Green Quest 7 basico`. Versión 2 (04-11-2026): mundo abierto mucho más grande, minimapa y 10 misiones secundarias en los caminos (`SIDE` en content.js).
+
+- **Festival Quest v2** (04-11-2026): isla más grande con caminos, 6 lugares para explorar, minimapa (tecla M) y 10 misiones secundarias "Festival friends" (lecturas B1 cortas). Las misiones se editan en `1° MEDIO/Festival_Quest/js/side.js`.

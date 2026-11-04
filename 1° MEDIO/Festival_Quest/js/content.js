@@ -268,3 +268,5 @@ export const ONLINE_EXTRA = [
 ];
 
 export const SKILLS = {E:'Reading — explicit', I:'Reading — implicit', V:'Vocabulary in context', L:'Language in use', Q:'Question tags'};
+
+export { SIDE } from './side.js';

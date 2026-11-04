@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { scene, buildWorld, makeChar, setProgress, colliders, animated, zoneInfo, pedestals, greatFire, ISLAND, paperLantern, zonePos } from './world.js';
-import { ZONES, BOSS, ONLINE_EXTRA, SKILLS } from './content.js';
+import { scene, buildWorld, makeChar, setProgress, colliders, animated, zoneInfo, pedestals, greatFire, ISLAND, paperLantern, camBlockers, sideInfo, gates, landmarks, roads } from './world.js';
+import { ZONES, BOSS, ONLINE_EXTRA, SKILLS, SIDE } from './content.js';
 import * as net from './net.js';
 
 const $ = id => document.getElementById(id);
@@ -9,12 +9,14 @@ const KCOL = { E: '#1f8fd6', I: '#7a2d8f', V: '#1fb5a8', L: '#ff7a1a', Q: '#e240
 
 // ---------------- save ----------------
 const SAVE_KEY = 'festivalquest1m_v1';
-function freshSave() { return { name: '', char: 'Knight', zones: {}, stats: { E: [0, 0], I: [0, 0], V: [0, 0], L: [0, 0], Q: [0, 0] }, final: false, intro: false, best: 0 }; }
+function freshSave() { return { name: '', char: 'Knight', zones: {}, stats: { E: [0, 0], I: [0, 0], V: [0, 0], L: [0, 0], Q: [0, 0] }, side: {}, final: false, intro: false, best: 0 }; }
 let S = freshSave();
 try { const raw = localStorage.getItem(SAVE_KEY); if (raw) S = Object.assign(freshSave(), JSON.parse(raw)); } catch (e) { }
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } }
 const zst = id => (S.zones[id] ||= { read: false, scrolls: [false, false, false], done: false });
 const lanterns = () => ZONES.filter(z => zst(z.id).done).length;
+const sst = q => (S.side[q.id] ||= { acc: false, got: [], done: false });
+const helped = () => SIDE.filter(q => sst(q).done).length;
 const stars = () => ZONES.reduce((n, z) => n + zst(z.id).scrolls.filter(Boolean).length, 0);
 
 // ---------------- audio ----------------
@@ -58,6 +60,7 @@ addEventListener('keydown', e => {
   keys[e.code] = true;
   if (modalOpen) return;
   if (e.code === 'KeyE' || e.code === 'Enter') interact();
+  if (e.code === 'KeyM' && mode !== 'menu') { mini.classList.toggle('big'); }
   if (e.code === 'Digit1') emote('Waving');
   if (e.code === 'Digit2') emote('Cheering');
   if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
@@ -189,7 +192,8 @@ function refreshStory() {
   if (boss) boss.root.visible = mode === 'story' && all && !S.final;
   const fireOn = mode === 'online' || S.final;
   greatFire.visible = fireOn; greatFire.userData.light.intensity = fireOn ? 40 : 0;
-  $('cLan').textContent = `🏮 ${lanterns()}/5`; $('cStar').textContent = `⭐ ${stars()}/15`;
+  $('cLan').textContent = `🏮 ${lanterns()}/5`; $('cStar').textContent = `⭐ ${stars()}/15`; $('cSide').textContent = `🤝 ${helped()}/${SIDE.length}`;
+  refreshSide();
   const sat = mode === 'story' ? (S.final ? 1.15 : 0.25 + lanterns() * 0.15) : 1.05;
   cv.style.filter = `saturate(${sat})`;
 }
@@ -241,6 +245,127 @@ async function collectScroll(zi, k) {
   if (st.scrolls.every(Boolean)) setTimeout(() => toast(`Go back to ${z.npc.name}!`), 1900);
 }
 
+// ---------------- side quests ("Festival friends") ----------------
+const sideNpcs = [];   // {c, q, i, markQ, markX, beam, pos}
+const got = q => sst(q).got.filter(Boolean).length;
+async function setupSide() {
+  for (let i = 0; i < SIDE.length; i++) {
+    const q = SIDE[i], info = sideInfo[i];
+    const c = await makeChar(q.npc.model, q.npc.tint);
+    c.root.position.copy(info.npcPos); c.root.rotation.y = info.face;
+    const lb = label(q.npc.name, '#bff6ff'); lb.position.y = 3.0; c.root.add(lb);
+    const markQ = label('?', '#29d3e8', 60, 2.6); markQ.position.y = 3.7; c.root.add(markQ);
+    const markX = label('!', '#ffc23d', 60, 2.6); markX.position.y = 3.7; c.root.add(markX);
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 16, 12, 1, true), new THREE.MeshBasicMaterial({ color: '#29d3e8', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide }));
+    beam.position.set(info.npcPos.x, 8, info.npcPos.z); scene.add(beam);
+    scene.add(c.root); colliders.push({ x: info.npcPos.x, z: info.npcPos.z, r: 0.7 });
+    sideNpcs.push({ c, q, i, markQ, markX, beam, pos: info.npcPos });
+  }
+  // zone names on the signposts at each entrance
+  gates.forEach((g, i) => { const d = g.clone().normalize(); const lb = label(ZONES[i].name, '#ffffff', 26, 3.4); lb.position.set(g.x - d.z * 3.4, 3.3, g.z + d.x * 3.4); scene.add(lb); });
+}
+
+function refreshSide() {
+  const story = mode === 'story';
+  SIDE.forEach((q, i) => {
+    const st = sst(q), info = sideInfo[i], n = sideNpcs[i]; if (!info) return;
+    const fixed = !story || st.done;
+    info.problem.forEach(o => { if (o) o.visible = !fixed; });
+    info.solved.forEach(o => { if (o) o.visible = fixed; });
+    info.items.forEach((it, k) => it.visible = story && st.acc && !st.done && !st.got[k]);
+    if (n) {
+      const ready = q.collect && st.acc && got(q) >= q.collect.n;
+      n.markQ.visible = story && !st.done && !ready && !(q.collect && st.acc);
+      n.markX.visible = story && !st.done && !!ready;
+      n.beam.visible = story && !st.done;
+    }
+  });
+}
+
+async function talkSide(n) {
+  const q = n.q, st = sst(q), col = q.npc.tint, tag = `<div class="small" style="margin-top:8px">${q.icon} <b>${esc(q.title)}</b> · side mission</div>`;
+  n.c.play('Waving', 0.2, true);
+  if (st.done) { await say(q.npc.name, col, q.thanks, [['Bye!']]); return; }
+  if (q.collect && !st.acc) {
+    const r = await say(q.npc.name, col, q.hello + tag, [["I'll help! 🤝"], ['Not now', 'alt']]);
+    if (r !== 0) return;
+    st.acc = true; st.got = []; save(); refreshSide(); toast(`${q.collect.icon} Find ${q.collect.n} ${q.collect.what}!`, 2200);
+    return;
+  }
+  if (q.collect && got(q) < q.collect.n) { await say(q.npc.name, col, `You have <b>${got(q)}/${q.collect.n}</b> ${q.collect.what}. Look for the blue light beams near here!`, [['OK']]); return; }
+  if (!q.collect) {
+    const r = await say(q.npc.name, col, q.hello + tag, [["Let's help! 🤝"], ['Not now', 'alt']]);
+    if (r !== 0) return;
+  } else await say(q.npc.name, col, q.ready, [['Read 📖']]);
+  sfx('open');
+  await runQuiz({ title: `${q.icon} ${q.title}`, color: '#1a8fa0', items: q.items, reading: { title: q.title, text: q.text }, passMin: q.items.length - 1 });
+  st.done = true; st.acc = true; save(); refreshStory();
+  sfx('win'); player.c.play('Cheering', 0.2, true); n.c.play('Cheering', 0.2, true);
+  await say(q.npc.name, col, q.thanks, [[`🤝 Festival friends ${helped()}/${SIDE.length}`]]);
+}
+
+function pickSide(i, k) {
+  const q = SIDE[i], st = sst(q); st.got[k] = true; save();
+  sfx('coin'); player.c.play('PickUp', 0.1, true);
+  refreshSide();
+  const g = got(q);
+  toast(g >= q.collect.n ? `${q.collect.icon} ${g}/${q.collect.n} — go back to ${q.npc.name}!` : `${q.collect.icon} ${g}/${q.collect.n}`, 1700);
+}
+
+function sideHint() {
+  const act = SIDE.find(q => q.collect && sst(q).acc && !sst(q).done);
+  if (act) return got(act) >= act.collect.n ? `${act.icon} Go back to ${act.npc.name}!` : `${act.collect.icon} ${act.title}: ${got(act)}/${act.collect.n} ${act.collect.what}`;
+  let best = null, bd = 30;
+  sideNpcs.forEach(n => { if (sst(n.q).done) return; const d = n.pos.distanceTo(player.pos); if (d < bd) { bd = d; best = n; } });
+  return best ? `💬 ${best.q.npc.name} needs help nearby! (side mission)` : '';
+}
+
+// ---------------- minimap ----------------
+const mini = $('mini'), mctx = mini.getContext('2d'), MR = ISLAND + 18;
+let miniBg = null, lastObj = null;
+function mapXY(x, z) { const S = mini.width; return [S / 2 + x / MR * S / 2, S / 2 + z / MR * S / 2]; }
+function buildMiniBg() {
+  const S = mini.width, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+  x.fillStyle = '#3fb3e8'; x.fillRect(0, 0, S, S);
+  const circ = (r, col) => { x.fillStyle = col; x.beginPath(); x.arc(S / 2, S / 2, r / MR * S / 2, 0, 7); x.fill(); };
+  circ(ISLAND + 15, '#f1d9a0'); circ(ISLAND + 7, '#6cc04a');
+  landmarks.forEach(l => { const [px, pz] = mapXY(l.x, l.z); x.fillStyle = l.lake ? '#2aa6e0' : 'rgba(110,80,40,.35)'; x.beginPath(); x.arc(px, pz, Math.max(4, l.r / MR * S / 2), 0, 7); x.fill(); });
+  x.strokeStyle = '#f3e6b8'; x.lineWidth = S / 90; x.lineCap = 'round'; x.lineJoin = 'round';
+  roads.forEach(r => { x.beginPath(); r.pts.forEach((p, i) => { const [px, pz] = mapXY(p.x, p.z); i ? x.lineTo(px, pz) : x.moveTo(px, pz); }); x.stroke(); });
+  circ(13, '#e6cf9e');
+  miniBg = c;
+}
+function drawMini(t) {
+  if (!miniBg) buildMiniBg();
+  const S = mini.width, K = S / 340, big = mini.classList.contains('big');
+  mctx.drawImage(miniBg, 0, 0);
+  mctx.textAlign = 'center'; mctx.textBaseline = 'middle';
+  ZONES.forEach((z, i) => {
+    const [px, pz] = mapXY(zoneInfo[i].center.x, zoneInfo[i].center.z), done = zst(z.id).done || mode !== 'story';
+    mctx.fillStyle = done ? z.color : '#8a8a8a'; mctx.beginPath(); mctx.arc(px, pz, 13 * K, 0, 7); mctx.fill(); mctx.lineWidth = 3 * K; mctx.strokeStyle = '#fff'; mctx.stroke();
+    if (big) { mctx.font = `800 ${11 * K}px Nunito, sans-serif`; mctx.fillStyle = '#24183a'; mctx.fillText(z.name, px, pz + 22 * K); }
+  });
+  if (big) landmarks.forEach(l => { const [px, pz] = mapXY(l.x, l.z); mctx.font = `700 ${9 * K}px Nunito, sans-serif`; mctx.fillStyle = 'rgba(36,24,58,.75)'; mctx.fillText(l.name, px, pz); });
+  if (mode === 'story') sideNpcs.forEach(n => {
+    const st = sst(n.q), [px, pz] = mapXY(n.pos.x, n.pos.z);
+    mctx.font = `800 ${14 * K}px Nunito, sans-serif`;
+    if (st.done) { mctx.fillStyle = 'rgba(255,255,255,.9)'; mctx.fillText('✓', px, pz); return; }
+    const ready = n.q.collect && st.acc && got(n.q) >= n.q.collect.n;
+    mctx.fillStyle = ready ? '#ffc23d' : '#29d3e8'; mctx.beginPath(); mctx.arc(px, pz, 8 * K, 0, 7); mctx.fill(); mctx.lineWidth = 2 * K; mctx.strokeStyle = '#fff'; mctx.stroke();
+    mctx.fillStyle = '#fff'; mctx.fillText(ready ? '!' : '?', px, pz + 1);
+  });
+  if (mode === 'story' && lastObj && lastObj.p) {
+    const [px, pz] = mapXY(lastObj.p.x, lastObj.p.z), r = (9 + Math.sin(t * 5) * 2) * K;
+    mctx.beginPath(); for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.45 : r; mctx.lineTo(px + Math.cos(a) * rr, pz + Math.sin(a) * rr); } mctx.closePath();
+    mctx.fillStyle = '#ffc23d'; mctx.strokeStyle = '#24183a'; mctx.lineWidth = 2 * K; mctx.fill(); mctx.stroke();
+  }
+  const [px, pz] = mapXY(player.pos.x, player.pos.z);
+  mctx.save(); mctx.translate(px, pz); mctx.rotate(Math.PI - player.ry); mctx.scale(K, K);
+  mctx.fillStyle = '#ff2e93'; mctx.strokeStyle = '#fff'; mctx.lineWidth = 3; mctx.beginPath(); mctx.moveTo(0, -12); mctx.lineTo(9, 10); mctx.lineTo(0, 5); mctx.lineTo(-9, 10); mctx.closePath(); mctx.stroke(); mctx.fill();
+  mctx.restore();
+}
+mini.addEventListener('click', () => { sfx('click'); mini.classList.toggle('big'); });
+
 async function bossDuel() {
   const r = await say(BOSS.name, '#6d6d7a', BOSS.intro, [['Duel! ⚔️'], ['Not yet', 'alt']]);
   if (r !== 0) return;
@@ -280,7 +405,7 @@ function certificate() {
   const rows = Object.entries(SKILLS).map(([k, n]) => { const [c, t] = S.stats[k] || [0, 0]; return `<tr><td><span style="color:${KCOL[k]}">●</span> ${n}</td><td>${t ? Math.round(c / t * 100) : 0}% <span class="small">(${c}/${t})</span></td></tr>`; }).join('');
   const tot = Object.values(S.stats).reduce((a, [c, t]) => [a[0] + c, a[1] + t], [0, 0]);
   openModal(`<div class="cert"><h2 style="font-size:34px">🏆 Festival Keeper Certificate</h2><div class="bubble" style="display:inline-block;margin-top:8px">This certifies that <b>${esc(S.name || 'the player')}</b> brought back the five festival lanterns and defeated Mr. Grey.<br><span class="small">${new Date().toLocaleDateString('es-CL')} · Unit 4: Traditions and Festivities · 1° medio</span></div>
-  <table>${rows}<tr><td><b>Total (all attempts)</b></td><td>${tot[1] ? Math.round(tot[0] / tot[1] * 100) : 0}%</td></tr></table><div class="small">Take a screenshot and send it to your teacher.</div></div><div class="foot"><button class="btn" id="cOk">Continue</button></div>`);
+  <table>${rows}<tr><td>🤝 Festival friends (side missions)</td><td>${helped()}/${SIDE.length}</td></tr><tr><td><b>Total (all attempts)</b></td><td>${tot[1] ? Math.round(tot[0] / tot[1] * 100) : 0}%</td></tr></table><div class="small">Take a screenshot and send it to your teacher.</div></div><div class="foot"><button class="btn" id="cOk">Continue</button></div>`);
   $('cOk').onclick = () => { sfx('click'); closeModal(); };
 }
 
@@ -300,10 +425,11 @@ function fireworks() {
 const ROUND = 180000, BREAK = 15000, PERIOD = ROUND + BREAK, NL = 12;
 const ON = { lan: [], score: 0, streak: 0, round: -1, peers: new Map(), lastSend: 0, lastSent: null, pool: [], podiumShown: -1 };
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const ONLINE_R = 62;   // online lanterns stay near the plaza
 function lanPos(r, i, gen) {
   const R = mulberry(r * 7919 + i * 131 + gen * 17 + 3);
   for (let tries = 0; tries < 40; tries++) {
-    const a = R() * Math.PI * 2, d = 9 + R() * (ISLAND - 14), x = Math.cos(a) * d, z = Math.sin(a) * d;
+    const a = R() * Math.PI * 2, d = 9 + R() * (ONLINE_R - 9), x = Math.cos(a) * d, z = Math.sin(a) * d;
     if (colliders.every(c => Math.hypot(c.x - x, c.z - z) > c.r + 1.2)) return new THREE.Vector3(x, 0, z);
   }
   return new THREE.Vector3(0, 0, 14);
@@ -416,6 +542,7 @@ function findNear() {
   near = null;
   if (mode === 'story') {
     for (const n of npcs) if (n.pos.distanceTo(player.pos) < 3) near = { t: 'npc', n, label: `Talk to ${ZONES[n.zi].npc.name}` };
+    for (const n of sideNpcs) if (n.pos.distanceTo(player.pos) < 3) near = { t: 'side', n, label: sst(n.q).done ? `Talk to ${n.q.npc.name}` : `Help ${n.q.npc.name} ${n.q.icon}` };
     if (boss && boss.root.visible && boss.root.position.distanceTo(player.pos) < 3.2) near = { t: 'boss', label: `Challenge ${BOSS.name}` };
   }
   const el = $('prompt');
@@ -426,6 +553,7 @@ function interact() {
   sfx('click');
   if (near.t === 'npc') talkNPC(near.n);
   if (near.t === 'boss') bossDuel();
+  if (near.t === 'side') talkSide(near.n);
 }
 
 // ---------------- loop ----------------
@@ -440,7 +568,7 @@ function updatePlayer(dt) {
   }
   const len = Math.min(1, Math.hypot(f, s));
   const run = (keys.ShiftLeft || keys.ShiftRight || Math.hypot(stick.x, stick.y) > 0.85) ? 1 : 0;
-  const speed = len * (run ? 8 : 4.2);
+  const speed = len * (run ? 10 : 5.2);
   if (len > 0.05) {
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
     const mx = (fx * f + rx * s) / Math.hypot(f, s), mz = (fz * f + rz * s) / Math.hypot(f, s);
@@ -467,7 +595,12 @@ function updatePlayer(dt) {
 function updateCamera(dt) {
   if (mode === 'menu') cam.yaw += dt * 0.12;
   const t = player.pos;
-  const h = Math.sin(cam.pitch) * cam.dist, hd = Math.cos(cam.pitch) * cam.dist;
+  // pull the camera in when a tree or a building is between it and the player
+  let dist = cam.dist;
+  const dx = Math.sin(cam.yaw) * Math.cos(cam.pitch), dy = Math.sin(cam.pitch), dz = Math.cos(cam.yaw) * Math.cos(cam.pitch), hy = t.y + 1.6;
+  const near = camBlockers.filter(b => Math.abs(b.x - t.x) < cam.dist + b.r && Math.abs(b.z - t.z) < cam.dist + b.r);
+  if (near.length) for (let s = 1.2; s <= cam.dist; s += 0.4) { const px = t.x + dx * s, py = hy + dy * s, pz = t.z + dz * s; if (near.some(b => py > b.y0 && py < b.y1 && (b.x - px) ** 2 + (b.z - pz) ** 2 < b.r * b.r)) { dist = Math.max(1.6, s - 0.7); break; } }
+  const h = Math.sin(cam.pitch) * dist, hd = Math.cos(cam.pitch) * dist;
   const want = tmp.set(t.x + Math.sin(cam.yaw) * hd, Math.max(0.6, t.y + 1.6 + h), t.z + Math.cos(cam.yaw) * hd);
   camera.position.lerp(want, Math.min(1, dt * 10));
   camera.lookAt(t.x, t.y + 1.7, t.z);
@@ -476,8 +609,9 @@ function updateCamera(dt) {
 
 function updateHUD() {
   if (mode !== 'story') { $('arrow').style.display = 'none'; if (beacon) beacon.visible = false; return; }
-  const o = objective();
-  $('objT').innerHTML = o.t; $('objD').innerHTML = o.d;
+  const o = objective(); lastObj = o;
+  const hint = S.final ? '' : sideHint();
+  $('objT').innerHTML = o.t; $('objD').innerHTML = o.d + (hint ? `<span class="sideHint">${hint}</span>` : '');
   if (o.p && o.p.distanceTo(player.pos) > 4) {
     const target = Math.atan2(o.p.x - player.pos.x, o.p.z - player.pos.z), fwd = Math.atan2(-Math.sin(cam.yaw), -Math.cos(cam.yaw));
     const diff = Math.atan2(Math.sin(target - fwd), Math.cos(target - fwd));
@@ -486,17 +620,26 @@ function updateHUD() {
   if (beacon) { beacon.visible = !!o.p; if (o.p) beacon.position.set(o.p.x, 20, o.p.z); }
 }
 
+let frame = 0;
 function loop() {
   requestAnimationFrame(loop);
+  step();
+}
+function step() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   updatePlayer(dt);
   if (player.c) player.c.mixer.update(dt);
-  for (const n of npcs) { n.c.mixer.update(dt); if (performance.now() > n.c.lockUntil) n.c.play('Idle_A', 0.3); }
+  for (const n of [...npcs, ...sideNpcs]) { if (n.pos.distanceTo(player.pos) > 90) continue; n.c.mixer.update(dt); if (performance.now() > n.c.lockUntil) n.c.play('Idle_A', 0.3); }
   if (boss) { boss.mixer.update(dt); if (boss.root.visible && performance.now() > boss.lockUntil && !S.final) boss.play('Idle_B', 0.3); }
   for (const f of animated) f(t, dt);
   scrolls.flat().forEach(s => { if (s.visible) { s.userData.paper.forEach(p => p.rotation.y = t * 2); s.position.y = 1.4 + Math.sin(t * 2 + s.position.x) * 0.15; } });
   if (mode === 'story') {
     scrolls.forEach((arr, zi) => arr.forEach((s, k) => { if (s.visible && !modalOpen && Math.hypot(s.position.x - player.pos.x, s.position.z - player.pos.z) < 1.6) collectScroll(zi, k); }));
+    sideInfo.forEach((info, i) => info.items.forEach((it, k) => {
+      if (!it.visible) return;
+      if (it.userData.float) { const m = it.userData.item; m.position.y = 0.9 + Math.sin(t * 2 + k) * 0.15; m.rotation.y = t * 1.8; }
+      if (!modalOpen && Math.hypot(it.position.x - player.pos.x, it.position.z - player.pos.z) < 1.6) pickSide(i, k);
+    }));
   }
   if (mode === 'online') {
     onlineTick();
@@ -514,6 +657,7 @@ function loop() {
   if (greatFire.visible) greatFire.userData.light.intensity = 35 + Math.sin(t * 10) * 6;
   updateCamera(dt);
   findNear(); updateHUD();
+  if (mode !== 'menu' && (frame++ & 1)) drawMini(t);
   renderer.render(scene, camera);
 }
 
@@ -522,7 +666,7 @@ function buildMenu() {
   $('chars').innerHTML = CHARS.map(([m, n]) => `<button data-m="${m}" class="${S.char === m ? 'on' : ''}">${n}</button>`).join('');
   $('chars').querySelectorAll('button').forEach(b => b.onclick = async () => { sfx('click'); S.char = b.dataset.m; save(); buildMenu(); await setPlayerModel(S.char); player.c.play('Waving', 0.2, true); });
   $('pname').value = S.name;
-  $('progressTxt').textContent = S.final ? '🏆 Story completed!' : `Story: ${lanterns()}/5 lanterns · ⭐ ${stars()}/15`;
+  $('progressTxt').textContent = S.final ? '🏆 Story completed!' : `Story: 🏮 ${lanterns()}/5 lanterns · ⭐ ${stars()}/15 scrolls · 🤝 ${helped()}/${SIDE.length} friends`;
 }
 $('pname').addEventListener('input', e => { S.name = e.target.value.trim(); save(); });
 $('bReset').onclick = () => { if (confirm('Reset your story progress?')) { const keep = { name: S.name, char: S.char, best: S.best }; S = Object.assign(freshSave(), keep); save(); refreshStory(); buildMenu(); } };
@@ -531,7 +675,7 @@ $('bOnline').onclick = () => start('online');
 $('menuBtn').onclick = () => {
   if (modalOpen) return;
   const btns = [['Continue playing'], ['Main menu', 'alt']]; if (S.final) btns.splice(1, 0, ['🏆 Certificate', 'teal']);
-  say('Menu', '#7a2d8f', `Player: <b>${esc(S.name || 'Player')}</b><br>Lanterns: ${lanterns()}/5 · Scrolls: ${stars()}/15`, btns).then(i => { const lab = btns[i][0]; if (lab.includes('Certificate')) certificate(); if (lab === 'Main menu') toMenu(); });
+  say('Menu', '#7a2d8f', `Player: <b>${esc(S.name || 'Player')}</b><br>Lanterns: ${lanterns()}/5 · Scrolls: ${stars()}/15 · Festival friends: ${helped()}/${SIDE.length}`, btns).then(i => { const lab = btns[i][0]; if (lab.includes('Certificate')) certificate(); if (lab === 'Main menu') toMenu(); });
 };
 
 function toMenu() {
@@ -544,14 +688,14 @@ async function start(m) {
   if (!S.name) { $('pname').focus(); $('pname').style.borderColor = '#d9433b'; toast('Write your name first ✍️'); return; }
   sfx('click');
   mode = m; $('menu').classList.add('hidden'); $('hud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
-  $('board').classList.toggle('hidden', m !== 'online'); $('emotes').classList.toggle('hidden', m !== 'online'); $('stats').classList.toggle('hidden', m !== 'story');
+  $('board').classList.toggle('hidden', m !== 'online'); $('emotes').classList.toggle('hidden', m !== 'online'); $('stats').classList.toggle('hidden', m !== 'story'); mini.classList.toggle('hidden', m !== 'story'); mini.classList.remove('big');
   cam.yaw = 0; player.pos.set(2, 0, 9); player.ry = Math.PI;
   refreshStory();
   if (m === 'story') {
     playMusic('m_story');
     if (!S.intro) {
       await say('Festival Island', '#ff7a1a', `Welcome, <b>${esc(S.name)}</b>! Every year, five festivals from around the world meet on this island: <b>Day of the Dead, Lunar New Year, Fiestas Patrias, Holi and We Tripantu</b>.<br><br>But last night, <b>Mr. Grey</b> — who thinks traditions are boring — stole their colours and blew out the Great Festival Fire. 😱`, [['What can I do?']]);
-      await say('Festival Island', '#ff7a1a', `Visit each festival, <b>read its story</b> and answer the questions. Then find the <b>3 lost scrolls</b> in each zone (vocabulary, language in use and question tags) to win back its <b>lantern</b>.<br><br>Follow the golden arrow ⬆️ and the light beam. Good luck!`, [["Let's go! 🏮"]]);
+      await say('Festival Island', '#ff7a1a', `Visit each festival, <b>read its story</b> and answer the questions. Then find the <b>3 lost scrolls</b> in each zone (vocabulary, language in use and question tags) to win back its <b>lantern</b>.<br><br>The island is big! Follow the golden arrow ⬆️, the light beam and the ⭐ on the map (press <b>M</b> or tap the map to make it bigger).<br><br>On the roads you will meet people who need help 💬. Help them, too — a real Festival Keeper always helps a friend! 🤝`, [["Let's go! 🏮"]]);
       S.intro = true; save();
     }
   } else {
@@ -567,12 +711,13 @@ setProgress(p => { $('lbar').style.width = `${Math.round(p * 100)}%`; });
 (async () => {
   await buildWorld();
   await setupStory();
+  await setupSide();
   await setPlayerModel(S.char);
   camera.position.set(0, 5, 20);
   $('loading').classList.add('hidden');
   refreshStory(); buildMenu(); $('menu').classList.remove('hidden');
   loop();
-  if (location.search.includes('debug')) window.FQ = { player, cam, get S() { return S; }, ZONES, zoneInfo, refreshStory, save, ON, tick: () => { onlineTick(); findNear(); } };
+  if (location.search.includes('debug')) window.FQ = { player, cam, get S() { return S; }, ZONES, zoneInfo, refreshStory, save, ON, SIDE, sideInfo, sideNpcs, sst, talkSide, step, tick: () => { onlineTick(); findNear(); } };
 })();
 
 $('bCred').onclick = () => {
