@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { scene, buildWorld, makeChar, setProgress, colliders, animated, zoneInfo, pedestals, greatFire, ISLAND, paperLantern, camBlockers, sideInfo, gates, landmarks, roads } from './world.js';
 import { ZONES, BOSS, ONLINE_EXTRA, SKILLS, SIDE } from './content.js';
 import * as net from './net.js';
+import { logAnswer, student } from './track.js';
+const GAME = 'festival-quest-1m'; // id del juego en el Panel del profe
 
 const $ = id => document.getElementById(id);
 const CHARS = [['Knight', 'Knight'], ['Mage', 'Mage'], ['Ranger', 'Ranger'], ['Rogue', 'Rogue'], ['Barbarian', 'Barbarian'], ['Rogue_Hooded', 'Hooded']];
@@ -103,7 +105,11 @@ function say(name, color, text, buttons) {
 
 function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; }
 function prepItem(it) { const order = shuffle(it.o.map((_, i) => i)); return { ...it, opts: order.map(i => it.o[i]), correct: order.indexOf(it.a) }; }
-function record(k, ok) { if (!S.stats[k]) S.stats[k] = [0, 0]; S.stats[k][1]++; if (ok) S.stats[k][0]++; save(); }
+// it = pregunta preparada (prepItem), j = opción elegida, t0 = momento en que apareció la pregunta
+function record(it, j, ok, activity, t0) {
+  const k = it.k; if (!S.stats[k]) S.stats[k] = [0, 0]; S.stats[k][1]++; if (ok) S.stats[k][0]++; save();
+  logAnswer(GAME, { activity, item: it, chosen: it.opts[j], right: it.opts[it.correct], ok, ms: performance.now() - t0 });
+}
 
 /** Generic activity: returns number correct. opts: {title, color, items, reading, passMin, shuffleItems} */
 function runQuiz(opt) {
@@ -118,10 +124,11 @@ function runQuiz(opt) {
       openModal(`<h2 style="color:${opt.color || 'inherit'}">${esc(opt.title)}</h2>${opt.reading ? `<div class="reading">${textHtml}${card}</div>` : card}`);
       if (opt.reading && i > 0) { const t = $('mbox').querySelector('.text'); if (t) t.scrollTop = render.scroll || 0; }
       $('mbox').querySelectorAll('.opt').forEach(b => b.onclick = () => answer(+b.dataset.j));
+      render.t0 = performance.now();
     }
     function answer(j) {
       const it = items[i], ok = j === it.correct; res[i] = ok; if (ok) correct++;
-      record(it.k, ok); sfx(ok ? 'ok' : 'bad');
+      record(it, j, ok, opt.title, render.t0); sfx(ok ? 'ok' : 'bad');
       const t = $('mbox').querySelector('.text'); if (t) render.scroll = t.scrollTop;
       $('mbox').querySelectorAll('.opt').forEach((b, bj) => { b.disabled = true; if (bj === it.correct) b.classList.add('ok'); else if (bj === j) b.classList.add('no'); });
       $('why').innerHTML = `<div class="why ${ok ? 'ok' : 'no'}">${ok ? '✔ Correct!' : '✘ Not quite.'} ${it.why}</div>`;
@@ -380,8 +387,9 @@ async function bossDuel() {
       const it = items[idx++];
       openModal(`<h2>Question Tag Duel</h2><div class="duel"><div>You ${'❤️'.repeat(hearts)}${'🤍'.repeat(3 - hearts)}</div><div style="text-align:right">${BOSS.name}<div class="hp"><i style="width:${grey / 8 * 100}%"></i></div></div></div>
       <div class="qcard"><span class="tag" style="background:${KCOL.Q}">${SKILLS.Q}</span><div class="q">${it.q}</div><div class="opts">${it.opts.map((o, j) => `<button class="opt" data-j="${j}">${String.fromCharCode(65 + j)}. ${esc(o)}</button>`).join('')}</div><div id="why"></div><div class="foot" id="qfoot"></div></div>`);
+      const t0 = performance.now();
       $('mbox').querySelectorAll('.opt').forEach(b => b.onclick = () => {
-        const j = +b.dataset.j, ok = j === it.correct; record('Q', ok);
+        const j = +b.dataset.j, ok = j === it.correct; record({ ...it, k: 'Q' }, j, ok, 'Question Tag Duel', t0);
         $('mbox').querySelectorAll('.opt').forEach((bb, bj) => { bb.disabled = true; if (bj === it.correct) bb.classList.add('ok'); else if (bj === j) bb.classList.add('no'); });
         if (ok) { grey--; sfx('hit'); player.c.play('Melee_Unarmed_Attack_Punch_A', 0.1, true); boss.play('Hit_A', 0.1, true); } else { hearts--; sfx('bad'); player.c.play('Hit_A', 0.1, true); }
         $('mbox').querySelector('.hp i').style.width = `${Math.max(0, grey) / 8 * 100}%`;
@@ -501,8 +509,9 @@ async function onlineQuestion(i) {
   const it = prepItem(ON.pool[Math.floor(Math.random() * ON.pool.length)]);
   await new Promise(res => {
     openModal(`<div class="qcard"><span class="tag" style="background:${KCOL[it.k]}">${SKILLS[it.k]}</span><div class="q">${it.q}</div><div class="opts">${it.opts.map((o, j) => `<button class="opt" data-j="${j}">${String.fromCharCode(65 + j)}. ${esc(o)}</button>`).join('')}</div><div id="why"></div><div class="foot" id="qfoot"></div></div>`);
+    const t0 = performance.now();
     $('mbox').querySelectorAll('.opt').forEach(b => b.onclick = () => {
-      const j = +b.dataset.j, ok = j === it.correct; record(it.k, ok);
+      const j = +b.dataset.j, ok = j === it.correct; record(it, j, ok, 'Online Festival', t0);
       $('mbox').querySelectorAll('.opt').forEach((bb, bj) => { bb.disabled = true; if (bj === it.correct) bb.classList.add('ok'); else if (bj === j) bb.classList.add('no'); });
       let pts = 0;
       if (ok && roundNow() === r) { ON.streak++; pts = 10 + Math.min(10, (ON.streak - 1) * 2); ON.score += pts; S.best = Math.max(S.best, ON.score); save(); net.updateMe(me()); } else ON.streak = 0;
@@ -665,7 +674,13 @@ function step() {
 function buildMenu() {
   $('chars').innerHTML = CHARS.map(([m, n]) => `<button data-m="${m}" class="${S.char === m ? 'on' : ''}">${n}</button>`).join('');
   $('chars').querySelectorAll('button').forEach(b => b.onclick = async () => { sfx('click'); S.char = b.dataset.m; save(); buildMenu(); await setPlayerModel(S.char); player.c.play('Waving', 0.2, true); });
+  const st = student();
+  if (st && !S.name && st.first_name) { S.name = String(st.first_name).slice(0, 14); save(); }
   $('pname').value = S.name;
+  $('esltStatus').innerHTML = st
+    ? `📊 Hola, <b>${esc(st.first_name || st.name || '')}</b> (${esc(st.section || '')}). Tu profe verá tu avance.`
+    : `⚠️ No has iniciado sesión: tu profe no verá tu avance. <a href="https://eslteacher.cl/" target="_blank" rel="noopener">Entra en eslteacher.cl</a> (Mi perfil) y vuelve a abrir el juego.`;
+  $('esltStatus').classList.toggle('warn', !st);
   $('progressTxt').textContent = S.final ? '🏆 Story completed!' : `Story: 🏮 ${lanterns()}/5 lanterns · ⭐ ${stars()}/15 scrolls · 🤝 ${helped()}/${SIDE.length} friends`;
 }
 $('pname').addEventListener('input', e => { S.name = e.target.value.trim(); save(); });

@@ -3,6 +3,24 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CLOTHES, SLOTS, ZONES, STORY, LESSONS, NPCS, NPC_HELLO, QUICK, CALLS, PHRASES } from './content.js';
+import { logAnswer, student } from './track.js';
+
+/* ===== Registro para el Panel del profe (eslteacher.cl → Análisis de juegos) =====
+   Se guarda cada intento. Habilidad: V vocabulario · A audición · R lectura · G gramática · O ordenar · C completar */
+const GAME_ID = 'weather-heroes-5b';
+function skillOf(s, L) {
+  if (s.read) return 'R';
+  if (s.t === 'listen') return 'A';
+  if (s.t === 'order') return 'O';
+  if (s.t === 'gap') return 'C';
+  if (s.t === 'mcq' && L && /language/i.test(L.kind)) return 'G';
+  return 'V';
+}
+function track(activity, s, L, q, chosen, right, ok, t0) {
+  logAnswer(GAME_ID, { activity, item: { q, k: skillOf(s, L) }, chosen, right, ok, ms: performance.now() - t0 });
+}
+// texto de la pregunta: incluye la imagen y lo que se escucha, para distinguir preguntas parecidas
+const qText = s => `${s.pic ? s.pic + ' ' : ''}${s.q}${s.say ? ` 🔊 "${s.say}"` : ''}`;
 
 /* ================= small helpers ================= */
 const $ = id => document.getElementById(id);
@@ -843,7 +861,7 @@ function runLesson(id, onDone) {
   };
   const next = () => { si++; if (si >= steps.length) finish(); else render(); };
   const render = () => {
-    const s = steps[si];
+    const s = steps[si], t0 = performance.now();
     let body = '';
     if (s.read) body += `<div class="reading"><div style="display:flex;justify-content:space-between;align-items:center"><b>${esc(s.read.title)}</b><button class="btn small" id="xRead">🔊 Listen</button></div>${s.read.text.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     if (s.t === 'mcq' || s.t === 'listen') {
@@ -855,6 +873,7 @@ function runLesson(id, onDone) {
       let tries = 0;
       $('mBox').querySelectorAll('.opts .btn').forEach(b => b.onclick = () => {
         const o = opts[+b.dataset.i]; if (b.classList.contains('no') || $('xNext').classList.contains('hidden') === false) return;
+        track(L.title, s, L, qText(s), o.o, s.o[0], o.ok, t0);
         if (o.ok) { b.classList.add('ok'); sfx('ok'); $('xFb').className = 'feedback good'; $('xFb').textContent = '✅ Correct! ' + (s.why || ''); show('xNext', true); $('xNext').focus(); }
         else { tries++; mistakes++; b.classList.add('no'); sfx('bad', .4); $('xFb').className = 'feedback bad'; $('xFb').textContent = '❌ Try again!' + (tries >= 1 && s.why ? ' Tip: ' + s.why : ''); }
       });
@@ -879,6 +898,7 @@ function runLesson(id, onDone) {
       if (s.es) $('xEs').onclick = () => show('xEsT', true);
       $('xCheck').onclick = () => {
         if (built.length < words.length) { $('xFb').className = 'feedback bad'; $('xFb').textContent = 'Use all the words.'; return; }
+        track(L.title, s, L, 'Order: ' + s.s, built.map(o => o.w).join(' '), s.s, built.map(o => o.w).join(' ') === s.s, t0);
         if (built.map(o => o.w).join(' ') === s.s) { sfx('ok'); $('xFb').className = 'feedback good'; $('xFb').textContent = '✅ Correct! ' + s.s; show('xCheck', false); show('xClear', false); show('xNext', true); speak(s.s); $('xBuilt').querySelectorAll('.chip').forEach(c => c.onclick = null); }
         else { mistakes++; sfx('bad', .4); $('xFb').className = 'feedback bad'; $('xFb').textContent = '❌ Not yet. Try again! Start with: "' + words[0] + '"'; }
       };
@@ -898,8 +918,10 @@ function runLesson(id, onDone) {
       draw();
       $('xQ').onclick = () => speak(parts.map((p, k) => p + (k < fill.length ? (fill[k] ? fill[k].w : 'blank') : '')).join(''), true);
       $('xCheck').onclick = () => {
+        if (locked || marks.some(m => m === 'bad')) return; // espera a que se borren las palabras rojas (evita contar dos veces)
         if (fill.some(f => !f)) { $('xFb').className = 'feedback bad'; $('xFb').textContent = 'Complete all the blanks.'; return; }
         marks = fill.map((f, k) => f.w === s.a[k] ? 'ok' : 'bad');
+        track(L.title, s, L, s.text, fill.map(f => f.w).join(' / '), s.a.join(' / '), marks.every(m => m === 'ok'), t0);
         if (marks.every(m => m === 'ok')) { locked = true; sfx('ok'); draw(); $('xFb').className = 'feedback good'; $('xFb').textContent = '✅ Perfect!'; show('xCheck', false); show('xNext', true); }
         else { mistakes++; sfx('bad', .4); draw(); $('xFb').className = 'feedback bad'; $('xFb').textContent = '❌ The red words are not correct. Try again!'; setTimeout(() => { fill.forEach((f, k) => { if (marks[k] === 'bad') fill[k] = null; }); marks = []; cur = Math.max(0, fill.findIndex(f => !f)); draw(); }, 1100); }
       };
@@ -915,6 +937,7 @@ function runLesson(id, onDone) {
         $('xL').querySelectorAll('.chip').forEach(b => b.onclick = () => { const o = left[+b.dataset.k]; if (done.has(o.i)) return; sel = o.i; speak(o.w, true); draw(); });
         $('xR').querySelectorAll('.chip').forEach(b => b.onclick = () => {
           const o = right[+b.dataset.k]; if (done.has(o.i) || sel === null) return;
+          track(L.title, s, L, 'Match: ' + s.pairs[sel][0], o.e, s.pairs[sel][1], o.i === sel, t0);
           if (o.i === sel) { done.add(o.i); sel = null; sfx('ok', .4); if (done.size === s.pairs.length) { $('xFb').className = 'feedback good'; $('xFb').textContent = '✅ All matched!'; show('xNext', true); } }
           else { mistakes++; sfx('bad', .4); $('xFb').className = 'feedback bad'; $('xFb').textContent = '❌ Try again!'; }
           draw();
@@ -939,14 +962,17 @@ function quickQuestion() {
     UI.openModal(`<div class="mhead"><span class="kind">Weather Orb</span><h2>Put the words in order</h2><span></span></div><div class="built" id="xBuilt"></div><div class="bank" id="xBank"></div><div class="feedback" id="xFb"></div><div class="mfoot"><span></span><button class="btn green" id="xCheck">Check ✔</button></div>`, false);
     const draw = () => { $('xBuilt').innerHTML = built.map((o, k) => `<button class="chip" data-k="${k}">${esc(o.w)}</button>`).join(''); $('xBank').innerHTML = order.map((o, k) => `<button class="chip ${built.includes(o) ? 'used' : ''}" data-k="${k}">${esc(o.w)}</button>`).join(''); $('xBank').querySelectorAll('.chip').forEach(b => b.onclick = () => { const o = order[+b.dataset.k]; if (!built.includes(o)) { built.push(o); draw(); } }); $('xBuilt').querySelectorAll('.chip').forEach(b => b.onclick = () => { built.splice(+b.dataset.k, 1); draw(); }); };
     draw();
-    $('xCheck').onclick = () => { if (built.length < words.length) return; if (built.map(o => o.w).join(' ') === q.s) { const p = tries ? 5 : 10; addScore(p); sfx('ok'); UI.closeModal(); toast(`✅ Correct! +${p} 🏆`); } else { tries++; sfx('bad', .4); built.length = 0; draw(); $('xFb').className = 'feedback bad'; $('xFb').textContent = '❌ Try again!'; } };
+    const t0 = performance.now();
+    $('xCheck').onclick = () => { if (built.length < words.length) return; track('Weather Orb', q, null, 'Order: ' + q.s, built.map(o => o.w).join(' '), q.s, built.map(o => o.w).join(' ') === q.s, t0); if (built.map(o => o.w).join(' ') === q.s) { const p = tries ? 5 : 10; addScore(p); sfx('ok'); UI.closeModal(); toast(`✅ Correct! +${p} 🏆`); } else { tries++; sfx('bad', .4); built.length = 0; draw(); $('xFb').className = 'feedback bad'; $('xFb').textContent = '❌ Try again!'; } };
     return;
   }
   const opts = shuffle(q.o.map((o, i) => ({ o, ok: i === 0 }))); let tries = 0;
   UI.openModal(`<div class="mhead"><span class="kind">Weather Orb</span><h2>Quick question!</h2><span></span></div>${q.pic ? `<div class="pic">${esc(q.pic)}</div>` : ''}${q.t === 'listen' ? `<div style="text-align:center"><button class="btn blue" id="xSay">🔊 Listen</button></div>` : ''}<div class="q">${esc(q.q)}</div><div class="opts">${opts.map((o, i) => `<button class="btn" data-i="${i}">${esc(o.o)}</button>`).join('')}</div><div class="feedback" id="xFb"></div>`, false);
   if (q.t === 'listen') { $('xSay').onclick = () => speak(q.say, true); setTimeout(() => speak(q.say, true), 300); }
+  const t0 = performance.now();
   $('mBox').querySelectorAll('.opts .btn').forEach(b => b.onclick = () => {
     const o = opts[+b.dataset.i]; if (b.classList.contains('no')) return;
+    track('Weather Orb', q, null, qText(q), o.o, q.o[0], o.ok, t0);
     if (o.ok) { const p = tries ? 5 : 10; b.classList.add('ok'); sfx('ok'); addScore(p); setTimeout(() => { UI.closeModal(); toast(`✅ Correct! +${p} 🏆`); }, 700); }
     else { tries++; b.classList.add('no'); sfx('bad', .4); $('xFb').className = 'feedback bad'; $('xFb').textContent = '❌ Try again!'; }
   });
@@ -1276,12 +1302,17 @@ function titleScreen() {
   $('bStory').textContent = sv && sv.name ? `📖 Continue Story (${sv.name})` : '📖 Story Mode';
   $('saveNote').innerHTML = sv && sv.name ? `💎 ${Object.keys(sv.crystals || {}).length}/4 · ⭐ ${Object.values(sv.lessons || {}).reduce((a, b) => a + b, 0)} &nbsp; <button class="btn small" id="bNew">New story</button>` : '';
   if ($('bNew')) $('bNew').onclick = () => { if (confirm('Start a new story? Your progress will be deleted.')) { store.set(SAVE_KEY, null); setupScreen('story'); } };
+  const st = student();
+  $('esltStatus').innerHTML = st
+    ? `📊 Hola, <b>${esc(st.first_name || st.name || '')}</b> (${esc(st.section || '')}). Tu profe verá tu avance.`
+    : `⚠️ No has iniciado sesión: tu profe no verá tu avance. <a href="https://eslteacher.cl/" target="_blank" rel="noopener">Entra en eslteacher.cl</a> (Mi perfil) y vuelve a abrir el juego.`;
+  $('esltStatus').classList.toggle('warn', !st);
 }
 let setupMode = 'story';
 function setupScreen(mode) {
   setupMode = mode; screen('setup'); show('roomField', mode === 'online');
   $('setupTitle').textContent = mode === 'online' ? '🌐 Play Online' : '📖 Create your hero';
-  const sv = store.get(SAVE_KEY); $('inName').value = (sv && sv.name) || store.get('weatherHeroes.name') || ''; $('inRoom').value = store.get('weatherHeroes.room') || '';
+  const sv = store.get(SAVE_KEY); $('inName').value = (sv && sv.name) || store.get('weatherHeroes.name') || (student() && String(student().first_name || '').slice(0, 14)) || ''; $('inRoom').value = store.get('weatherHeroes.room') || '';
   selSkin = (sv && sv.skin) || 'a'; buildSkins();
   $('setupNote').textContent = mode === 'online' ? 'Everybody in the same room code plays together. Your score starts at 0.' : 'Your progress is saved on this computer.';
 }

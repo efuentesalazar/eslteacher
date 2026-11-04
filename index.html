@@ -1,269 +1,2623 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Weather Heroes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESL Teacher · Play & Learn English</title>
+<meta name="description" content="Juegos para aprender inglés por curso, palabra del día, desafío rápido y práctica de pronunciación.">
+<meta name="theme-color" content="#0b0b16">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<!-- Vista previa al compartir el enlace (WhatsApp, Facebook, Classroom) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://eslteacher.cl/">
+<meta property="og:title" content="ESL Teacher · Play. Learn. Speak.">
+<meta property="og:description" content="Juegos para aprender inglés por curso, palabra del día, desafío rápido y práctica de pronunciación.">
+<meta property="og:image" content="https://eslteacher.cl/assets/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="assets/mundos/isles.webp" media="(min-width: 761px)" fetchpriority="high">
+<link rel="preload" as="image" href="assets/mundos/m/isles.webp" media="(max-width: 760px)" fetchpriority="high">
 <style>
 :root{
-  --ink:#1f2a44; --paper:#fffdf7; --line:#1f2a44; --sky:#4aa8ff; --sun:#ffc93c; --leaf:#38b26a; --red:#ef5a4c; --snow:#e9f4ff;
-  --shadow:0 5px 0 rgba(31,42,68,.9);
+  --void:#000; --bone:#fff; --charcoal:#444345; --frost:#e2e2e2; --ash:#b8bab9;
+  --glass:rgba(8,8,20,.62); --line:rgba(226,226,226,.2);
+  --display:'Fredoka','Lexend',ui-rounded,system-ui,sans-serif;
+  --body:'Lexend',ui-sans-serif,system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --pad:clamp(16px,6vw,80px);
+  /* colores por acción */
+  --green:#58cc02; --green-d:#3f9a00;
+  --purple:#a560ff; --purple-d:#7434d1;
+  --yellow:#ffc800; --yellow-d:#d19a00;
+  --red:#ff4b4b; --red-d:#c9302c;
+  --ink:#10101c;
+  /* color del mundo actual (cambia al hacer scroll) */
+  --accent:#ffd23f; --accent-d:#c99a00;
+  --tabbar:0px;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;background:#87c8ff;font-family:Fredoka,system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none}
-canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
-button{font-family:inherit;cursor:pointer}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;background:var(--void)}
+body{background:var(--void);color:var(--bone);font-family:var(--body);font-weight:400;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:8px}
 .hidden{display:none!important}
+.cap{font-family:var(--body);font-weight:600;font-size:12px;line-height:1.3;letter-spacing:.06em;text-transform:uppercase;color:var(--frost)}
+.num{font-family:var(--mono);font-weight:700}
 
-/* blocky buttons and panels */
-.btn{border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-weight:600;font-size:18px;padding:10px 18px;box-shadow:var(--shadow);transition:transform .08s}
-.btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(31,42,68,.9)}
-.btn.primary{background:var(--sun)} .btn.blue{background:var(--sky);color:#fff} .btn.green{background:var(--leaf);color:#fff} .btn.red{background:var(--red);color:#fff}
-.btn.small{font-size:15px;padding:6px 12px;border-radius:10px}
-.panel{background:var(--paper);border:3px solid var(--line);border-radius:18px;box-shadow:0 7px 0 rgba(31,42,68,.9)}
+/* ---------- Escenario fijo: los mundos ---------- */
+#stage{position:fixed;inset:0;z-index:0;overflow:hidden;background:#000}
+.scene{position:absolute;inset:0;opacity:0;will-change:opacity,transform;transition:opacity .15s linear}
+.scene svg{position:absolute;inset:-6%;width:112%;height:112%}
+.scene .L{will-change:transform}
+.scene .photo{position:absolute;inset:0;overflow:hidden;animation:kenburns 40s ease-in-out infinite alternate}
+.scene .photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:68% 50%;will-change:transform;transform:scale(1.1)}
+.scene.has-photo .draw{display:none}
+.scene .fx{pointer-events:none;mix-blend-mode:screen}
+@keyframes kenburns{from{transform:scale(1) translateX(0)}to{transform:scale(1.07) translateX(-1.5%)}}
+@keyframes rise{from{transform:translateY(80px);opacity:0}20%{opacity:1}to{transform:translateY(-500px);opacity:0}}
+@keyframes blow{from{transform:translate(-200px,20px);opacity:0}30%{opacity:1}to{transform:translate(500px,-60px);opacity:0}}
+@keyframes firefly{0%,100%{transform:translate(0,0);opacity:.2}50%{transform:translate(18px,-26px);opacity:1}}
+.rise{animation:rise 12s linear infinite}.blow{animation:blow 12s linear infinite}.firefly{animation:firefly 5s ease-in-out infinite}
+/* Challenge Zone: disparos láser que cruzan la arena, chispas al impactar y luces que laten */
+@keyframes laser{0%{stroke-dashoffset:110;opacity:0}4%{opacity:1}30%{stroke-dashoffset:-2;opacity:1}36%,100%{stroke-dashoffset:-2;opacity:0}}
+@keyframes spark{0%,28%{opacity:0;transform:scale(.2)}31%{opacity:1;transform:scale(1)}44%,100%{opacity:0;transform:scale(2.4)}}
+@keyframes glowpulse{0%,100%{opacity:.25}50%{opacity:.85}}
+@keyframes sweep{from{transform:translateX(-500px)}to{transform:translateX(2100px)}}
+.sc-zone .photo img{filter:brightness(.72) saturate(1.1)}
+.laser{stroke-dasharray:14 110;animation:laser 3.6s cubic-bezier(.4,0,.6,1) infinite}
+.spark{transform-box:fill-box;transform-origin:center;animation:spark 3.6s ease-out infinite}
+.glowpulse{animation:glowpulse 2.6s ease-in-out infinite}
+.sweep{animation:sweep 9s linear infinite}
+#stage::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.35) 45%,rgba(0,0,0,0) 75%),
+             linear-gradient(0deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 40%)}
 
-/* full screens */
-.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:40;background:linear-gradient(#5fb6ff,#bfe6ff 60%,#9fdc8a 60%,#7cc56c)}
-#title,#setup,#info{background:linear-gradient(rgba(95,182,255,.25),rgba(20,40,90,.45))}
-.screen .box{width:min(560px,100%);max-height:100%;overflow:auto;touch-action:pan-y;overscroll-behavior:contain;padding:24px;text-align:center}
-.logo{font-size:clamp(38px,8vw,64px);font-weight:700;line-height:1;margin:6px 0 4px;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 6px 0 var(--ink)}
-.subtitle{font-size:18px;margin-bottom:18px}
-.menu{display:grid;gap:12px;margin-top:12px}
-.menu .btn{font-size:21px;padding:14px}
-.weather-strip{font-size:34px;letter-spacing:6px;margin:4px 0 8px}
-.field{display:grid;gap:6px;text-align:left;margin:10px 0}
-.field input{font:inherit;font-size:18px;padding:10px 12px;border:3px solid var(--line);border-radius:12px}
-.skins{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
-.skins button{aspect-ratio:1;border:3px solid var(--line);border-radius:12px;font-size:12px;font-weight:600;background:#fff;padding:0;overflow:hidden}
-.skins button.sel{background:var(--sun);transform:scale(1.06)}
-.skins img{width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
-.btn{-webkit-touch-callout:none}
-#setup .btn{white-space:nowrap}
-.note{font-size:14px;opacity:.8;margin-top:8px}
-#esltStatus{opacity:1;padding:8px 12px;border-radius:12px;background:rgba(88,204,2,.18);line-height:1.4}
-#esltStatus.warn{background:rgba(255,200,0,.25)}#esltStatus a{color:inherit;font-weight:800}
-#loading .bar{height:22px;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;margin-top:14px}
-#loading .bar div{height:100%;width:0;background:var(--leaf);transition:width .2s}
+/* ---------- Navegación por mundos (portal) ---------- */
+body.paged main > section{display:none}
+body.paged main > section.active{display:flex}
+body.paged .scene{transition:none}
+section.portal{position:fixed;inset:0;z-index:7;overflow:hidden;will-change:clip-path;background:radial-gradient(120% 90% at 70% 40%,var(--accent-d),#05060a 75%)}
+section.portal.tall{justify-content:flex-start}
+section.portal > .scene{z-index:-1}
+section.portal::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.35) 45%,rgba(0,0,0,0) 75%),
+             linear-gradient(0deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 40%)}
+#portal-ring{position:fixed;left:0;top:0;width:0;height:0;z-index:8;border-radius:50%;pointer-events:none;opacity:0;
+  transform:translate(-50%,-50%) scale(0);will-change:transform,opacity;
+  box-shadow:0 0 0 3px var(--accent),0 0 40px 8px color-mix(in srgb,var(--accent) 55%,transparent),inset 0 0 50px 10px color-mix(in srgb,var(--accent) 40%,transparent)}
+.next-world{align-self:flex-start;margin-top:4px}
 
-/* HUD */
-#hud{position:fixed;inset:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);pointer-events:none;z-index:10}
-#hud > *{pointer-events:auto}
-#zoneCard{position:absolute;left:12px;top:12px;padding:10px 14px;min-width:220px;max-width:min(330px,60vw)}
-#zoneCard .zn{font-weight:700;font-size:19px}
-#zoneCard .zw{font-size:15px;margin-top:2px}
-#zoneCard .row{display:flex;gap:10px;align-items:center;margin-top:6px;font-size:14px}
-.meter{flex:1;height:12px;border:2px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
-.meter div{height:100%;background:var(--leaf);transition:width .2s}
-#topRight{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-#minimap{width:170px;height:170px;border-radius:50%;border:3px solid var(--line);box-shadow:0 5px 0 rgba(31,42,68,.9);background:#9fdc8a}
-#stats{padding:6px 12px;font-weight:600;font-size:17px;display:flex;gap:12px}
-#quest{position:absolute;left:12px;top:140px;padding:10px 14px;max-width:min(330px,62vw);font-size:15px}
-#quest b{display:block;font-size:13px;text-transform:uppercase;letter-spacing:1px;opacity:.7}
-#prompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);padding:8px 16px;font-weight:600;font-size:18px;white-space:nowrap}
-#toast{position:absolute;left:50%;top:16px;transform:translateX(-50%);padding:10px 18px;font-weight:600;font-size:18px;max-width:90vw;text-align:center;transition:opacity .3s}
-#bottomBar{position:absolute;right:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-#feel{position:absolute;left:50%;top:40%;transform:translateX(-50%);font-size:32px;pointer-events:none;filter:drop-shadow(0 3px 0 #0005)}
-#callBox{position:absolute;left:50%;top:70px;transform:translateX(-50%);padding:10px 16px;font-size:17px;font-weight:600;text-align:center;max-width:92vw;background:#fff4c9}
-#board{position:absolute;right:12px;top:240px;padding:8px 12px;font-size:14px;min-width:170px;max-height:40vh;overflow:auto}
-#board b{display:block;margin-bottom:4px}
-#chatLog{position:absolute;left:12px;bottom:12px;width:min(320px,55vw);font-size:14px;display:flex;flex-direction:column;gap:4px;pointer-events:none}
-#chatLog div{background:#fffdf7e6;border:2px solid var(--line);border-radius:10px;padding:4px 8px}
+/* animaciones del arte */
+@keyframes drift{from{transform:translateX(-120px)}to{transform:translateX(120px)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes twinkle{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes fall{from{transform:translateY(-120px)}to{transform:translateY(1000px)}}
+@keyframes wave{0%,100%{transform:skewX(0) translateX(0)}50%{transform:skewX(-6deg) translateX(40px)}}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.drift{animation:drift 26s ease-in-out infinite alternate}
+.drift2{animation:drift 38s ease-in-out infinite alternate-reverse}
+.bob{animation:bob 7s ease-in-out infinite}
+.twinkle{animation:twinkle 3.2s ease-in-out infinite}
+.fall{animation:fall 9s linear infinite}
+.wave{animation:wave 9s ease-in-out infinite;transform-origin:50% 100%}
+.pulse{animation:pulse 2.4s ease-in-out infinite}
 
-/* dialog */
-#dialog{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(720px,calc(100% - 32px));padding:16px 18px 14px;z-index:30}
-#dialog .who{font-weight:700;font-size:18px;color:#2a63c9}
-#dialog .txt{font-size:20px;margin:6px 0 10px;line-height:1.35}
-#dialog .es{font-size:14px;opacity:.75;margin:-4px 0 10px}
-#dialog .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+/* ---------- Nav ---------- */
+nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:8px;
+  padding:12px var(--pad);border-bottom:1px solid rgba(226,226,226,.12);
+  background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0))}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:17px;white-space:nowrap}
+.logo i{width:14px;height:14px;border:2px solid var(--accent);transform:rotate(45deg);display:inline-block;position:relative;border-radius:3px;transition:border-color .4s}
+.logo i::after{content:"";position:absolute;inset:3px;background:var(--accent);border-radius:1px;transition:background .4s}
+.links{display:flex;gap:4px;margin:0 auto}
+.links a{font-weight:500;font-size:14px;padding:8px 14px;border-radius:999px;transition:background .2s,color .2s}
+.links a:hover{background:rgba(255,255,255,.1)}
+.links a.on{background:var(--accent);color:var(--ink)}
 
-/* modal (exercises, wardrobe) */
-#modal{position:fixed;inset:0;z-index:35;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(20,30,60,.45)}
-#modal .box{width:min(760px,100%);max-height:100%;overflow:auto;touch-action:pan-y;overscroll-behavior:contain;padding:20px 22px}
-.mhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
-.mhead .kind{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;background:var(--sun);border:2px solid var(--line);border-radius:8px;padding:2px 8px}
-.mhead h2{margin:0;font-size:22px}
-.progress{display:flex;gap:4px;margin:6px 0 12px}
-.progress span{flex:1;height:8px;border-radius:5px;background:#dde3ee;border:1px solid #0002}
-.progress span.on{background:var(--leaf)}
-.q{font-size:22px;font-weight:600;margin:8px 0 12px}
-.pic{font-size:64px;text-align:center;margin:4px 0}
-.opts{display:grid;gap:10px;grid-template-columns:1fr 1fr}
-.opts .btn{text-align:left;font-size:18px;font-weight:500}
-.opts .btn.ok{background:var(--leaf);color:#fff} .opts .btn.no{background:#f3b1aa;opacity:.6}
-.reading{background:#fff;border:2px dashed #8aa;border-radius:12px;padding:12px 16px;font-size:18px;line-height:1.5;margin-bottom:10px}
-.reading p{margin:0 0 8px}
-.feedback{margin-top:12px;font-size:17px;min-height:24px;font-weight:500}
-.feedback.good{color:#1f8a4c} .feedback.bad{color:#b8382c}
-.bank,.built{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;padding:8px;border-radius:12px}
-.built{border:3px dashed #9ab;background:#fff;margin-bottom:10px}
-.chip{border:3px solid var(--line);border-radius:10px;background:#fff;font-size:19px;font-weight:600;padding:6px 12px;box-shadow:0 3px 0 rgba(31,42,68,.9)}
-.chip.used{visibility:hidden}
-.gaptext{font-size:20px;line-height:2.1;background:#fff;border-radius:12px;padding:10px 14px;border:2px solid #cbd}
-.slot{display:inline-block;min-width:90px;border-bottom:3px solid var(--ink);text-align:center;font-weight:700;color:#2a63c9;padding:0 6px;cursor:pointer}
-.slot.cur{background:#fff4c9}
-.slot.ok{color:#1f8a4c;border-color:#1f8a4c} .slot.bad{color:#b8382c;border-color:#b8382c}
-.match{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.match .col{display:grid;gap:8px}
-.match .chip{text-align:center;width:100%}
-.match .chip.sel{background:var(--sun)} .match .chip.done{background:var(--leaf);color:#fff;opacity:.7}
-.match .emo{font-size:30px;padding:2px}
-.mfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
-.hint{font-size:14px;opacity:.8}
-.stars{font-size:44px;letter-spacing:6px;text-align:center;margin:10px 0}
-.wardrobe{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
-.wardrobe .chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;font-size:16px}
-.wardrobe .chip .e{font-size:34px}
-.wardrobe .chip.on{background:var(--leaf);color:#fff}
-.need{background:#fff;border:2px solid #cbd;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:16px}
-.cert{border:6px double var(--ink);border-radius:16px;padding:20px;text-align:center;background:#fffbe6}
-.cert h1{margin:0;font-size:34px}
-.cert .nm{font-size:30px;font-weight:700;color:#2a63c9;margin:10px 0}
-.phr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* Botones "jugosos": color, esquinas redondeadas y relieve que se hunde al presionar */
+.btn{--b:var(--accent);--bd:var(--accent-d);--fg:var(--ink);
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;
+  background:var(--b);color:var(--fg);border:0;border-radius:14px;padding:11px 22px;
+  font-family:var(--body);font-weight:700;font-size:14px;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;
+  box-shadow:0 4px 0 var(--bd),0 8px 18px rgba(0,0,0,.25);transform:translateY(0);
+  transition:transform .12s ease,box-shadow .12s ease,filter .2s,background .4s}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 5px 0 var(--bd),0 10px 22px rgba(0,0,0,.3)}
+.btn:active{transform:translateY(4px);box-shadow:0 0 0 var(--bd),0 2px 6px rgba(0,0,0,.25)}
+.btn.play{--b:var(--green);--bd:var(--green-d);--fg:#fff}
+.btn.talk{--b:var(--purple);--bd:var(--purple-d);--fg:#fff}
+.btn.hint{--b:var(--yellow);--bd:var(--yellow-d);--fg:var(--ink)}
+.btn.ghost{--b:rgba(255,255,255,.1);--bd:rgba(0,0,0,.45);--fg:var(--bone);box-shadow:inset 0 0 0 2px rgba(255,255,255,.22),0 4px 0 var(--bd)}
+.btn.ghost:hover{--b:rgba(255,255,255,.18);box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 5px 0 var(--bd)}
+.btn.ghost:active{box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 0 0 var(--bd)}
+.btn.hint.ghost{--fg:var(--yellow);box-shadow:inset 0 0 0 2px rgba(255,200,0,.5),0 4px 0 var(--bd)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none}
+.btn.sm{min-height:40px;padding:8px 14px;font-size:12px;border-radius:12px}
+.icon-btn{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:18px;background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18);transition:background .2s}
+.icon-btn:hover{background:rgba(255,255,255,.2)}
+.links a{white-space:nowrap}
+@media (max-width:1120px){.links{display:none}}
+@media (max-width:900px){nav .btn.navplay{display:none}}
 
-/* touch controls */
-#touch{position:fixed;inset:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);pointer-events:none;z-index:12}
-#joy{position:absolute;left:24px;bottom:24px;width:130px;height:130px;border-radius:50%;background:#ffffff55;border:3px solid #1f2a4488;pointer-events:auto}
-#joy .k{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#fff;border:3px solid var(--line)}
-#tbtns{position:absolute;right:20px;bottom:90px;display:grid;grid-template-columns:repeat(2,64px);gap:10px;pointer-events:auto}
-#tbtns button{width:64px;height:64px;border-radius:50%;border:3px solid var(--line);background:#fffd;font-size:24px;font-weight:700}
-@media (max-width:700px){
-  #minimap{width:120px;height:120px}
-  #zoneCard{min-width:0}
-  #quest{top:150px;font-size:14px}
-  .opts{grid-template-columns:1fr}
-  #board{top:190px;min-width:0;width:150px;font-size:12px;padding:6px 8px}
-  #callBox{top:auto;bottom:240px;width:calc(100% - 24px);font-size:15px}
-  #hud:has(#board:not(.hidden)) #quest{max-width:calc(100% - 190px)}
-  .q{font-size:19px}
-  #dialog .txt{font-size:18px}
+/* Ficha del jugador en la barra superior */
+.me{display:flex;align-items:center;gap:10px;height:46px;padding:0 14px 0 6px;border-radius:999px;background:rgba(0,0,0,.45);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.18);font-weight:600;font-size:14px;transition:background .2s}
+.me:hover{background:rgba(255,255,255,.14)}
+.me .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:19px;background:var(--accent);transition:background .4s}
+.me .pill{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-weight:700}
+.me .pill.bump{animation:bump .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+nav .tools{display:flex;gap:8px;align-items:center;margin-left:auto}
+.links + .tools{margin-left:0}
+@media (max-width:560px){.me .pill.xp{display:none}}
+
+/* ---------- HUD de mundos ---------- */
+#hud{position:fixed;right:var(--pad);top:50%;transform:translateY(-50%);z-index:15;display:flex;flex-direction:column;gap:14px;align-items:flex-end}
+#hud a{display:flex;align-items:center;gap:10px;font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.45);transition:color .3s}
+#hud a b{font-weight:400;opacity:0;transform:translateX(6px);transition:.3s}
+#hud a::after{content:"";width:18px;height:1px;background:currentColor;transition:width .3s}
+#hud a.on{color:var(--bone)}#hud a.on b,#hud a:hover b{opacity:1;transform:none}
+#hud a.on::after{width:40px}
+@media (max-width:1240px){#hud{display:none}}
+
+/* ---------- Secciones ---------- */
+main{position:relative;z-index:5}
+section{position:relative;min-height:100vh;min-height:100svh;padding:120px var(--pad) calc(90px + var(--tabbar));display:flex;flex-direction:column;justify-content:flex-end;gap:28px}
+/* color de cada mundo */
+#hero{--accent:#ffd23f;--accent-d:#c99a00}
+#worlds{--accent:#5fd3ff;--accent-d:#1f8fbf}
+#word{--accent:#ffa94d;--accent-d:#cc6b14}
+#challenge{--accent:#ff5fd2;--accent-d:#b8288f}
+#zone{--accent:#b98cff;--accent-d:#7a4fd0}
+#speak{--accent:#3dffb0;--accent-d:#12a874}
+#how{--accent:#a6e85b;--accent-d:#5f9e1c}
+.title{font-family:var(--display);font-size:clamp(54px,9vw,128px);line-height:.92;font-weight:600;letter-spacing:-.01em;text-shadow:0 4px 30px rgba(0,0,0,.45)}
+.title span{display:block;position:relative;padding-bottom:.1em;margin-bottom:.04em;width:max-content;max-width:100%}
+.title span::after{content:"";position:absolute;left:0;bottom:0;height:5px;border-radius:5px;width:38%;background:var(--accent);transform-origin:left;transform:scaleX(0);transition:transform 1.1s cubic-bezier(.2,.7,.1,1)}
+.in .title span::after{transform:scaleX(1)}
+.in .title span:nth-child(2)::after{transition-delay:.15s}.in .title span:nth-child(3)::after{transition-delay:.3s}
+.sub{font-size:clamp(20px,2.4vw,30px);line-height:1.05;max-width:620px}
+.lead{font-size:16px;line-height:1.5;color:rgba(255,255,255,.82);max-width:540px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.1,1)}
+.in .reveal{opacity:1;transform:none}
+.in .reveal.d1{transition-delay:.12s}.in .reveal.d2{transition-delay:.24s}.in .reveal.d3{transition-delay:.36s}
+#hero .reveal{transition-duration:.55s}
+#hero.in .reveal.d1{transition-delay:.06s}#hero.in .reveal.d2{transition-delay:.12s}
+
+/* panel de vidrio mate */
+.panel{background:var(--glass);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:22px;padding:22px;
+  backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px) saturate(130%);max-width:760px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.panel h3{font-size:26px;line-height:1.15;font-weight:500}
+.panel .head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+
+/* hero */
+#hero{justify-content:flex-end}
+#hero .scroll{position:absolute;right:var(--pad);bottom:40px}
+@media (max-width:900px){#hero .scroll{display:none}}
+
+/* mundos / cursos */
+.search{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:14px;padding:0 14px;margin-bottom:16px;transition:border-color .2s}
+.search:focus-within{border-color:var(--accent)}
+.search input{flex:1;background:none;border:0;outline:0;color:var(--bone);font-family:var(--body);font-size:15px;padding:13px 0}
+.search input::placeholder{color:rgba(255,255,255,.5)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.chip{font-family:var(--body);font-weight:600;font-size:13px;padding:8px 14px;min-height:40px;border:2px solid var(--line);border-radius:999px;display:flex;gap:8px;align-items:center;transition:border-color .2s,background .2s,transform .12s}
+.chip:hover{border-color:rgba(255,255,255,.55)}
+.chip:active{transform:scale(.96)}
+.chip.on{background:var(--accent);color:var(--ink);border-color:var(--accent)}
+.chip small{font-family:var(--mono);font-size:11px;font-weight:700;opacity:.7;background:rgba(0,0,0,.2);border-radius:999px;padding:1px 7px}
+.games{display:grid;gap:10px}
+.game{display:grid;grid-template-columns:56px 1fr auto;gap:16px;align-items:center;padding:14px 16px;background:rgba(0,0,0,.45);
+  border:2px solid rgba(255,255,255,.1);border-radius:18px;transition:transform .2s cubic-bezier(.3,1.4,.5,1),border-color .2s,background .2s,box-shadow .2s}
+.game:hover{transform:translateY(-3px);border-color:var(--accent);background:rgba(255,255,255,.07);box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 4px color-mix(in srgb,var(--accent) 25%,transparent)}
+.game .ic{font-size:30px;width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.1);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.game:hover .ic{transform:rotate(-8deg) scale(1.12)}
+/* Tarjeta con captura del juego */
+.game.has-shot{grid-template-columns:minmax(150px,210px) 1fr auto;padding:10px 16px 10px 10px}
+.thumb{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#111;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.01);transition:transform .6s cubic-bezier(.2,.7,.1,1),filter .3s}
+.game:hover .thumb img{transform:scale(1.1)}
+.thumb .ic{position:absolute;left:6px;bottom:6px;width:36px;height:36px;font-size:20px;border-radius:10px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.thumb::after{content:"▶";position:absolute;inset:0;display:grid;place-items:center;font-size:34px;color:#fff;background:rgba(0,0,0,.35);opacity:0;transition:opacity .25s;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.game:hover .thumb::after{opacity:1}
+@media (max-width:640px){
+  .game.has-shot{grid-template-columns:1fr;padding:10px}
+  .game.has-shot .btn{grid-column:auto}
+}
+/* Transición al entrar a un juego: la captura crece hasta llenar la pantalla */
+.launch{position:fixed;z-index:80;border-radius:12px;overflow:hidden;background:#000 center/cover no-repeat;
+  transition:left .6s cubic-bezier(.7,0,.2,1),top .6s cubic-bezier(.7,0,.2,1),width .6s cubic-bezier(.7,0,.2,1),height .6s cubic-bezier(.7,0,.2,1),border-radius .6s;
+  box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.launch.full{left:0!important;top:0!important;width:100vw!important;height:100vh!important;border-radius:0}
+.launch::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.15),rgba(0,0,0,.65));opacity:0;transition:opacity .5s .3s}
+.launch.full::before{opacity:1}
+.launch b{position:absolute;left:50%;top:50%;transform:translate(-50%,-30%);opacity:0;transition:opacity .4s .45s,transform .5s .45s;
+  font-family:var(--display);font-weight:600;font-size:clamp(28px,5vw,64px);text-align:center;text-shadow:0 4px 24px rgba(0,0,0,.7);width:90%}
+.launch b small{display:block;font-family:var(--body);font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin-top:10px;opacity:.85}
+.launch.full b{opacity:1;transform:translate(-50%,-50%)}
+.game h4{font-family:var(--display);font-size:22px;font-weight:600;line-height:1.1;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.game p{font-size:14px;color:rgba(255,255,255,.75);margin-top:4px;line-height:1.4}
+.game .cap{color:var(--accent);margin-top:6px;display:block}
+.game.soon{border-style:dashed;opacity:.65;cursor:default}
+.game.soon:hover{transform:none;box-shadow:none;border-color:rgba(255,255,255,.25)}
+.tag{font-family:var(--body);font-weight:700;font-size:11px;letter-spacing:.05em;text-transform:uppercase;background:var(--green);color:#fff;border-radius:999px;padding:3px 9px}
+.empty{padding:28px;text-align:center;color:rgba(255,255,255,.75);background:rgba(0,0,0,.45);border-radius:18px;font-size:15px}
+@media (max-width:560px){.game{grid-template-columns:48px 1fr}.game .ic{width:48px;height:48px;font-size:26px}.game .btn{grid-column:1/-1}}
+
+/* palabra del día */
+.word{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;margin-bottom:18px}
+.word .em{font-size:72px;line-height:1}
+.word .w{font-family:var(--display);font-weight:600;font-size:clamp(46px,7vw,88px);line-height:.9}
+.word .es{font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-top:10px}
+.ex{font-size:20px;line-height:1.35;border-left:4px solid var(--accent);border-radius:2px;padding-left:14px;margin-bottom:18px;color:rgba(255,255,255,.92)}
+
+/* desafío */
+.stats{display:flex;gap:24px}
+.stat b{display:block;font-family:var(--mono);font-size:30px;line-height:1;font-weight:700}
+.q{font-family:var(--display);font-weight:500;font-size:clamp(22px,3vw,32px);line-height:1.2;margin-bottom:16px}
+.q em{font-style:normal;color:var(--accent);border-bottom:3px solid var(--accent)}
+.wp{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
+.wp .hint{font-size:14px;color:var(--ash);margin-top:4px}
+.gap{font-size:clamp(18px,2.4vw,22px);line-height:1.4;margin:10px 0 12px}
+.gap b{display:inline-block;min-width:90px;border-bottom:3px dashed var(--accent);font-weight:500;color:var(--accent);text-align:center}
+.wp-msg{min-height:22px;font-size:15px;line-height:1.45;margin-top:10px}
+.wp-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.qtag{font-family:var(--body);font-weight:700;font-size:11px;letter-spacing:.05em;text-transform:uppercase;background:var(--yellow);color:var(--ink);border-radius:999px;padding:3px 9px;margin-right:8px;vertical-align:middle;white-space:nowrap}
+.qtag.hard{background:var(--red);color:#fff}
+.opts{display:grid;gap:10px;margin-bottom:16px}
+.opt{display:flex;gap:14px;align-items:center;text-align:left;min-height:56px;padding:12px 16px;border:2px solid rgba(255,255,255,.18);border-radius:16px;font-size:18px;font-weight:500;
+  background:rgba(255,255,255,.04);box-shadow:0 4px 0 rgba(0,0,0,.4);transition:transform .12s,box-shadow .12s,background .2s,border-color .2s}
+.opt i{font-style:normal;font-family:var(--mono);font-weight:700;font-size:13px;border:2px solid rgba(255,255,255,.25);border-radius:10px;width:30px;height:30px;display:grid;place-items:center;flex:none}
+.opt:hover{border-color:var(--accent);background:rgba(255,255,255,.08)}
+.opt:active{transform:translateY(4px);box-shadow:0 0 0 rgba(0,0,0,.4)}
+.opt.ok{background:var(--green);color:#fff;border-color:var(--green);box-shadow:0 4px 0 var(--green-d);animation:pop .4s cubic-bezier(.3,1.6,.5,1)}.opt.ok i{border-color:#fff}
+.opt.bad{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 4px 0 var(--red-d);text-decoration:line-through}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
+.shake{animation:shake .45s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+.streakfire{display:inline-block}
+.streakfire.bump{animation:bump .5s cubic-bezier(.3,1.6,.5,1)}
+
+/* entrenador de pronunciación */
+.trainer{max-width:860px}
+.target{border:2px solid rgba(255,255,255,.12);border-radius:18px;padding:20px;margin-bottom:16px;background:rgba(0,0,0,.35)}
+.target .phrase{font-family:var(--display);font-weight:600;font-size:clamp(28px,4vw,46px);line-height:1.1;margin:8px 0 6px}
+.target .meaning{font-size:14px;color:rgba(255,255,255,.7)}
+.own{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.own input{flex:1;min-width:180px;min-height:46px;background:rgba(0,0,0,.25);border:2px solid var(--line);border-radius:14px;color:var(--bone);font-family:var(--body);font-size:16px;padding:10px 14px;outline:0;transition:border-color .2s}
+.own input:focus{border-color:var(--accent)}
+/* Botón GRABAR protagonista */
+.voice-sel{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.voice-sel select{flex:1;min-width:200px;min-height:42px;background:rgba(0,0,0,.3);border:2px solid var(--line);border-radius:12px;color:var(--bone);font-family:var(--body);font-size:14px;padding:6px 10px;outline:0}
+.voice-sel select:focus{border-color:var(--accent)}
+.voice-sel option{background:#141428}
+.rec{--b:var(--red);--bd:var(--red-d);--fg:#fff;position:relative;width:100%;min-height:68px;padding:18px;font-size:17px;border-radius:20px}
+.rec.live{--b:#fff;--bd:#bbb;--fg:var(--red);animation:recpulse 1.4s ease-out infinite}
+@keyframes recpulse{0%{box-shadow:0 4px 0 var(--bd),0 0 0 0 rgba(255,75,75,.7)}100%{box-shadow:0 4px 0 var(--bd),0 0 0 22px rgba(255,75,75,0)}}
+.bars{display:none;gap:3px;align-items:center;height:16px}
+.rec.live .bars{display:inline-flex}
+.bars i{width:3px;height:100%;background:currentColor;animation:eq 0.9s ease-in-out infinite}
+.bars i:nth-child(2){animation-delay:.15s}.bars i:nth-child(3){animation-delay:.3s}.bars i:nth-child(4){animation-delay:.45s}
+@keyframes eq{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
+.heard{font-size:15px;line-height:1.5;color:rgba(255,255,255,.8);margin:14px 0;min-height:20px}
+.fb{border-top:1px solid var(--line);margin-top:16px;padding-top:18px;display:grid;gap:16px}
+.score{display:flex;align-items:flex-end;gap:16px}
+.score b{font-family:var(--mono);font-size:clamp(64px,9vw,104px);line-height:.8;font-weight:700;color:var(--accent)}
+.score .meter{flex:1;height:12px;border-radius:12px;background:rgba(255,255,255,.12);position:relative;margin-bottom:10px;overflow:hidden}
+.score .meter i{position:absolute;left:0;top:0;bottom:0;border-radius:12px;background:linear-gradient(90deg,var(--yellow),var(--green));transition:width 1s cubic-bezier(.2,.7,.1,1)}
+.teacher{display:grid;grid-template-columns:44px 1fr;gap:14px}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--ink);display:grid;place-items:center;font-size:20px}
+.teacher p{font-size:17px;line-height:1.45}
+.teacher .en{font-size:14px;color:rgba(255,255,255,.65);margin-top:6px;font-style:italic}
+.wchips{display:flex;flex-wrap:wrap;gap:6px}
+.wc{font-weight:500;font-size:14px;padding:6px 12px;border:2px solid var(--line);border-radius:999px}
+.wc.ok{border-color:var(--green);background:rgba(88,204,2,.18)}
+.wc.unclear{border-style:dashed;border-color:var(--yellow);color:var(--yellow)}
+.wc.missing{opacity:.55;text-decoration:line-through}
+.snds{display:grid;gap:10px}
+.ipa{text-transform:none;font-family:var(--mono)}
+.snd{border:2px solid rgba(255,200,0,.45);background:rgba(255,200,0,.07);border-radius:16px;padding:14px 16px;display:grid;gap:8px}
+.snd-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.snd-h b{font-family:var(--mono);font-size:20px;color:var(--yellow)}
+.snd-h span{font-weight:600;font-size:14px;color:rgba(255,255,255,.8)}
+.snd-what{font-size:15px;line-height:1.45}
+.snd-how{font-size:14px;line-height:1.5;color:rgba(255,255,255,.85)}
+.snd-how .cap{display:block;margin-bottom:2px;color:var(--yellow)}
+.tips{display:grid;gap:10px;list-style:none}
+.tips li{display:grid;grid-template-columns:auto 1fr;gap:12px;font-size:15px;line-height:1.45}
+.tips li::before{content:"→";font-family:var(--mono);color:var(--frost)}
+.tips li b{font-weight:500}
+.hint{font-size:13px;color:var(--ash)}
+.history{font-family:var(--mono);font-size:12px;color:var(--ash)}
+.loading{font-size:13px;color:var(--frost)}
+.loading::after{content:"…";animation:pulse 1s infinite}
+.note{font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+
+/* cómo jugar */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:1000px}
+.steps div{background:rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.12);border-radius:20px;padding:20px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.steps b{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--ink);background:var(--accent);border-radius:999px;padding:4px 10px}
+.steps h4{font-family:var(--display);font-size:24px;font-weight:600;line-height:1.1;margin:16px 0 8px}
+.steps p{font-size:14px;line-height:1.45;color:rgba(255,255,255,.75)}
+@media (max-width:760px){.steps{grid-template-columns:1fr}}
+.toast{position:fixed;left:50%;bottom:calc(24px + var(--tabbar));transform:translate(-50%,20px);z-index:60;max-width:min(520px,calc(100% - 32px));
+  background:rgba(10,10,24,.92);border:2px solid var(--accent);border-radius:16px;padding:12px 16px;font-size:15px;line-height:1.4;
+  opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid rgba(226,226,226,.15);padding-top:16px;margin-top:20px}
+
+
+/* Challenge Zone */
+.zone{max-width:820px}
+.zn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.zn-card{display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center;text-align:left;padding:14px;border-radius:18px;
+  background:rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.12);transition:transform .2s cubic-bezier(.3,1.4,.5,1),border-color .2s,background .2s}
+.zn-card:hover{transform:translateY(-3px);border-color:var(--accent);background:rgba(255,255,255,.06)}
+.zn-card .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:26px;background:rgba(255,255,255,.1)}
+.zn-card b{display:block;font-family:var(--display);font-weight:600;font-size:18px;line-height:1.15}
+.zn-card small{display:block;font-size:13px;color:rgba(255,255,255,.7);margin-top:2px}
+.zn-card em{display:inline-block;font-style:normal;font-size:11px;font-weight:700;margin-top:6px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.1)}
+.zn-card em.good{background:var(--green);color:#fff}
+.zn-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.zn-top .cap{flex:1}
+.zn-count{font-size:15px;color:var(--accent)}
+.zn-bar{height:10px;border-radius:10px;background:rgba(255,255,255,.12);overflow:hidden;margin-bottom:16px}
+.zn-bar i{display:block;height:100%;width:0;border-radius:10px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .5s cubic-bezier(.2,.7,.1,1)}
+.zn-body{display:grid;gap:14px}
+.zn-q{font-family:var(--display);font-weight:500;font-size:clamp(20px,2.6vw,26px);line-height:1.3}
+.zn-q .gapb{display:inline-block;min-width:80px;border-bottom:3px dashed var(--accent);color:var(--accent);text-align:center}
+.zn-base{display:inline-block;font-family:var(--mono);font-weight:700;letter-spacing:.05em;background:var(--accent);color:var(--ink);border-radius:8px;padding:2px 10px;margin-left:6px;font-size:.8em}
+.zn-line{min-height:62px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;padding:10px;border-radius:16px;border:2px dashed rgba(255,255,255,.25);background:rgba(0,0,0,.2)}
+.zn-line.ok{border-style:solid;border-color:var(--green);background:rgba(88,204,2,.12)}
+.zn-line.bad{border-style:solid;border-color:var(--red);background:rgba(255,75,75,.1)}
+.zn-pool{display:flex;flex-wrap:wrap;gap:8px}
+.zn-chip{min-height:44px;padding:8px 14px;border-radius:12px;font-size:17px;font-weight:500;background:rgba(255,255,255,.1);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.2),0 3px 0 rgba(0,0,0,.4);transition:transform .12s}
+.zn-chip:active{transform:translateY(3px)}
+.zn-line .zn-chip{background:color-mix(in srgb,var(--accent) 28%,transparent);box-shadow:inset 0 0 0 2px var(--accent),0 3px 0 rgba(0,0,0,.4)}
+.zn-text{font-size:17px;line-height:2.1}
+.zn-text select{font:inherit;font-size:16px;min-height:40px;margin:0 2px;padding:2px 8px;border-radius:10px;color:var(--bone);background:rgba(0,0,0,.4);border:2px solid var(--accent);outline:0;vertical-align:middle}
+.zn-text select option{background:#141428}
+.zn-text select.ok{border-color:var(--green);background:rgba(88,204,2,.25)}
+.zn-text select.bad{border-color:var(--red);background:rgba(255,75,75,.2)}
+.zn-text .fixw{font-size:13px;font-weight:700;color:var(--green);margin-right:4px}
+.zn-words{display:flex;flex-wrap:wrap;gap:6px;font-size:19px}
+.zn-words button{padding:6px 10px;border-radius:10px;border:2px solid transparent;transition:background .15s,border-color .15s}
+.zn-words button:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3)}
+.zn-words button.bad{background:var(--red);color:#fff;text-decoration:line-through}
+.zn-words button.ok{background:var(--green);color:#fff}
+.zn-words button.miss{border-color:var(--yellow);border-style:dashed}
+.zn-fix{color:var(--green);font-weight:700}
+.zn-why{font-size:15px;line-height:1.5;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.06);border-left:4px solid var(--accent)}
+.zn-input{width:100%;min-height:50px;background:rgba(0,0,0,.3);border:2px solid var(--line);border-radius:14px;color:var(--bone);font-family:var(--body);font-size:18px;padding:10px 14px;outline:0}
+.zn-input:focus{border-color:var(--accent)}
+.zn-input.ok{border-color:var(--green)}.zn-input.bad{border-color:var(--red)}
+.zn-dict{font-size:18px;line-height:1.6}
+.zn-dict .w-ok{color:var(--green)}
+.zn-dict .w-bad{color:var(--red);text-decoration:underline wavy}
+.zn-dict .w-miss{color:var(--yellow);text-decoration:underline}
+.zn-reading{font-size:16px;line-height:1.65;padding:14px 16px;border-radius:16px;background:rgba(0,0,0,.25);max-height:300px;overflow:auto}
+.zn-reading h4{font-family:var(--display);font-weight:600;font-size:20px;margin-bottom:6px}
+.zn-rq{display:grid;gap:8px}
+.zn-rq p{font-weight:600}
+.zn-rq .opt{min-height:48px;font-size:16px}
+.zn-rq .opt.pick{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.zn-end{display:grid;gap:14px;text-align:center;justify-items:center}
+.zn-end .big{font-family:var(--mono);font-weight:700;font-size:clamp(56px,9vw,90px);line-height:1;color:var(--accent)}
+.zn-end .stars{font-size:38px;letter-spacing:6px}
+
+/* Confeti */
+#fx{position:fixed;inset:0;pointer-events:none;z-index:70}
+
+/* Barra inferior (solo celular) */
+.tabbar{display:none}
+@media (max-width:900px){
+  :root{--tabbar:68px}
+  .tabbar{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;
+    height:calc(var(--tabbar) + env(safe-area-inset-bottom));padding:6px 6px env(safe-area-inset-bottom);
+    background:rgba(10,10,24,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(255,255,255,.12)}
+  .tabbar a,.tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;
+    font-size:11px;font-weight:600;color:rgba(255,255,255,.7);transition:background .2s,color .2s}
+  .tabbar span{font-size:21px;line-height:1}
+  .tabbar .on{color:var(--ink);background:var(--accent)}
 }
 
-/* phone in landscape: short screen, keep HUD and touch buttons apart */
-@media (max-height:500px){
-  #zoneCard{left:8px;top:8px;padding:6px 10px;min-width:0;max-width:40vw}
-  #zoneCard .zn{font-size:16px} #zoneCard .zw{font-size:13px} #zoneCard .row{font-size:13px;margin-top:3px}
-  #quest{left:8px;top:96px;padding:6px 10px;font-size:13px;max-width:40vw}
-  #quest b{font-size:11px}
-  #topRight{right:8px;top:8px;gap:6px}
-  #minimap{width:92px;height:92px}
-  #stats{font-size:14px;padding:4px 8px;gap:8px}
-  #board{top:8px;right:112px;max-height:45vh;min-width:140px;font-size:13px}
-  #joy{left:16px;bottom:14px;width:110px;height:110px}
-  #joy .k{left:30px;top:30px}
-  #tbtns{right:12px;bottom:58px;grid-template-columns:repeat(2,52px);gap:8px}
-  #tbtns button{width:52px;height:52px;font-size:20px}
-  #tbtns #tAct{width:112px!important;height:46px}
-  #bottomBar{right:8px;bottom:8px}
-  #bottomBar .btn.small{padding:4px 10px;font-size:14px}
-  #callBox{top:8px;font-size:14px;max-width:46vw;padding:6px 10px}
-  #toast{font-size:15px;padding:6px 12px}
-  #prompt{bottom:18%;font-size:15px}
-  #chatLog{left:140px;bottom:8px;width:min(260px,34vw);font-size:12px}
-  #dialog{bottom:8px;padding:10px 14px 10px}
-  #dialog .txt{font-size:16px;margin:4px 0 6px} #dialog .who{font-size:15px}
-  #modal{padding:8px} #modal .box{padding:12px 16px}
-  .q{font-size:17px;margin:4px 0 8px} .pic{font-size:40px} .stars{font-size:32px}
-  .reading{font-size:15px;padding:8px 12px} .gaptext{font-size:16px;line-height:1.9}
-  .opts .btn{font-size:16px;padding:7px 12px} .chip{font-size:16px;padding:4px 10px}
-  .screen{padding:8px} .screen .box{padding:14px 18px}
-  .logo{font-size:36px} .weather-strip{font-size:24px;margin:0} .menu{grid-template-columns:1fr 1fr;gap:8px} .menu .btn{font-size:17px;padding:10px}
-  .skins{grid-template-columns:repeat(9,1fr);gap:6px}
+/* Ventana del perfil */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .25s}
+.modal.on{opacity:1;pointer-events:auto}
+.modal .box{position:relative;width:min(560px,100%);max-height:calc(100svh - 32px);overflow:auto;background:#141428;border:2px solid rgba(255,255,255,.14);
+  border-top:4px solid var(--accent);border-radius:24px;padding:24px;transform:translateY(20px) scale(.97);transition:transform .3s cubic-bezier(.3,1.4,.5,1)}
+.modal.on .box{transform:none}
+.modal h3{font-family:var(--display);font-weight:600;font-size:28px;margin-bottom:4px}
+.modal .x{position:absolute;top:14px;right:14px}
+.modal label{display:block;margin:16px 0 8px}
+.modal input,.modal select{width:100%;min-height:46px;background:rgba(0,0,0,.3);border:2px solid var(--line);border-radius:14px;color:var(--bone);font-family:var(--body);font-size:16px;padding:10px 14px;outline:0}
+.modal input:focus,.modal select:focus{border-color:var(--accent)}
+.modal select option{background:#141428}
+.avatars{display:flex;flex-wrap:wrap;gap:8px}
+.avatars button{width:48px;height:48px;border-radius:14px;font-size:26px;background:rgba(255,255,255,.08);border:2px solid transparent;transition:transform .15s,border-color .2s}
+.avatars button:hover{transform:scale(1.1)}
+.avatars button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 25%,transparent)}
+.pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.pstats div{background:rgba(255,255,255,.06);border-radius:16px;padding:12px;text-align:center}
+.pstats b{display:block;font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent)}
+.pstats span{font-size:12px;color:rgba(255,255,255,.7)}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:10px}
+.badge{border-radius:16px;padding:12px 8px;text-align:center;background:rgba(255,255,255,.05);border:2px dashed rgba(255,255,255,.15);font-size:12px;line-height:1.3;color:rgba(255,255,255,.55)}
+.badge i{display:block;font-style:normal;font-size:30px;margin-bottom:6px;filter:grayscale(1);opacity:.4}
+.badge.got{border:2px solid var(--yellow);background:rgba(255,200,0,.1);color:#fff}
+.badge.got i{filter:none;opacity:1}
+.login{margin-top:10px;padding:16px;border-radius:18px;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1)}
+.login label:first-of-type{margin-top:10px}
+.login .btn{width:100%;margin-top:4px}
+.login #l-pin{letter-spacing:.5em;font-family:var(--mono);font-size:20px}
+.who{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin-top:12px;padding:12px 14px;border-radius:18px;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);border:2px solid color-mix(in srgb,var(--accent) 50%,transparent)}
+.who .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--accent)}
+.who b{display:block;font-family:var(--display);font-weight:600;font-size:20px;line-height:1.1}
+.who .sync{display:block;font-size:12px;color:rgba(255,255,255,.75);margin-top:4px}
+.who .sync.warn{color:var(--yellow)}
+.hardlist{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.hardlist span{font-size:13px;padding:4px 10px;border-radius:999px;background:rgba(255,75,75,.18);border:1px solid rgba(255,75,75,.5)}
+
+/* Modo proyector: el panel ocupa toda la pantalla con letra gigante */
+.panel.proj{position:fixed;inset:0;z-index:45;max-width:none;width:100%;height:100%;border-radius:0;overflow:auto;
+  padding:clamp(24px,5vw,72px);background:rgba(8,8,20,.9);display:flex;flex-direction:column;justify-content:center;font-size:1.3em}
+.panel.proj .word .em{font-size:clamp(90px,14vw,200px)}
+.panel.proj .word .w{font-size:clamp(80px,13vw,220px)}
+.panel.proj .word .es{font-size:clamp(18px,2.4vw,32px)}
+.panel.proj .ex{font-size:clamp(26px,3.6vw,56px)}
+.panel.proj .wp{display:none}
+.panel.proj .q{font-size:clamp(34px,5vw,80px)}
+.panel.proj .opt{font-size:clamp(22px,3vw,44px);min-height:clamp(64px,9vh,110px)}
+.panel.proj .opt i{width:clamp(34px,4vw,56px);height:clamp(34px,4vw,56px);font-size:clamp(14px,1.6vw,24px)}
+.panel.proj .stat b{font-size:clamp(34px,4vw,64px)}
+.panel.proj #qz-next{align-self:flex-start}
+.proj-exit{display:none}
+.panel.proj .proj-exit{display:inline-flex;position:fixed;top:16px;right:16px;z-index:2}
+.panel.proj .proj-btn{display:none}
+body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none}
 }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
 
-<!-- LOADING -->
-<div id="loading" class="screen"><div class="box panel">
-  <div class="weather-strip">☀️🌧️❄️🌬️</div>
-  <div class="logo">Weather Heroes</div>
-  <div>Loading the world…</div>
-  <div class="bar"><div id="loadBar"></div></div>
-</div></div>
+<div id="stage" aria-hidden="true"></div>
 
-<!-- TITLE -->
-<div id="title" class="screen hidden"><div class="box panel">
-  <div class="weather-strip">☀️🌧️❄️🌬️</div>
-  <div class="logo">Weather Heroes</div>
-  <div class="subtitle">Unit 4 · What's the weather like?</div>
-  <div class="menu">
-    <button class="btn primary" id="bStory">📖 Story Mode</button>
-    <button class="btn blue" id="bOnline">🌐 Play Online</button>
-    <button class="btn" id="bHow">🎮 How to play</button>
-    <button class="btn small" id="bCredits">Credits</button>
+<nav>
+  <a class="logo" href="#hero"><i></i>ESL Teacher</a>
+  <div class="links">
+    <a href="#worlds">Worlds</a>
+    <a href="#word">Word of the day</a>
+    <a href="#challenge">Quick challenge</a>
+    <a href="#zone">Challenge Zone</a>
+    <a href="#speak">Speak</a>
   </div>
-  <div class="note" id="saveNote"></div>
-  <div class="note" id="esltStatus"></div>
-</div></div>
-
-<!-- SETUP (name + skin, room for online) -->
-<div id="setup" class="screen hidden"><div class="box panel">
-  <h2 id="setupTitle" style="margin:0 0 6px">Create your hero</h2>
-  <div class="field"><label for="inName"><b>What's your name?</b></label><input id="inName" maxlength="14" placeholder="Your name" autocomplete="off"></div>
-  <div class="field" id="roomField"><label for="inRoom"><b>Room code</b> <span class="hint">(your teacher gives you the code)</span></label><input id="inRoom" maxlength="12" placeholder="5A" autocomplete="off"></div>
-  <div class="field"><b>Choose your character</b><div class="skins" id="skins"></div></div>
-  <div class="menu" style="grid-template-columns:1fr 2fr">
-    <button class="btn" id="bBack">⬅ Back</button>
-    <button class="btn primary" id="bGo">Let's go! ▶</button>
+  <div class="tools">
+    <button class="icon-btn" id="mute" type="button" aria-label="Silenciar sonidos" title="Sonidos">🔊</button>
+    <button class="me" id="me" type="button" aria-label="Mi perfil">
+      <span class="av" id="me-av">🙂</span>
+      <span class="pill" id="me-streak" title="Racha de días">🔥<span>0</span></span>
+      <span class="pill xp" id="me-xp" title="Puntos de experiencia">⭐<span>0</span></span>
+    </button>
+    <a class="btn play navplay" href="#worlds">Play ▸</a>
   </div>
-  <div class="note" id="setupNote"></div>
-</div></div>
+</nav>
 
-<!-- HOW TO PLAY / CREDITS -->
-<div id="info" class="screen hidden"><div class="box panel" style="text-align:left">
-  <div id="infoBody"></div>
-  <div style="text-align:center;margin-top:14px"><button class="btn primary" id="bInfoOk">OK</button></div>
-</div></div>
+<!-- Barra inferior para celular -->
+<div class="tabbar" id="tabbar">
+  <a href="#worlds"><span>🎮</span>Games</a>
+  <a href="#word"><span>📒</span>Word</a>
+  <a href="#challenge"><span>⚡</span>Challenge</a>
+  <a href="#zone"><span>🧠</span>Zone</a>
+  <a href="#speak"><span>🎙</span>Speak</a>
+  <button type="button" id="tab-me"><span id="tab-av">🙂</span>Me</button>
+</div>
 
-<!-- HUD -->
-<div id="hud" class="hidden">
-  <div id="zoneCard" class="panel">
-    <div class="zn" id="zName">Sunnyvale Town</div>
-    <div class="zw" id="zWeather">It's sunny and warm.</div>
-    <div class="row"><span id="zTemp">🌡️ 20°C</span><span title="Comfort">😊</span><div class="meter"><div id="comfort" style="width:100%"></div></div></div>
-  </div>
-  <div id="quest" class="panel"><b id="qHead">Quest</b><span id="qText"></span></div>
-  <div id="topRight">
-    <canvas id="minimap" width="340" height="340"></canvas>
-    <div id="stats" class="panel"><span id="sStars">⭐ 0</span><span id="sCrys">💎 0/4</span><span id="sScore" class="hidden">🏆 0</span></div>
-  </div>
-  <div id="board" class="panel hidden"></div>
-  <div id="callBox" class="panel hidden"></div>
-  <div id="prompt" class="panel hidden"></div>
-  <div id="toast" class="panel hidden"></div>
-  <div id="feel" class="hidden"></div>
-  <div id="chatLog"></div>
-  <div id="bottomBar">
-    <button class="btn small hidden" id="bChat">💬 Say</button>
-    <button class="btn small" id="bListen" title="Listen to the weather">🔊</button>
-    <button class="btn small" id="bMenu">☰ Menu</button>
+<!-- Perfil del alumno (se guarda solo en este dispositivo) -->
+<div class="modal" id="profile" role="dialog" aria-modal="true" aria-labelledby="p-title">
+  <div class="box">
+    <button class="icon-btn x" id="p-close" type="button" aria-label="Cerrar">✕</button>
+    <h3 id="p-title">My profile · Mi perfil</h3>
+
+    <!-- Ingreso con curso + RUT + clave -->
+    <form id="login" class="login" autocomplete="off" novalidate>
+      <p class="hint">Ingresa para que tu profe reciba tus reportes.</p>
+      <label class="cap" for="l-section">Course · Curso</label>
+      <select id="l-section" required></select>
+      <label class="cap" for="l-rut">RUT</label>
+      <input id="l-rut" inputmode="text" maxlength="12" placeholder="Ej: 12345678-9" autocapitalize="characters" spellcheck="false">
+      <label class="cap" for="l-pin">Clave · 4 dígitos</label>
+      <input id="l-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••" autocomplete="off">
+      <p class="wp-msg" id="l-msg" aria-live="polite"></p>
+      <button class="btn play" id="l-go" type="submit">→ Entrar · Log in</button>
+      <p class="note" style="margin-top:10px">Tu clave te la entrega tu profesor. Tu RUT no se guarda en este dispositivo.</p>
+    </form>
+    <div id="who" class="who hidden">
+      <span class="av" id="who-av">🙂</span>
+      <div><b id="who-name"></b><span class="cap" id="who-sec"></span><span class="sync" id="sync">☁️ Guardado en la nube</span></div>
+      <button class="btn ghost sm" id="logout" type="button">Salir</button>
+    </div>
+
+    <label class="cap">Avatar</label>
+    <div class="avatars" id="p-avatars"></div>
+    <div class="pstats">
+      <div><b id="p-xp">0</b><span>⭐ XP</span></div>
+      <div><b id="p-streak">0</b><span>🔥 Días seguidos</span></div>
+      <div><b id="p-words">0</b><span>📒 Palabras completas</span></div>
+    </div>
+    <label class="cap">Medals · Medallas</label>
+    <div class="badges" id="p-badges"></div>
+    <div id="p-hard-wrap">
+      <label class="cap">My hard words · Mis palabras difíciles</label>
+      <div class="hardlist" id="p-hard"></div>
+    </div>
+    <div id="p-snd-wrap" class="hidden">
+      <label class="cap">Sounds to practice · Sonidos para practicar</label>
+      <div class="hardlist" id="p-snd"></div>
+    </div>
+    <div class="row" style="margin-top:20px">
+      <button class="btn play" id="p-save" type="button">✓ Save · Guardar</button>
+      <button class="btn talk" id="p-report" type="button">📤 Enviar reporte al profe</button>
+    </div>
+    <p class="note" id="p-report-note" style="margin-top:12px">“Enviar reporte al profe” manda tu progreso directo a tu profesor. Necesitas ingresar con tu RUT.</p>
   </div>
 </div>
 
-<div id="touch" class="hidden">
-  <div id="joy"><div class="k"></div></div>
-  <div id="tbtns"><button id="tRun">🏃</button><button id="tJump">⤒</button><button id="tAct" style="grid-column:span 2;width:138px;border-radius:32px">E · Talk</button></div>
-</div>
+<canvas id="fx" aria-hidden="true"></canvas>
 
-<div id="dialog" class="panel hidden">
-  <div class="who" id="dWho"></div>
-  <div class="txt" id="dTxt"></div>
-  <div class="es hidden" id="dEs"></div>
-  <div class="acts" id="dActs"></div>
-</div>
+<div id="hud"></div>
 
-<div id="modal" class="hidden"><div class="box panel" id="mBox"></div></div>
+<main>
+  <!-- 01 HERO -->
+  <section id="hero" data-scene="isles" data-name="Sky Isles">
+    <p class="cap reveal">ESL Teacher · English games · Juegos para aprender inglés</p>
+    <h1 class="title"><span>Play.</span><span>Learn.</span><span>Speak.</span></h1>
+    <p class="lead reveal d1">Elige tu nivel, entra al mundo y gana puntos respondiendo en inglés. Ahora también puedes grabar tu voz y practicar tu pronunciación.</p>
+    <div class="row reveal d2">
+      <a class="btn play" href="#worlds">▶ Explore worlds</a>
+      <a class="btn talk" href="#speak">🎙 Practice speaking</a>
+    </div>
+    <span class="cap scroll">Choose a world · Elige un mundo ↑</span>
+  </section>
 
-<script type="importmap">
-{ "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-} }
+  <!-- 02 CURSOS -->
+  <section id="worlds" data-scene="ice" data-name="Frost Keep">
+    <p class="cap reveal">Choose your level · Elige tu curso</p>
+    <h2 class="title"><span>Choose</span><span>your world</span></h2>
+    <div class="panel reveal d1">
+      <label class="search"><span class="cap">⌕</span><input id="q" type="search" placeholder="Search a game · Busca un juego" autocomplete="off"></label>
+      <div class="chips" id="courses"></div>
+      <div class="games" id="games"></div>
+    </div>
+  </section>
+
+  <!-- 03 PALABRA DEL DÍA -->
+  <section id="word" data-scene="dunes" data-name="Sun Dunes">
+    <p class="cap reveal">Word of the day · Palabra del día</p>
+    <h2 class="title"><span>Word of</span><span>the day</span></h2>
+    <div class="panel reveal d1" id="word-panel">
+      <button class="btn ghost proj-exit" type="button" data-proj-exit>✕ Salir · Esc</button>
+      <div class="head">
+        <span class="cap" id="w-day">Day 1 · 365</span>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost sm" id="w-prev" type="button" aria-label="Previous word">←</button>
+          <button class="btn ghost sm hidden" id="w-today" type="button">Today · Hoy</button>
+          <button class="btn ghost sm" id="w-next" type="button" aria-label="Next word">→</button>
+          <button class="btn ghost sm proj-btn" type="button" data-proj="word-panel" title="Mostrar en grande para la clase">📺 Proyectar</button>
+        </div>
+      </div>
+      <div class="word">
+        <div class="em" id="w-emoji">🌈</div>
+        <div><div class="w" id="w-word">rainbow</div><div class="es" id="w-es">arcoíris</div></div>
+      </div>
+      <p class="ex" id="w-ex"></p>
+      <div class="row">
+        <button class="btn talk" id="w-say" type="button">🔊 Listen</button>
+      </div>
+
+      <!-- Practicar la palabra del día -->
+      <div class="wp">
+        <span class="cap">Practice the word · Practica la palabra</span>
+        <div class="chips" id="wp-tabs" style="margin-top:10px">
+          <button class="chip on" data-p="complete" type="button">1 · Complete</button>
+          <button class="chip" data-p="write" type="button">2 · Write</button>
+          <button class="chip" data-p="say" type="button">3 · Say it</button>
+        </div>
+        <div class="wp-pane" data-p="complete">
+          <p class="hint">Complete the sentence · Completa la oración</p>
+          <p class="gap" id="wp-gap"></p>
+          <div class="own"><input id="wp-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the missing word…"><button class="btn play" id="wp-check" type="button">✓ Check</button></div>
+          <div class="row" style="margin-top:10px"><button class="btn hint sm" id="wp-hint" type="button">💡 Hint · Pista</button></div>
+          <p class="wp-msg" id="wp-msg1" aria-live="polite"></p>
+        </div>
+        <div class="wp-pane hidden" data-p="write">
+          <p class="hint">Write your own sentence with <b id="wp-word2"></b> · Escribe tu propia oración</p>
+          <div class="own"><input id="wp-sent" maxlength="160" autocomplete="off" placeholder="Example: I like…"><button class="btn play" id="wp-check2" type="button">✓ Check</button></div>
+          <p class="wp-msg" id="wp-msg2" aria-live="polite"></p>
+          <div class="row hidden" id="wp-sent-actions" style="margin-top:10px">
+            <button class="btn ghost sm" id="wp-sent-listen" type="button">🔊 Listen to it</button>
+            <button class="btn talk sm" id="wp-sent-say" type="button">🎙 Say it</button>
+          </div>
+        </div>
+        <div class="wp-pane hidden" data-p="say">
+          <p class="hint">Say it out loud and get your score · Dilo en voz alta y recibe tu puntaje</p>
+          <div class="row" style="margin-top:10px">
+            <button class="btn talk" id="wp-say-word" type="button">🎙 Say the word</button>
+            <button class="btn ghost" id="wp-say-ex" type="button">🎙 Say the example</button>
+          </div>
+        </div>
+        <div class="wp-foot">
+          <span class="cap" id="wp-progress"></span>
+          <button class="btn ghost sm" id="w-challenge" type="button">⚡ Quick challenge →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 DESAFÍO -->
+  <section id="challenge" data-scene="neon" data-name="Neon City">
+    <p class="cap reveal">Quick challenge · Desafío rápido</p>
+    <h2 class="title"><span>Quick</span><span>challenge</span></h2>
+    <div class="panel reveal d1" id="quiz-panel">
+      <button class="btn ghost proj-exit" type="button" data-proj-exit>✕ Salir · Esc</button>
+      <div class="chips" id="qz-modes">
+        <button class="chip on" data-q="recent" type="button">Recent words · Últimos 30 días</button>
+        <button class="chip" data-q="all" type="button">All 365 words</button>
+        <button class="chip" data-q="hard" type="button">🎯 My hard words <small id="qz-hard-n">0</small></button>
+        <button class="chip proj-btn" type="button" data-proj="quiz-panel" title="Mostrar en grande para la clase">📺 Proyectar</button>
+      </div>
+      <div class="head">
+        <span class="cap" id="qz-type">What does it mean? · ¿Qué significa?</span>
+        <div class="stats">
+          <div class="stat"><b id="qz-streak" class="streakfire">0</b><span class="cap">Streak · racha</span></div>
+          <div class="stat"><b id="qz-best">0</b><span class="cap">Best · récord</span></div>
+        </div>
+      </div>
+      <p class="q" id="qz-q"></p>
+      <div class="opts" id="qz-opts"></div>
+      <button class="btn ghost" id="qz-next" type="button">Next →</button>
+    </div>
+  </section>
+
+  <!-- 04b CHALLENGE ZONE: ejercicios más desafiantes por nivel (datos en ejercicios.js) -->
+  <section id="zone" data-scene="zone" data-name="Challenge Zone">
+    <p class="cap reveal">New · Challenge Zone · Ejercicios para subir de nivel</p>
+    <h2 class="title"><span>Challenge</span><span>zone</span></h2>
+    <p class="lead reveal d1">Ordena oraciones, gramática, vocabulario en contexto, dictado y lectura. Elige tu nivel y completa rondas para ganar XP.</p>
+    <div class="panel zone reveal d2">
+      <div class="chips" id="zn-levels"></div>
+      <div id="zn-menu" class="zn-grid"></div>
+      <div id="zn-play" class="hidden">
+        <div class="zn-top">
+          <button class="btn ghost sm" id="zn-back" type="button">← Menú</button>
+          <span class="cap" id="zn-title"></span>
+          <span class="zn-count num" id="zn-count"></span>
+        </div>
+        <div class="zn-bar"><i id="zn-bar"></i></div>
+        <div id="zn-body" class="zn-body"></div>
+        <p class="wp-msg zn-msg" id="zn-msg" aria-live="polite"></p>
+        <div class="row" id="zn-foot"></div>
+      </div>
+      <div id="zn-end" class="hidden"></div>
+    </div>
+  </section>
+
+  <!-- 05 PRÁCTICA DE PRONUNCIACIÓN (gratis, funciona en el navegador) -->
+  <section id="speak" data-scene="aurora" data-name="Aurora Lake">
+    <p class="cap reveal">New · Pronunciation practice · Práctica de pronunciación</p>
+    <h2 class="title"><span>Speak</span><span>& shine</span></h2>
+    <p class="lead reveal d1">Escucha, graba tu voz y descubre qué palabras dijiste bien, qué sonidos mejorar y cómo hacerlo.</p>
+    <div class="panel trainer reveal d2">
+      <div class="chips" id="modes">
+        <button class="chip on" data-m="words" type="button">Words</button>
+        <button class="chip" data-m="sentences" type="button">Sentences</button>
+        <button class="chip" data-m="twisters" type="button">Tongue twisters</button>
+        <button class="chip" data-m="own" type="button">My own · Mi frase</button>
+      </div>
+      <div class="target">
+        <span class="cap">Say this · Di esto</span>
+        <p class="phrase" id="t-phrase">rainbow</p>
+        <p class="meaning" id="t-meaning"></p>
+        <div class="own hidden" id="own">
+          <input id="own-in" maxlength="160" placeholder="Write a word or sentence in English…">
+          <button class="btn" id="own-set" type="button">Use</button>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn talk" id="t-listen" type="button">🔊 Listen</button>
+          <button class="btn ghost" id="t-slow" type="button">🐢 Slow</button>
+          <button class="btn ghost" id="t-new" type="button">↻ New phrase</button>
+        </div>
+        <label class="voice-sel hidden" id="voice-wrap"><span class="cap">🗣 Voice · Voz</span><select id="voice-sel" aria-label="Voz de lectura"></select></label>
+      </div>
+      <button class="btn rec" id="rec" type="button"><span class="bars"><i></i><i></i><i></i><i></i></span><span id="rec-label">● Record · Grabar</span></button>
+      <p class="heard" id="heard"></p>
+      <p class="note" id="sr-note"></p>
+      <div class="fb hidden" id="fb"></div>
+      <p class="history" id="history"></p>
+    </div>
+  </section>
+
+  <!-- 06 CÓMO JUGAR -->
+  <section id="how" data-scene="forest" data-name="Dawn Woods">
+    <p class="cap reveal">How to play · Cómo jugar</p>
+    <h2 class="title"><span>How to</span><span>play</span></h2>
+    <p class="sub reveal d1">Tres pasos y estás jugando.</p>
+    <div class="steps reveal d2">
+      <div><b>01</b><h4>Choose your course</h4><p>Elige tu curso entre los mundos de arriba.</p></div>
+      <div><b>02</b><h4>Pick a game, press Play</h4><p>Escoge un juego y entra al mundo.</p></div>
+      <div><b>03</b><h4>Read, listen, speak, win</h4><p>Lee, escucha y responde en inglés para ganar puntos. ¡Y graba tu voz para practicar tu pronunciación!</p></div>
+    </div>
+    <div class="row reveal d3">
+      <button class="btn hidden" id="install" type="button">📲 Instalar app · Install</button>
+    </div>
+    <div class="foot">
+      <span class="cap">© eslteacher.cl · Made with ❤️ for my students</span>
+      <a class="cap" href="#hero">↑ Back to top · Volver</a>
+    </div>
+  </section>
+</main>
+
+<script src="palabras.js"></script>
+<script src="ejercicios.js"></script>
+<script>
+/* =====================================================================
+   DATOS — edita aquí tus cursos, juegos y palabras (igual que antes)
+   ===================================================================== */
+const COURSES = [
+  { id:"5basico", num:"5°", level:"Básico", folder:"5° BASICO", icon:"☀️",
+    games:[
+      { title:"Weather Heroes", desc:"3D adventure! Fix the Weather Machine, wear the right clothes and play online with your class.", icon:"🌈", unit:"Unit 4", file:"Weather_Heroes/index.html", shot:"weather-heroes", isNew:true },
+      { title:"Weather Worlds", desc:"Explore the worlds and learn weather words.", icon:"🌦️", unit:"Unit 4", file:"Game_Weather_Worlds_Unit4.html", shot:"weather-worlds", isNew:true }
+    ]},
+  { id:"6basico", num:"6°", level:"Básico", folder:"6° BASICO", icon:"✈️",
+    games:[
+      { title:"Past Quest", desc:"3D adventure! Use the past simple to get the village's memories back. Story mode and online mode.", icon:"🧭", unit:"Past simple", file:"Past_Quest.html", shot:"past-quest", isNew:true },
+      { title:"Let's Travel City", desc:"Travel around the city and describe places.", icon:"🏙️", unit:"Unit 4", file:"Lets_Travel_City.html", shot:"lets-travel-city", isNew:true },
+      { title:"Ludo World Tour", desc:"3D Ludo online! Answer in English to roll the dice.", icon:"🎲", unit:"Unit 4", file:"Travel_Tycoon.html", shot:"ludo-world-tour", isNew:true }
+    ]},
+  { id:"7basico", num:"7°", level:"Básico", folder:"7° BASICO", icon:"🌱",
+    games:[
+      { title:"Green Quest", desc:"Open-world 3D adventure! Explore Eco Island, help 10 people on the roads and defeat Captain Smog: A2 readings, should / must / have to and the zero conditional. Story mode and online mode.", icon:"🌳", unit:"Unit 4", file:"Green_Quest/index.html", shot:"green-quest", isNew:true },
+      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
+    ]},
+  { id:"8basico", num:"8°", level:"Básico", folder:"8° BASICO", icon:"🌍",
+    games:[
+      { title:"Future Worlds", desc:"Explore Neo City, Green Valley and Fossil Valley!", icon:"🚀", file:"Future_Worlds.html", shot:"future-worlds", isNew:true },
+      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English!", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
+    ]},
+  { id:"1medio", num:"1°", level:"Medio", folder:"1° MEDIO", icon:"🎉",
+    games:[
+      { title:"Festival Quest", desc:"3D open world! Bring back the 5 festival lanterns and help 10 festival friends on the roads: B1 readings, vocabulary, language in use and question tags. Story mode and online mode.", icon:"🏮", unit:"Unit 4", file:"Festival_Quest/index.html", shot:"festival-quest", isNew:true },
+      { title:"Festival Worlds", desc:"Discover festivals around the world.", icon:"🎪", unit:"Unit 4", file:"Mundo_Unit4_Festival_Worlds.html", shot:"festival-worlds" },
+      { title:"Festival Worlds 2", desc:"More festivals, more challenges!", icon:"🎆", unit:"Unit 4", file:"Festival_Worlds_2.html", shot:"festival-worlds-2", isNew:true },
+      { title:"Traditions", desc:"Learn about traditions from different cultures.", icon:"🏮", unit:"Unit 4", file:"Mundo_Unit4_Traditions_1.html", shot:"traditions" },
+      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
+    ]},
+  { id:"3medio", num:"3°", level:"Medio", folder:"3° MEDIO", icon:"💬",
+    games:[
+      { title:"TikTok vs. Vine", desc:"Compare social media apps and share your opinions in English.", icon:"📱", unit:"Unit 4", file:"Mundo_Unit4_TikTok_vs_Vine.html", shot:"tiktok-vs-vine", isNew:true },
+      { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
+    ]},
+  { id:"englishweek", num:"English Week", level:"2026", folder:"English Week 2026", icon:"🏆",
+    games:[
+      { title:"Chest Quest", desc:"Explore the UK, the USA and Australia. Open chests and answer in English!", icon:"🗝️", unit:"English Week", file:"english-week-2026.html", shot:"chest-quest", isNew:true }
+    ]}
+];
+/* Capturas de los juegos: assets/games/<shot>.webp (800x450). Para un juego nuevo, agrega su captura ahí. */
+
+/* Cursos del colegio (para ingresar con RUT). "course" conecta cada curso con sus juegos. */
+const SECTIONS = [
+  { id:"5°A", course:"5basico" }, { id:"5°B", course:"5basico" },
+  { id:"6°A", course:"6basico" }, { id:"6°B", course:"6basico" },
+  { id:"7°A", course:"7basico" }, { id:"7°B", course:"7basico" },
+  { id:"8°A", course:"8basico" }, { id:"8°B", course:"8basico" },
+  { id:"1°A HC", course:"1medio" }, { id:"1°B HC", course:"1medio" },
+  { id:"3°B HC", course:"3medio" }
+];
+/* Base de datos (Supabase). La clave "publishable" es pública por diseño: solo permite llamar
+   las funciones eslt_* (ingresar, enviar reporte), nunca leer la nómina. */
+const DB_URL = "https://tlihbmgokuhvppbchvrz.supabase.co";
+const DB_KEY = "sb_publishable_nGgOCuUUuXKK7gx957LYhg_Jf2V4TJC";
+
+/* Las 365 palabras del día están en palabras.js */
+
+const TWISTERS = [
+  ["She sells seashells by the seashore.","Practica: sh / s"],
+  ["Three thin thinkers think thick thoughts.","Practica: th"],
+  ["Very well, Victor, we will vote.","Practica: v / w"],
+  ["I think this is the third Thursday.","Practica: th"],
+  ["Red lorry, yellow lorry.","Practica: r / l / y"],
+  ["How much wood would a woodchuck chuck?","Practica: w / ch"],
+  ["Big black bugs bleed blue blood.","Practica: b / l"],
+  ["Six sticky skeletons.","Practica: s + consonante (sin 'e' al inicio)"],
+  ["Is this the ship or the sheep?","Practica: i corta / i larga"],
+  ["The fat cat sat on a black hat.","Practica: a abierta /æ/"],
+  ["Uncle Gus runs up to the bus.","Practica: u corta /ʌ/"],
+  ["Harry has a happy hamster at home.","Practica: h aspirada"],
+  ["Zebras zigzag at the zoo.","Practica: z sonora"],
+  ["The king is singing a long song.","Practica: ng final"],
+  ["She walked, played and wanted to rest.","Practica: -ed"],
+  ["Yes, Jack, your yellow jacket is in the yard.","Practica: y / j"],
+  ["Chips and cheese for Charlie's chair.","Practica: ch"]
+];
+
+
+/* ====== De aquí hacia abajo no es necesario cambiar nada ====== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const store = { get(k, d){ try { const v = localStorage.getItem("eslt_" + k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+                set(k, v){ try { localStorage.setItem("eslt_" + k, JSON.stringify(v)); } catch(e){} } };
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* =====================================================================
+   SENSACIÓN DE JUEGO — sonidos, confeti, puntos (XP), palabras difíciles y medallas.
+   Todo se guarda solo en el navegador del alumno.
+   ===================================================================== */
+let xp = store.get("xp", 0), stats = store.get("stats", {}), hard = store.get("hard", {});
+let muted = store.get("muted", false), gotBadges = store.get("badges", []);
+
+/* Sonidos (Kenney, CC0). Si el navegador no puede abrir .ogg (iPhone antiguo), se sintetizan. */
+const SFX = ["click", "select", "correct", "wrong", "badge"];
+const SYNTH = { click:[[700,.04]], select:[[540,.06]], correct:[[660,.09],[990,.16]], wrong:[[240,.12],[170,.2]], badge:[[523,.1],[659,.1],[784,.1],[1046,.3]] };
+let actx = null; const sfxBuf = {};
+function audioInit(){
+  if (actx){ if (actx.state === "suspended") actx.resume(); return; }
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  actx = new AC();
+  SFX.forEach(k => fetch("assets/sfx/" + k + ".ogg")
+    .then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+    .then(b => new Promise((res, rej) => actx.decodeAudioData(b, res, rej)))
+    .then(buf => { sfxBuf[k] = buf; }).catch(() => {}));
+}
+addEventListener("pointerdown", audioInit, { passive:true });
+addEventListener("keydown", audioInit);
+function sfx(name){
+  if (muted || !actx) return;
+  if (actx.state === "suspended") actx.resume();
+  if (sfxBuf[name]){
+    const src = actx.createBufferSource(), g = actx.createGain();
+    src.buffer = sfxBuf[name]; g.gain.value = name === "click" || name === "select" ? .35 : .6;
+    src.connect(g); g.connect(actx.destination); src.start(); return;
+  }
+  let t = actx.currentTime;
+  (SYNTH[name] || []).forEach(([f, d]) => {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = name === "wrong" ? "square" : "triangle"; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(name === "wrong" ? .07 : .16, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + d + .02); t += d * .85;
+  });
+}
+
+/* Confeti */
+const fxCanvas = document.getElementById("fx"), fxc = fxCanvas.getContext("2d");
+let parts = [], fxRun = false;
+function sizeFx(){ const d = Math.min(devicePixelRatio || 1, 2); fxCanvas.width = innerWidth * d; fxCanvas.height = innerHeight * d; fxc.setTransform(d, 0, 0, d, 0, 0); }
+sizeFx(); addEventListener("resize", sizeFx);
+const CONF = ["#58cc02", "#ffc800", "#ff4b4b", "#a560ff", "#3dd3ff", "#ff5fd2"];
+function confetti(n = 80, el){
+  if (reduced) return;
+  let x = innerWidth / 2, y = innerHeight * .4;
+  if (el){ const r = el.getBoundingClientRect(); x = r.left + r.width / 2; y = r.top + r.height / 2; }
+  for (let i = 0; i < n; i++){
+    const a = -Math.PI / 2 + (Math.random() - .5) * (el ? 1.6 : 2.4), v = (el ? 5 : 8) + Math.random() * (el ? 6 : 10);
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: Math.random() * 6, vr: (Math.random() - .5) * .35,
+      w: 6 + Math.random() * 6, h: 4 + Math.random() * 6, c: CONF[i % CONF.length], life: 0 });
+  }
+  if (!fxRun){ fxRun = true; requestAnimationFrame(fxTick); }
+}
+function fxTick(){
+  fxc.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter(p => p.life < 150 && p.y < innerHeight + 30);
+  parts.forEach(p => {
+    p.life++; p.vy += .24; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    fxc.save(); fxc.translate(p.x, p.y); fxc.rotate(p.r); fxc.globalAlpha = Math.max(0, 1 - p.life / 150);
+    fxc.fillStyle = p.c; fxc.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); fxc.restore();
+  });
+  if (parts.length) requestAnimationFrame(fxTick); else { fxRun = false; fxc.clearRect(0, 0, innerWidth, innerHeight); }
+}
+const replay = (el, cls) => { if (!el || reduced) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+const shake = el => replay(el, "shake");
+
+/* Puntos */
+function addXP(n){
+  if (!n) return;
+  xp += n; store.set("xp", xp); renderMe(); replay($("me-xp"), "bump");
+}
+function renderMe(){
+  const av = (store.get("profile", {}).avatar) || "🙂", sess = store.get("session", null);
+  $("me-av").textContent = av; $("tab-av").textContent = av;
+  $("me").title = sess ? `${sess.first_name} · ${sess.section}` : "Mi perfil · Ingresa con tu RUT";
+  $("me-streak").lastElementChild.textContent = dayStreak();
+  $("me-xp").lastElementChild.textContent = xp;
+}
+
+/* Palabras difíciles: las que el alumno falla vuelven en el desafío hasta acertarlas 2 veces */
+const hardList = () => Object.keys(hard).map(Number).filter(i => i >= 0 && i < WORDS.length);
+function updHardN(){ $("qz-hard-n").textContent = hardList().length; }
+function markHard(i){ hard[i] = 2; store.set("hard", hard); updHardN(); }
+function clearHard(i){
+  if (!hard[i]) return;
+  if (--hard[i] <= 0){
+    delete hard[i]; stats.hardCleared = (stats.hardCleared || 0) + 1; store.set("stats", stats);
+    toast("🎯 ¡Dominaste “" + WORDS[i][1] + "”! Ya no está en tus palabras difíciles.");
+  }
+  store.set("hard", hard); updHardN();
+}
+
+/* Medallas */
+const BADGES = [
+  ["first",    "🌱", "Primera palabra completa",       s => s.words >= 1],
+  ["words10",  "📚", "10 palabras completas",          s => s.words >= 10],
+  ["streak3",  "🔥", "Racha de 3 días",                s => s.streak >= 3],
+  ["streak7",  "🌟", "Racha de 7 días",                s => s.streak >= 7],
+  ["quiz5",    "⚡", "5 seguidas en el desafío",       s => s.best >= 5],
+  ["quiz10",   "🚀", "10 seguidas en el desafío",      s => s.best >= 10],
+  ["correct50","🎯", "50 respuestas correctas",        s => s.correct >= 50],
+  ["pron90",   "🎙", "90 o más en pronunciación",      s => s.pron >= 90],
+  ["hard5",    "💪", "5 palabras difíciles dominadas", s => s.hardCleared >= 5],
+  ["xp500",    "🏆", "500 XP",                         s => s.xp >= 500],
+  ["zone10",   "🧠", "10 rondas en Challenge Zone",    s => s.zoneRounds >= 10],
+  ["zone100",  "💯", "Ronda perfecta en Challenge Zone", s => s.zonePerfect >= 1]
+];
+const wordsCompleted = () => Object.values(wpDone).filter(p => STEPS.every(s => p[s])).length;
+const badgeStats = () => ({ words: wordsCompleted(), streak: dayStreak(), best, correct: stats.correct || 0,
+  pron: stats.pronBest || 0, hardCleared: stats.hardCleared || 0, xp,
+  zoneRounds: stats.zoneRounds || 0, zonePerfect: stats.zonePerfect || 0 });
+function checkBadges(){
+  const s = badgeStats(); let delay = 600;
+  BADGES.forEach(([id, ic, name, test]) => {
+    if (gotBadges.includes(id) || !test(s)) return;
+    gotBadges.push(id); store.set("badges", gotBadges);
+    setTimeout(() => { sfx("badge"); confetti(180); toast(`🏅 ¡Nueva medalla! ${ic} ${name}`); }, delay);
+    delay += 2500;
+  });
+}
+
+/* =====================================================================
+   MUNDOS — escenas ilustradas en SVG (todo el color vive aquí)
+   ===================================================================== */
+function rnd(seed){ return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
+const lg = (id, stops) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${stops.map(([o,c,a=1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join("")}</linearGradient>`;
+const rg = (id, stops) => `<radialGradient id="${id}">${stops.map(([o,c,a=1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join("")}</radialGradient>`;
+const L = (d, inner) => `<g class="L" data-d="${d}">${inner}</g>`;
+function stars(seed, n, maxY, color="#fff"){
+  const r = rnd(seed); let o = "";
+  for (let i = 0; i < n; i++) o += `<circle cx="${(r()*1600)|0}" cy="${(r()*maxY)|0}" r="${(r()*1.6+.4).toFixed(1)}" fill="${color}" opacity="${(r()*.6+.4).toFixed(2)}"/>`;
+  return `<g class="twinkle">${o}</g>`;
+}
+function cloud(x, y, s, op=.9){
+  return `<g transform="translate(${x} ${y}) scale(${s})" fill="#fff" opacity="${op}"><ellipse cx="0" cy="0" rx="120" ry="38"/><ellipse cx="-50" cy="-22" rx="60" ry="40"/><ellipse cx="40" cy="-30" rx="70" ry="50"/></g>`;
+}
+
+const SCENES = {
+  isles: () => `<defs>${lg("is-sky",[[0,"#3c8de0"],[.55,"#9fd2ff"],[1,"#ffe6bf"]])}${rg("is-sun",[[0,"#fff8dc",.95],[1,"#fff8dc",0]])}
+      ${lg("is-fall",[[0,"#fff",.9],[1,"#fff",0]])}${lg("is-rock",[[0,"#7a6a8c"],[1,"#3a3150"]])}</defs>
+    <rect width="1600" height="900" fill="url(#is-sky)"/>
+    <circle cx="1180" cy="230" r="320" fill="url(#is-sun)"/>
+    ${L(.12, `<g fill="#86b6e0" opacity=".85">
+        <path d="M120 470 q90 -40 180 0 q-40 90 -90 120 q-60 -40 -90 -120z"/><rect x="190" y="420" width="16" height="50"/><path d="M186 420 l12 -24 l12 24z"/>
+        <path d="M1320 520 q70 -30 150 0 q-30 70 -75 95 q-50 -30 -75 -95z"/></g>
+      <g class="drift2">${cloud(300,250,.9,.7)}${cloud(1400,330,.7,.6)}</g>`)}
+    ${L(.4, `<g class="bob"><g transform="translate(1080 400) scale(.9)">
+        <path d="M-380 70 Q-230 400 0 500 Q210 400 380 70Z" fill="url(#is-rock)"/>
+        <path d="M-300 120 Q-150 300 0 360 Q120 300 260 130" fill="none" stroke="#2c2540" stroke-width="6" opacity=".5"/>
+        <rect x="236" y="70" width="22" height="420" fill="url(#is-fall)"/>
+        <ellipse cx="0" cy="70" rx="390" ry="72" fill="#4fae52"/><ellipse cx="-10" cy="58" rx="350" ry="52" fill="#76d06a"/>
+        <g fill="#2f8a44"><circle cx="-300" cy="40" r="34"/><circle cx="-262" cy="30" r="26"/><circle cx="300" cy="44" r="30"/><circle cx="-200" cy="56" r="18"/></g>
+        <g>
+          <rect x="-150" y="-110" width="300" height="170" fill="#f3efe6"/><rect x="-150" y="-110" width="300" height="20" fill="#e2dccd"/>
+          <rect x="-190" y="-170" width="70" height="230" fill="#f7f4ec"/><path d="M-200 -170 L-155 -250 L-110 -170Z" fill="#3a6fd6"/>
+          <rect x="120" y="-170" width="70" height="230" fill="#f7f4ec"/><path d="M110 -170 L155 -250 L200 -170Z" fill="#3a6fd6"/>
+          <rect x="-50" y="-280" width="100" height="200" fill="#fbf9f3"/><path d="M-64 -280 L0 -400 L64 -280Z" fill="#2f5fc4"/>
+          <path d="M0 -400 v-50" stroke="#333" stroke-width="3"/><path d="M0 -450 l44 12 l-44 12z" fill="#ff6b5b"/>
+          <g fill="#2b3a5a"><rect x="-14" y="-240" width="28" height="44" rx="14"/><rect x="-170" y="-130" width="16" height="26" rx="8"/><rect x="140" y="-130" width="16" height="26" rx="8"/>
+          <rect x="-26" y="0" width="52" height="60" rx="26"/><rect x="-100" y="-60" width="16" height="24" rx="8"/><rect x="84" y="-60" width="16" height="24" rx="8"/></g>
+        </g></g></g>`)}
+    ${L(.9, `<g class="bob" style="animation-delay:-3s"><path d="M130 760 q60 -24 120 0 q-24 60 -60 80 q-40 -24 -60 -80z" fill="#5a4b70"/><ellipse cx="190" cy="760" rx="62" ry="14" fill="#6cc864"/></g>
+      <g class="bob" style="animation-delay:-5s"><path d="M1380 700 q40 -16 84 0 q-16 44 -42 58 q-28 -16 -42 -58z" fill="#5a4b70"/><ellipse cx="1422" cy="700" rx="44" ry="10" fill="#6cc864"/></g>
+      <g class="drift">${cloud(700,860,1.6,.95)}${cloud(1500,880,1.3,.9)}${cloud(-40,840,1.2,.9)}</g>`)}`,
+
+  ice: () => `<defs>${lg("ic-sky",[[0,"#061430"],[.6,"#2b5d98"],[1,"#c4dcf2"]])}${rg("ic-moon",[[0,"#eaf4ff",.9],[1,"#eaf4ff",0]])}</defs>
+    <rect width="1600" height="900" fill="url(#ic-sky)"/>${stars(7,90,380)}
+    <circle cx="420" cy="200" r="200" fill="url(#ic-moon)"/><circle cx="420" cy="200" r="54" fill="#f3f8ff"/>
+    ${L(.15, `<path d="M0 620 L180 420 L320 560 L520 340 L700 560 L900 380 L1100 580 L1300 400 L1600 600 V900 H0Z" fill="#7fa5cf"/>`)}
+    ${L(.45, `<g transform="translate(980 220)">
+        <path d="M0 520 L60 120 L90 0 L120 120 L180 520Z" fill="#e6f3ff"/><path d="M90 0 L120 120 L180 520 L90 520Z" fill="#a9cbea"/>
+        <path d="M-160 520 L-110 220 L-80 140 L-50 220 L0 520Z" fill="#dcedfc"/><path d="M-80 140 L-50 220 L0 520 L-80 520Z" fill="#9fc2e4"/>
+        <path d="M180 520 L230 260 L260 180 L290 260 L340 520Z" fill="#dcedfc"/><path d="M260 180 L290 260 L340 520 L260 520Z" fill="#9fc2e4"/>
+        <path d="M-300 520 L-260 340 L-240 290 L-220 340 L-180 520Z" fill="#cfe4f8"/><path d="M340 520 L380 360 L400 300 L420 360 L460 520Z" fill="#cfe4f8"/>
+        <g fill="#5fd3ff" class="pulse"><rect x="80" y="200" width="20" height="40" rx="10"/><rect x="-90" y="300" width="16" height="30" rx="8"/><rect x="252" y="320" width="16" height="30" rx="8"/></g>
+      </g>`)}
+    ${L(.8, `<path d="M0 760 Q300 690 640 740 T1200 720 T1600 740 V900 H0Z" fill="#eef6ff"/><path d="M0 820 Q400 770 900 810 T1600 800 V900 H0Z" fill="#d7e8f8"/>
+      <g fill="#fff">${(() => { const r = rnd(3); let o=""; for (let i=0;i<70;i++) o += `<circle class="fall" style="animation-delay:-${(r()*9).toFixed(1)}s;animation-duration:${(6+r()*6).toFixed(1)}s" cx="${(r()*1600)|0}" cy="${(r()*100)|0}" r="${(r()*2.4+1).toFixed(1)}" opacity=".85"/>`; return o; })()}</g>`)}`,
+
+  dunes: () => `<defs>${lg("du-sky",[[0,"#2a1640"],[.45,"#c0507a"],[1,"#f7b267"]])}${rg("du-sun",[[0,"#ffe2a0",1],[.4,"#ffc76e",.6],[1,"#ffc76e",0]])}</defs>
+    <rect width="1600" height="900" fill="url(#du-sky)"/>${stars(11,40,240)}
+    <circle cx="800" cy="560" r="420" fill="url(#du-sun)"/><circle cx="800" cy="560" r="130" fill="#ffd98a"/>
+    ${L(.15, `<g fill="#9a4a5a"><path d="M560 600 L700 380 L840 600Z"/><path d="M820 600 L900 470 L980 600Z"/></g>
+      <g class="bob" style="animation-duration:9s"><ellipse cx="1200" cy="300" rx="70" ry="70" fill="none" stroke="#ffe2a8" stroke-width="6" opacity=".9"/><ellipse cx="1200" cy="300" rx="50" ry="50" fill="#ffe2a8" opacity=".15"/></g>`)}
+    ${L(.4, `<path d="M0 640 Q300 560 620 640 T1200 620 T1600 640 V900 H0Z" fill="#e7a15e"/><path d="M0 700 Q420 620 860 700 T1600 690 V900 H0Z" fill="#d2803f"/>`)}
+    ${L(.85, `<path d="M0 780 Q360 700 760 780 T1600 770 V900 H0Z" fill="#b6632e"/><path d="M0 850 Q500 790 1000 840 T1600 830 V900 H0Z" fill="#8c4824"/>
+      <g fill="#5a2c18"><rect x="220" y="700" width="12" height="80"/><path d="M226 700 q-40 10 -60 -20 q40 0 60 20 q20 -30 60 -20 q-20 30 -60 20z"/></g>`)}`,
+
+  neon: () => `<defs>${lg("ne-sky",[[0,"#05010f"],[.5,"#1f0a3d"],[.8,"#6a1b6e"],[1,"#ff5f8f"]])}${lg("ne-sun",[[0,"#ffd166"],[1,"#ff3d8b"]])}</defs>
+    <rect width="1600" height="900" fill="url(#ne-sky)"/>${stars(5,70,360)}
+    ${L(.1, `<circle cx="800" cy="520" r="230" fill="url(#ne-sun)"/>
+      <g fill="#1f0a3d">${[0,1,2,3,4,5].map(i => `<rect x="560" y="${540 + i*30}" width="480" height="${6 + i*2}"/>`).join("")}</g>`)}
+    ${L(.4, (() => { const r = rnd(9); let o = `<g fill="#0b0420">`; let x = 0; while (x < 1600){ const w = 50 + r()*90, h = 140 + r()*320; o += `<rect x="${x|0}" y="${(700-h)|0}" width="${w|0}" height="${(h+20)|0}"/>`; x += w + 6; } o += `</g><g class="twinkle">`;
+        for (let i = 0; i < 260; i++) o += `<rect x="${(r()*1600)|0}" y="${(380 + r()*300)|0}" width="5" height="7" fill="${r() > .5 ? "#ff8fd8" : "#6ff0ff"}" opacity="${(r()*.7+.2).toFixed(2)}"/>`;
+        return o + `</g>`; })())}
+    ${L(.85, `<rect x="0" y="700" width="1600" height="200" fill="#08021a"/>
+      <g stroke="#ff3d8b" stroke-width="2" opacity=".7">${Array.from({length:21},(_,i) => `<line x1="800" y1="700" x2="${-800 + i*160}" y2="900"/>`).join("")}
+      ${[706,716,732,756,792,840,900].map(y => `<line x1="0" y1="${y}" x2="1600" y2="${y}"/>`).join("")}</g>`)}`,
+
+  aurora: () => `<defs>${lg("au-sky",[[0,"#01040c"],[.7,"#04202e"],[1,"#0a3a46"]])}${lg("au-a",[[0,"#3dffb0",0],[.5,"#3dffb0",.75],[1,"#46c8ff",0]])}${lg("au-b",[[0,"#b46bff",0],[.5,"#46c8ff",.55],[1,"#3dffb0",0]])}</defs>
+    <rect width="1600" height="900" fill="url(#au-sky)"/>${stars(13,160,520)}
+    ${L(.2, `<g class="wave"><path d="M-100 380 C200 140 500 420 800 220 S1300 120 1700 300 L1700 420 C1300 260 1000 460 800 360 S300 320 -100 520Z" fill="url(#au-a)"/></g>
+      <g class="wave" style="animation-delay:-4s;animation-duration:12s"><path d="M-100 300 C300 200 600 360 900 160 S1400 260 1700 140 L1700 240 C1400 360 1100 300 900 280 S300 300 -100 400Z" fill="url(#au-b)"/></g>`)}
+    ${L(.5, `<path d="M0 640 L200 470 L330 560 L520 400 L700 580 L880 440 L1080 600 L1280 450 L1460 560 L1600 500 V900 H0Z" fill="#06202c"/>
+      <path d="M520 400 L560 440 L540 450 L500 420Z M1280 450 L1320 490 L1290 494Z" fill="#cde9ff" opacity=".7"/>`)}
+    ${L(.85, `<rect x="0" y="700" width="1600" height="200" fill="#031118"/>
+      <g opacity=".35" transform="translate(0 1400) scale(1 -1)"><path d="M-100 860 C300 760 600 920 900 740 S1400 820 1700 720 L1700 800 C1400 900 1100 860 900 840 S300 860 -100 940Z" fill="url(#au-a)"/></g>
+      <path d="M0 700 L180 650 L300 690 L460 640 L600 700Z M1100 700 L1260 660 L1400 690 L1600 650 V700Z" fill="#020b10"/>`)}`,
+
+  forest: () => `<defs>${lg("fo-sky",[[0,"#ff9e7a"],[.45,"#ffd59a"],[1,"#e7f5d8"]])}${rg("fo-sun",[[0,"#fff4cf",1],[1,"#fff4cf",0]])}</defs>
+    <rect width="1600" height="900" fill="url(#fo-sky)"/>
+    <circle cx="1100" cy="430" r="300" fill="url(#fo-sun)"/><circle cx="1100" cy="430" r="90" fill="#fff1c4"/>
+    ${L(.12, `<g class="drift2">${cloud(400,200,.8,.75)}${cloud(1300,160,.6,.7)}</g>
+      <path d="M0 560 Q300 470 640 540 T1300 520 T1600 540 V900 H0Z" fill="#a6d48e"/>`)}
+    ${L(.4, `<path d="M0 620 Q360 540 760 620 T1600 600 V900 H0Z" fill="#6fb764"/>
+      <g fill="#3f8f4f">${Array.from({length:14},(_,i) => { const x = 60 + i*115, h = 90 + (i*37 % 70); return `<path d="M${x} ${620 - h} L${x+38} ${640} L${x-38} ${640}Z"/>`; }).join("")}</g>
+      <g transform="translate(1180 560)"><rect x="0" y="0" width="90" height="60" fill="#fff4e0"/><path d="M-12 2 L45 -40 L102 2Z" fill="#c4553f"/><rect x="36" y="24" width="18" height="36" fill="#6b3d2a"/><rect x="62" y="14" width="16" height="14" fill="#ffd36e" class="pulse"/></g>`)}
+    ${L(.85, `<path d="M0 760 Q420 680 860 760 T1600 750 V900 H0Z" fill="#3f8f4f"/><path d="M0 830 Q500 770 1000 820 T1600 810 V900 H0Z" fill="#2a6b3e"/>
+      <g fill="#1f5a33">${[90,210,1400,1520].map((x,i) => `<path d="M${x} ${560+i*20} L${x+70} 860 L${x-70} 860Z"/>`).join("")}</g>
+      <g class="drift" fill="none" stroke="#3a2a2a" stroke-width="3"><path d="M600 300 q12 -10 24 0 q12 -10 24 0"/><path d="M680 260 q10 -8 20 0 q10 -8 20 0"/><path d="M560 250 q8 -6 16 0 q8 -6 16 0"/></g>`)}`,
+
+  // Respaldo dibujado de la Challenge Zone (si la imagen no carga): arena neón con plataformas
+  zone: () => `<defs>${lg("zn-sky",[[0,"#0b0526"],[.6,"#2a0f5c"],[1,"#5b1f8f"]])}</defs>
+    <rect width="1600" height="900" fill="url(#zn-sky)"/>${stars(17,80,420)}
+    ${L(.2, `<g fill="#1c0b40">${[[120,520,260],[520,430,300],[980,480,280],[1340,400,220]].map(([x,y,w]) => `<rect x="${x}" y="${y}" width="${w}" height="40"/><rect x="${x}" y="${y}" width="${w}" height="6" fill="#5ff4ff" class="glowpulse"/>`).join("")}</g>`)}
+    ${L(.6, `<rect x="0" y="700" width="1600" height="200" fill="#12062e"/>
+      <g stroke="#b98cff" stroke-width="2" opacity=".5">${Array.from({length:17},(_,i) => `<line x1="800" y1="700" x2="${-800 + i*200}" y2="900"/>`).join("")}
+      ${[712,730,760,800,850,900].map(y => `<line x1="0" y1="${y}" x2="1600" y2="${y}"/>`).join("")}</g>`)}`
+};
+
+/* Partículas animadas sobre las imágenes (dan vida a cada mundo) */
+function specks(seed, n, { color = "#fff", rmin = 1, rmax = 3, cls = "twinkle", ymin = 0, ymax = 900, op = .8, dur = [3, 7] }){
+  const r = rnd(seed); let o = "";
+  for (let i = 0; i < n; i++){
+    const c = Array.isArray(color) ? color[(r() * color.length) | 0] : color;
+    o += `<circle class="${cls}" style="animation-delay:-${(r()*10).toFixed(1)}s;animation-duration:${(dur[0] + r()*(dur[1]-dur[0])).toFixed(1)}s"
+      cx="${(r()*1600)|0}" cy="${(ymin + r()*(ymax-ymin))|0}" r="${(rmin + r()*(rmax-rmin)).toFixed(1)}" fill="${c}" opacity="${(op*(.4+r()*.6)).toFixed(2)}"/>`;
+  }
+  return o;
+}
+const FX = {
+  isles:  () => `<g class="drift">${cloud(200,880,1.8,.55)}${cloud(1300,900,1.6,.5)}</g><g class="drift2">${cloud(800,940,2,.45)}</g>${specks(21, 30, { color:"#fff6d8", rmax:2.2, cls:"rise", dur:[10,18] })}`,
+  ice:    () => specks(3, 110, { color:"#fff", rmin:1, rmax:3.2, cls:"fall", ymin:-100, ymax:100, op:.9, dur:[6,13] }),
+  dunes:  () => specks(8, 60, { color:["#ffd9a0","#fff1d0"], rmax:2.2, cls:"blow", dur:[8,16] }),
+  neon:   () => specks(9, 70, { color:["#ff5fd2","#5ff4ff","#fff"], rmax:2, cls:"rise", dur:[7,14] }),
+  aurora: () => specks(13, 120, { color:"#fff", rmax:1.8, ymax:480, dur:[2,5] }),
+  forest: () => specks(5, 45, { color:"#ffe58a", rmin:1.5, rmax:3.5, cls:"firefly", ymin:350, ymax:880, dur:[3,7] }),
+  zone:   () => zoneFX()
+};
+/* Disparos láser de la Challenge Zone: cada rayo cruza de un jugador a otro y deja una chispa al impactar.
+   [x1, y1, x2, y2, color, retraso en segundos, duración] */
+// Coinciden con los rayos dibujados en la imagen (assets/mundos/zone.webp), así parece que los jugadores disparan
+const ZONE_SHOTS = [
+  [ 527, 540,  747, 453, "#5ff4ff", 0.0, 3.4],   // jugador azul (adelante) → jugador verde
+  [ 273, 283,  733, 393, "#ffb347", 1.3, 3.9],   // jugador naranjo (arriba izq.) → centro
+  [1220, 507,  973, 440, "#ff5fd2", 2.2, 3.7],   // jugador rosado (derecha) → bloque amarillo
+  [1060, 187,  800, 247, "#ff4b6e", 0.7, 4.3],   // jugador rojo (fondo) → muro
+  [ 760, 430,  560, 530, "#b6ff5f", 2.9, 4.6]    // jugador verde responde → jugador azul
+];
+// Letreros de neón de la imagen que parpadean: [x, y, ancho, alto, color]
+const ZONE_NEON = [[153, 87, 120, 60, "#ff5fd2"], [1260, 120, 110, 75, "#7dff8a"], [550, 370, 50, 26, "#5ff4ff"], [1550, 290, 40, 40, "#7dff8a"]];
+function zoneFX(){
+  const beams = ZONE_SHOTS.map(([x1, y1, x2, y2, c, d, t]) => {
+    const st = `animation-delay:${d}s;animation-duration:${t}s`;
+    return `<g opacity=".55"><line class="laser" pathLength="100" style="${st}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="16" stroke-linecap="round" filter="url(#zn-blur)"/></g>
+      <line class="laser" pathLength="100" style="${st}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+      <circle class="spark" style="${st}" cx="${x2}" cy="${y2}" r="22" fill="${c}" opacity=".9" filter="url(#zn-blur)"/>
+      <circle class="spark" style="${st}" cx="${x2}" cy="${y2}" r="7" fill="#fff"/>`;
+  }).join("");
+  return `<defs><filter id="zn-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+      <linearGradient id="zn-sweep" x1="0" x2="1"><stop offset="0" stop-color="#b98cff" stop-opacity="0"/><stop offset=".5" stop-color="#b98cff" stop-opacity=".18"/><stop offset="1" stop-color="#b98cff" stop-opacity="0"/></linearGradient></defs>
+    <rect class="sweep" x="0" y="0" width="420" height="900" fill="url(#zn-sweep)" transform="skewX(-18)"/>
+    ${ZONE_NEON.map(([x, y, w, h, c], i) => `<ellipse class="glowpulse" style="animation-delay:-${i * .9}s;animation-duration:${2.2 + i * .5}s" cx="${x}" cy="${y}" rx="${w}" ry="${h}" fill="${c}" opacity=".5" filter="url(#zn-blur)"/>`).join("")}
+    ${beams}
+    ${specks(29, 50, { color:["#5ff4ff","#ff5fd2","#b98cff","#fff"], rmax:2.2, cls:"rise", dur:[8,15] })}`;
+}
+
+/* Construir el escenario y el HUD */
+const sections = [...document.querySelectorAll("main section")];
+const stage = $("stage");
+// En celular se usan fondos más livianos (assets/mundos/m/)
+const bgFolder = matchMedia("(max-width: 760px)").matches ? "assets/mundos/m/" : "assets/mundos/";
+sections.forEach((s, i) => {
+  const key = s.dataset.scene;
+  const div = document.createElement("div");
+  div.className = "scene sc-" + key;
+  // El dibujo SVG queda de respaldo; si existe la imagen en assets/mundos/, se muestra encima
+  div.innerHTML = `<svg class="draw" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">${SCENES[key]()}</svg>
+    <div class="photo"><img alt="" decoding="async"></div>
+    <svg class="fx" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">${FX[key] ? FX[key]() : ""}</svg>`;
+  stage.appendChild(div);
+  const img = div.querySelector(".photo img");
+  img.addEventListener("load", () => div.classList.add("has-photo"));
+  img.addEventListener("error", () => { const p = div.querySelector(".photo"); if (p) p.remove(); });
+  s._scene = div; s._img = img; s._layers = [...div.querySelectorAll(".draw .L")];
+  s._loadBg = () => { if (!s._bgOn){ s._bgOn = true; img.src = bgFolder + key + ".webp"; } };
+  if (!i) { img.fetchPriority = "high"; s._loadBg(); }
+});
+// Cada fondo se descarga solo cuando el alumno se acerca a ese mundo
+// En computador se precargan todos después de unos segundos (transiciones suaves); en celular no, para ahorrar datos
+const nextBgs = () => sections.forEach(s => s._loadBg());
+if (bgFolder === "assets/mundos/")
+  addEventListener("load", () => setTimeout(() => ("requestIdleCallback" in window ? requestIdleCallback(nextBgs) : nextBgs()), 4000));
+$("hud").innerHTML = sections.map((s, i) =>
+  `<a href="#${s.id}" data-i="${i}"><b>${s.dataset.name}</b>${String(i+1).padStart(2,"0")}</a>`).join("");
+const hudLinks = [...document.querySelectorAll("#hud a")];
+const navLinks = [...document.querySelectorAll(".links a")];
+const tabLinks = [...document.querySelectorAll("#tabbar a")];
+let lastBest = -1;
+
+/* =====================================================================
+   NAVEGACIÓN POR MUNDOS
+   Cada sección es una pantalla. Al elegir otra, se abre un portal
+   circular desde el punto donde se hizo clic y aparece el nuevo mundo.
+   ===================================================================== */
+const ids = sections.map(s => s.id);
+const EASE_IO = "cubic-bezier(0.77, 0, 0.175, 1)";   // movimiento en pantalla
+const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";   // entradas y salidas
+const PORTAL_MS = 820;
+let current = -1, nav = null, lastPt = null;
+document.body.classList.add("paged");
+const ring = document.createElement("div"); ring.id = "portal-ring"; ring.setAttribute("aria-hidden", "true");
+document.body.appendChild(ring);
+
+addEventListener("pointerdown", e => { lastPt = { x: e.clientX, y: e.clientY, t: performance.now() }; }, { passive:true, capture:true });
+
+function setAccent(i){
+  const cs = getComputedStyle(sections[i]);
+  document.documentElement.style.setProperty("--accent", cs.getPropertyValue("--accent").trim());
+  document.documentElement.style.setProperty("--accent-d", cs.getPropertyValue("--accent-d").trim());
+}
+function markNav(i){
+  const id = sections[i].id;
+  hudLinks.forEach((a, k) => a.classList.toggle("on", k === i));
+  navLinks.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + id));
+  tabLinks.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + id));
+}
+function revealIn(s){ s.classList.remove("in"); void s.offsetWidth; s.classList.add("in"); }
+function preload(i){ sections[i]._loadBg(); const n = sections[(i + 1) % sections.length]; if (n) setTimeout(() => n._loadBg(), 1500); }
+
+// Mostrar una sección sin animación (al cargar la página)
+function showNow(i){
+  sections.forEach((s, k) => {
+    const on = k === i;
+    s.classList.toggle("active", on);
+    s._scene.classList.toggle("active", on);
+    s._scene.style.opacity = on ? 1 : 0; s._scene.style.transform = "";
+  });
+  current = i; preload(i); markNav(i); setAccent(i); revealIn(sections[i]);
+}
+
+// Paralaje suave del fondo al bajar dentro de una sección larga
+let ticking = false;
+function parallax(){
+  ticking = false;
+  const s = sections[current]; if (!s || reduced) return;
+  const y = Math.min(scrollY, innerHeight) * .06;
+  if (s._scene.classList.contains("has-photo")) s._img.style.transform = `translate3d(0, ${(-y).toFixed(1)}px, 0) scale(1.1)`;
+  else s._layers.forEach(l => { l.style.transform = `translate(0px, ${(-y * l.dataset.d * 2).toFixed(1)}px)`; });
+}
+addEventListener("scroll", () => { if (!ticking){ ticking = true; requestAnimationFrame(parallax); } }, { passive:true });
+
+// Sonido del portal (sintetizado, respeta el botón de silencio)
+function portalSound(){
+  if (muted || !actx) return;
+  try {
+    if (actx.state === "suspended") actx.resume();
+    const t = actx.currentTime, len = .7, buf = actx.createBuffer(1, actx.sampleRate * len, actx.sampleRate), d = buf.getChannelData(0);
+    for (let k = 0; k < d.length; k++) d[k] = (Math.random() * 2 - 1) * (1 - k / d.length);
+    const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+    src.buffer = buf; f.type = "bandpass"; f.Q.value = 6;
+    f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(2600, t + len * .8);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.22, t + .08); g.gain.exponentialRampToValueAtTime(.0001, t + len);
+    src.connect(f); f.connect(g); g.connect(actx.destination); src.start(t); src.stop(t + len);
+  } catch(e){}
+}
+
+// Volver arriba al instante (sin depender de scroll-behavior: instant, que Safari antiguo no conoce)
+function toTop(){ const h = document.documentElement, prev = h.style.scrollBehavior; h.style.scrollBehavior = "auto"; scrollTo(0, 0); h.style.scrollBehavior = prev; }
+
+// Origen del portal: el punto del clic, o el centro de la pantalla
+function originFor(el){
+  if (lastPt && performance.now() - lastPt.t < 900) return lastPt;
+  if (el && el.getBoundingClientRect){ const r = el.getBoundingClientRect(); if (r.width) return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+  return { x: innerWidth / 2, y: innerHeight / 2 };
+}
+
+function goTo(id, opts = {}){
+  const i = ids.indexOf(id); if (i < 0) return;
+  if (nav) nav.finish();                                   // si hay un portal abriéndose, se completa al instante
+  if (opts.push !== false){
+    const url = i === 0 ? location.pathname + location.search : "#" + id;
+    if (location.hash !== (i === 0 ? "" : "#" + id)) history.pushState({ id }, "", url);
+  }
+  if (i === current){ scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" }); return; }
+
+  const from = sections[current], to = sections[i], o = opts.origin || originFor(opts.el);
+  preload(i); markNav(i); setAccent(i);
+  // Si la imagen del nuevo mundo aún se descarga, se espera un momento (máx. 0,9 s) para que el portal no se abra vacío
+  const img = to._img;
+  if (!opts.ready && img && img.src && !img.complete){
+    nav = { finish(){ nav = null; } };
+    const token = nav;
+    Promise.race([img.decode ? img.decode().catch(() => {}) : null, new Promise(r => setTimeout(r, 900))])
+      .then(() => { if (nav === token){ nav = null; goTo(id, { ...opts, origin: o, push: false, ready: true }); } });
+    return;
+  }
+  portalSound();
+
+  // Preparar la nueva pantalla: queda fija encima, con su mundo dentro, recortada en un círculo
+  to.classList.add("active", "portal"); to.classList.remove("in");
+  to.insertBefore(to._scene, to.firstChild);
+  to._scene.classList.add("active"); to._scene.style.opacity = 1;
+  to.classList.toggle("tall", to.scrollHeight > to.clientHeight + 4);
+  const R = Math.hypot(Math.max(o.x, innerWidth - o.x), Math.max(o.y, innerHeight - o.y)) + 24;
+  const anims = [];
+  let done = false, revealT;
+
+  const cleanup = () => {
+    if (done) return; done = true; clearTimeout(revealT);
+    anims.forEach(a => { try { a.cancel(); } catch(e){} });
+    stage.appendChild(to._scene);
+    to.classList.remove("portal", "tall");
+    from.classList.remove("active"); from._scene.classList.remove("active"); from._scene.style.opacity = 0;
+    from.style.opacity = ""; from.style.transform = "";
+    ring.style.opacity = 0;
+    current = i; toTop();
+    if (!to.classList.contains("in")) to.classList.add("in");
+    parallax();
+    const h = to.querySelector(".title, h1, h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+    nav = null;
+  };
+  nav = { finish: cleanup };
+
+  if (reduced || !CSS.supports("clip-path", "circle(1px at 1px 1px)")){
+    // Movimiento reducido: solo un fundido corto
+    anims.push(to.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: "ease" }));
+    anims.push(from.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: "ease", fill: "forwards" }));
+    revealT = setTimeout(() => to.classList.add("in"), 60);
+    anims[0].finished.then(cleanup, () => {});
+    return;
+  }
+
+  const at = `at ${o.x.toFixed(0)}px ${o.y.toFixed(0)}px`;
+  // 1. El portal se abre desde el punto del clic
+  anims.push(to.animate([{ clipPath: `circle(0px ${at})` }, { clipPath: `circle(${R.toFixed(0)}px ${at})` }],
+    { duration: PORTAL_MS, easing: EASE_IO, fill: "forwards" }));
+  // 2. El nuevo mundo se acerca desde dentro del portal
+  anims.push(to._scene.animate([{ transform: "scale(1.25)" }, { transform: "scale(1)" }], { duration: PORTAL_MS + 200, easing: EASE_OUT }));
+  // 3. El mundo anterior se aleja
+  anims.push(from.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.94)" }], { duration: 420, easing: EASE_OUT, fill: "forwards" }));
+  anims.push(from._scene.animate([{ transform: "scale(1)" }, { transform: "scale(1.12)" }], { duration: PORTAL_MS, easing: EASE_OUT, fill: "forwards" }));
+  // 4. Anillo de luz en el borde del portal
+  ring.style.left = o.x + "px"; ring.style.top = o.y + "px";
+  ring.style.width = ring.style.height = (R * 2).toFixed(0) + "px";
+  anims.push(ring.animate([
+    { transform: "translate(-50%, -50%) scale(0)", opacity: 1 },
+    { transform: "translate(-50%, -50%) scale(.75)", opacity: 1, offset: .7 },
+    { transform: "translate(-50%, -50%) scale(1)", opacity: 0 }
+  ], { duration: PORTAL_MS, easing: EASE_IO }));
+  // 5. El título y los paneles entran escalonados cuando el portal ya está abierto a la mitad
+  revealT = setTimeout(() => to.classList.add("in"), PORTAL_MS * .38);
+  anims[0].finished.then(cleanup, () => {});
+}
+
+// Todos los enlaces internos (#worlds, #word, …) abren un portal en vez de bajar
+document.addEventListener("click", e => {
+  const a = e.target.closest('a[href^="#"]'); if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey) return;
+  const id = a.getAttribute("href").slice(1);
+  if (!ids.includes(id)) return;
+  e.preventDefault(); goTo(id, { el: a });
+});
+addEventListener("popstate", () => goTo(location.hash.slice(1) || ids[0], { push: false, origin: { x: innerWidth / 2, y: innerHeight / 2 } }));
+
+// Botón "siguiente mundo" al final de cada sección
+const NAMES = { hero: "Home · Inicio", worlds: "Worlds", word: "Word of the day", challenge: "Quick challenge", zone: "Challenge Zone", speak: "Speak", how: "How to play" };
+sections.forEach((s, k) => {
+  if (k === 0 || k === sections.length - 1) return;
+  const n = sections[k + 1], a = document.createElement("a");
+  a.className = "btn ghost sm next-world"; a.href = "#" + n.id;
+  a.innerHTML = `Next world · ${esc(NAMES[n.id] || n.dataset.name)} <span aria-hidden="true">→</span>`;
+  s.appendChild(a);
+});
+
+showNow(Math.max(0, ids.indexOf(location.hash.slice(1))));
+
+/* =====================================================================
+   MUNDOS / CURSOS
+   ===================================================================== */
+let currentCourse = COURSES.find(c => c.games.length)?.id || COURSES[0].id;
+function gameRow(c, g, showCourse){
+  const href = encodeURI(c.folder + "/" + g.file);
+  const shot = g.shot ? `assets/games/${g.shot}.webp` : "";
+  return `<a class="game ${shot ? "has-shot" : ""}" href="${href}" data-shot="${shot}" data-title="${esc(g.title)}">
+      ${shot ? `<span class="thumb"><img src="${shot}" alt="${esc(g.title)}" loading="lazy" decoding="async"><span class="ic" aria-hidden="true">${g.icon}</span></span>`
+             : `<span class="ic" aria-hidden="true">${g.icon}</span>`}
+      <span><h4>${esc(g.title)} ${g.isNew ? `<span class="tag">New</span>` : ""}</h4>
+        <p>${esc(g.desc)}</p>
+        <span class="cap">${showCourse ? esc(c.num + " " + c.level) + " · " : ""}${g.unit ? esc(g.unit) : ""}</span></span>
+      <span class="btn play">▶ Play</span>
+    </a>`;
+}
+const soonRow = `<div class="game soon" aria-hidden="true"><span class="ic">🔒</span>
+    <span><h4>Coming soon</h4><p>Un nuevo juego viene en camino · A new game is on its way!</p></span></div>`;
+function renderCourses(){
+  $("courses").innerHTML = COURSES.map(c => {
+    const n = c.games.length;
+    return `<button class="chip ${c.id === currentCourse ? "on" : ""}" data-id="${c.id}" type="button">${c.icon} ${esc(c.num)} ${esc(c.level)} <small>${n ? n : "soon"}</small></button>`;
+  }).join("");
+  $("courses").querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+    currentCourse = b.dataset.id; $("q").value = ""; renderCourses(); renderGames();
+  }));
+}
+// Si el alumno ingresó con su RUT, se abren los juegos de su curso
+{ const pc = (store.get("session", null) || {}).course; if (pc && COURSES.some(c => c.id === pc && c.games.length)) currentCourse = pc; }
+function renderGames(){
+  const q = norm($("q").value.trim());
+  if (q){
+    const hits = [];
+    COURSES.forEach(c => c.games.forEach(g => { if (norm(g.title + " " + g.desc + " " + (g.unit||"") + " " + c.num + " " + c.level).includes(q)) hits.push([c,g]); }));
+    $("games").innerHTML = hits.length ? hits.map(([c,g]) => gameRow(c,g,true)).join("")
+      : `<div class="empty">🤔 No games found · No encontramos juegos con ese nombre.</div>`;
+    return;
+  }
+  const c = COURSES.find(x => x.id === currentCourse);
+  $("games").innerHTML = c.games.length ? c.games.map(g => gameRow(c,g,false)).join("") + soonRow
+    : `<div class="empty">🚧 New games coming soon · ¡Pronto habrá juegos nuevos!</div>`;
+}
+$("q").addEventListener("input", renderGames);
+
+/* Al presionar un juego: su captura crece hasta llenar la pantalla y luego se abre el juego */
+$("games").addEventListener("click", e => {
+  const a = e.target.closest("a.game");
+  if (!a || !a.dataset.shot || reduced || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+  e.preventDefault();
+  const r = a.querySelector(".thumb").getBoundingClientRect();
+  const el = document.createElement("div");
+  el.className = "launch";
+  el.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background-image:url("${a.dataset.shot}")`;
+  el.innerHTML = `<b>${a.dataset.title}<small>Loading world… · Cargando…</small></b>`;
+  document.body.appendChild(el);
+  sfx("badge");
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("full")));
+  setTimeout(() => { location.href = a.href; }, 900);
+});
+// Si el alumno vuelve con el botón "atrás", se quita la transición
+addEventListener("pageshow", () => document.querySelectorAll(".launch").forEach(x => x.remove()));
+renderCourses(); renderGames();
+
+/* =====================================================================
+   VOZ (texto a voz)
+   ===================================================================== */
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let voices = [];
+function loadVoices(){ try { voices = speechSynthesis.getVoices(); } catch(e){} if (typeof renderVoices === "function") renderVoices(); }
+if ("speechSynthesis" in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+/* Elegir la voz más natural disponible.
+   Edge: "Microsoft Aria/Jenny… Online (Natural)" · Chrome: "Google US English" · iPhone/Mac: voces "Enhanced/Premium".
+   Las voces antiguas de Windows (David, Zira, Mark) suenan robóticas y quedan al final. */
+function voiceScore(v){
+  let s = /^en[-_]US/i.test(v.lang) ? 30 : /^en[-_](GB|AU|CA|IE|NZ)/i.test(v.lang) ? 20 : 10;
+  if (/natural|neural/i.test(v.name)) s += 60;
+  else if (/premium|enhanced/i.test(v.name)) s += 50;
+  else if (/google/i.test(v.name)) s += 45;
+  else if (/online/i.test(v.name)) s += 40;
+  else if (/samantha|ava|allison|susan|karen|daniel|serena|moira/i.test(v.name)) s += 25;   // buenas voces de Apple
+  if (/david|zira|mark|hazel|george|desktop/i.test(v.name) && !/online|natural/i.test(v.name)) s -= 25;
+  if (/novelty|whisper|bad news|bells|boing|bubbles|cellos|jester|organ|trinoids|zarvox|albert|fred|junior|ralph|kathy|bahh|superstar|grandma|grandpa|rocko|shelley|flo|eddy|reed|sandy/i.test(v.name)) s -= 80;
+  return s;
+}
+function englishVoices(){ return voices.filter(v => /^en[-_]/i.test(v.lang)).sort((a, b) => voiceScore(b) - voiceScore(a)); }
+function pickVoice(local){
+  if (!voices.length) loadVoices();
+  const list = englishVoices().filter(v => !local || v.localService);
+  const chosen = store.get("voice", "");
+  return (chosen && !local && list.find(v => v.name === chosen)) || list[0];
+}
+// Avisos en fila: si llegan varios juntos, se muestran uno tras otro
+const toastQ = []; let toastAt = 0;
+function toast(msg){
+  toastQ.push(msg);
+  if (toastQ.length === 1) setTimeout(showToast, Math.max(0, toastAt + 2800 - Date.now()));
+}
+function showToast(){
+  let el = document.getElementById("toast");
+  if (!el){ el = document.createElement("div"); el.id = "toast"; el.className = "toast"; el.setAttribute("role", "status"); document.body.appendChild(el); }
+  el.textContent = toastQ[0]; el.classList.add("on"); toastAt = Date.now();
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), 7000);
+  toastQ.shift();
+  if (toastQ.length) setTimeout(showToast, 2800);
+}
+function speak(t, rate = .9){
+  if (!("speechSynthesis" in window)){ toast("Este navegador no puede leer en voz alta."); return; }
+  if (listening && rec){ try { rec.abort(); } catch(e){} }
+  const u = new SpeechSynthesisUtterance(t); u.lang = "en-US"; u.rate = rate; u.volume = 1;
+  const v = pickVoice(); if (v){ u.voice = v; u.lang = v.lang; }
+  let started = false; u.onstart = () => { started = true; };
+  // Las voces "online" necesitan internet: si fallan, se repite con una voz del dispositivo
+  u.onerror = e => {
+    if (started || !v || v.localService || e.error === "interrupted" || e.error === "canceled") return;
+    const lv = pickVoice(true); if (!lv) return;
+    const u2 = new SpeechSynthesisUtterance(t); u2.voice = lv; u2.lang = lv.lang; u2.rate = rate; speechSynthesis.speak(u2);
+  };
+  // En iPhone, cancel() justo antes de speak() puede tragarse la voz nueva:
+  // solo se cancela si algo está sonando, y se espera un momento antes de hablar.
+  if (speechSynthesis.speaking || speechSynthesis.pending){
+    speechSynthesis.cancel();
+    setTimeout(() => speechSynthesis.speak(u), 150);
+  } else {
+    speechSynthesis.resume();
+    speechSynthesis.speak(u);                 // directo dentro del toque (Safari lo exige)
+  }
+  if (isIOS){
+    if (!store.get("ttsTip", false)){ store.set("ttsTip", true); toast("🔊 ¿No se escucha? Desactiva el modo silencio del iPhone (interruptor lateral) y sube el volumen."); }
+    setTimeout(() => { if (!started) toast("🔊 No se escucha la voz: revisa que el iPhone no esté en modo silencio y que el volumen esté alto."); }, 1800);
+  }
+}
+
+/* =====================================================================
+   PALABRA DEL DÍA
+   ===================================================================== */
+// Una palabra por día: el 1 de enero es la palabra 1, el 31 de diciembre la 365
+function dayOfYear(d = new Date()){
+  return Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / 86400000);
+}
+const todayIndex = (dayOfYear() - 1) % WORDS.length;
+const todayKey = new Date().toLocaleDateString("en-CA");      // AAAA-MM-DD
+let wIndex = todayIndex;
+const wordRe = (w, suffix = "") => new RegExp("\\b" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + suffix + "\\b", "i");
+const dateOf = i => new Date(new Date().getFullYear(), 0, i + 1).toLocaleDateString("es-CL", { day:"numeric", month:"long" });
+
+// Progreso: qué pasos se hicieron con cada palabra, y qué días se completó la palabra del día
+let wpDone = store.get("wpDone", {});            // { indice: { complete:1, write:1, say:1 } }
+let daysDone = store.get("daysDone", []);        // ["2026-10-28", ...]
+const STEPS = ["complete", "write", "say"];
+function markStep(i, step){
+  const first = !(wpDone[i] || {})[step];
+  wpDone[i] = { ...(wpDone[i] || {}), [step]: 1 }; store.set("wpDone", wpDone);
+  if (first) addXP(15);
+  if (i === todayIndex && STEPS.every(s => wpDone[i][s]) && !daysDone.includes(todayKey)){
+    daysDone = [...daysDone, todayKey].slice(-400); store.set("daysDone", daysDone);
+    addXP(30); sfx("badge"); confetti(160);
+    toast("🏆 ¡Completaste la palabra del día! +30 ⭐ · Racha: " + dayStreak() + (dayStreak() === 1 ? " día" : " días"));
+  }
+  renderProgress(); renderMe(); checkBadges();
+}
+function dayStreak(){
+  let n = 0; const d = new Date();
+  if (!daysDone.includes(d.toLocaleDateString("en-CA"))) d.setDate(d.getDate() - 1);   // la racha sigue viva si hoy aún no practicas
+  while (daysDone.includes(d.toLocaleDateString("en-CA"))){ n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function renderProgress(){
+  const p = wpDone[wIndex] || {};
+  const labels = { complete:"1 · Complete", write:"2 · Write", say:"3 · Say it" };
+  $("wp-tabs").querySelectorAll(".chip").forEach(c => { c.textContent = labels[c.dataset.p] + (p[c.dataset.p] ? " ✓" : ""); });
+  const done = STEPS.filter(s => p[s]).length, st = dayStreak();
+  $("wp-progress").textContent = `${done}/3 completado` + (st ? ` · 🔥 Racha: ${st} ${st === 1 ? "día" : "días"}` : "");
+}
+
+function showWord(){
+  const [e, w, es, ex] = WORDS[wIndex];
+  $("w-emoji").textContent = e; $("w-word").textContent = w;
+  $("w-es").textContent = es; $("w-ex").textContent = "“" + ex + "”";
+  const isToday = wIndex === todayIndex;
+  $("w-day").textContent = (isToday ? "⭐ Today · " : "") + `Day ${wIndex + 1} · 365 · ${dateOf(wIndex)}`;
+  $("w-today").classList.toggle("hidden", isToday);
+  // Ejercicio 1: completar la oración
+  $("wp-gap").innerHTML = esc(ex).replace(wordRe(esc(w)), "<b>_____</b>");
+  $("wp-in").value = ""; $("wp-msg1").textContent = ""; hintLevel = 0;
+  // Ejercicio 2: oración propia
+  $("wp-word2").textContent = "“" + w + "”";
+  $("wp-sent").value = ""; $("wp-msg2").textContent = ""; $("wp-sent-actions").classList.add("hidden");
+  renderProgress();
+}
+$("w-next").addEventListener("click", () => { wIndex = (wIndex + 1) % WORDS.length; showWord(); });
+$("w-prev").addEventListener("click", () => { wIndex = (wIndex - 1 + WORDS.length) % WORDS.length; showWord(); });
+$("w-today").addEventListener("click", () => { wIndex = todayIndex; showWord(); });
+$("w-say").addEventListener("click", () => { const [,w,,ex] = WORDS[wIndex]; speak(w + ". " + ex, .85); });
+if (!("speechSynthesis" in window)) $("w-say").classList.add("hidden");
+
+// Pestañas de práctica
+function showPane(p){
+  $("wp-tabs").querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.p === p));
+  document.querySelectorAll(".wp-pane").forEach(el => el.classList.toggle("hidden", el.dataset.p !== p));
+}
+$("wp-tabs").querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => showPane(c.dataset.p)));
+
+// 1 · Completar
+let hintLevel = 0;
+function checkGap(){
+  const w = WORDS[wIndex][1], v = norm($("wp-in").value.trim()).replace(/[^a-z' -]/g, "");
+  if (!v){ $("wp-msg1").textContent = "Escribe la palabra que falta."; return; }
+  if (v === norm(w)){
+    $("wp-msg1").textContent = "✅ ¡Correcto! “" + WORDS[wIndex][3] + "”";
+    sfx("correct"); confetti(60, $("wp-check"));
+    speak(WORDS[wIndex][3], .9); markStep(wIndex, "complete");
+    setTimeout(() => showPane("write"), 1600);
+  } else {
+    $("wp-msg1").textContent = "❌ Casi. Mira la palabra de arriba o usa la pista 💡 e inténtalo otra vez.";
+    sfx("wrong"); shake($("wp-in").parentElement); markHard(wIndex);
+  }
+}
+$("wp-check").addEventListener("click", checkGap);
+$("wp-in").addEventListener("keydown", e => { if (e.key === "Enter") checkGap(); });
+$("wp-hint").addEventListener("click", () => {
+  const w = WORDS[wIndex][1]; hintLevel = Math.min(hintLevel + 1, w.length);
+  $("wp-msg1").textContent = "💡 Empieza con: " + w.slice(0, hintLevel) + "_".repeat(w.length - hintLevel) + `  (${w.length} letras)`;
+});
+
+// 2 · Escribir una oración propia
+function checkSentence(){
+  const [, w, , ex] = WORDS[wIndex], s = $("wp-sent").value.trim();
+  const n = s.split(/\s+/).filter(Boolean).length;
+  $("wp-sent-actions").classList.add("hidden");
+  if (!s){ $("wp-msg2").textContent = "Escribe una oración en inglés."; return; }
+  if (!wordRe(w, "(s|es|ed|d|ing|'s)?").test(s)){ $("wp-msg2").textContent = `Tu oración debe usar la palabra “${w}”. ¡Inténtalo!`; return; }
+  if (n < 4){ $("wp-msg2").textContent = "Escribe una oración un poco más larga (mínimo 4 palabras)."; return; }
+  if (norm(s).replace(/[^a-z ]/g, "") === norm(ex).replace(/[^a-z ]/g, "")){ $("wp-msg2").textContent = "Esa es la oración de ejemplo 😉 Crea una distinta, sobre ti o tu día."; return; }
+  const tips = [];
+  if (!/^[A-Z¿¡"“]/.test(s)) tips.push("empieza con mayúscula");
+  if (!/[.!?]["”]?$/.test(s)) tips.push("termina con un punto (.), ! o ?");
+  $("wp-msg2").textContent = "✅ ¡Muy bien! Usaste “" + w + "” en tu propia oración." + (tips.length ? " Tip: " + tips.join(" y ") + "." : "");
+  $("wp-sent-actions").classList.remove("hidden");
+  sfx("correct"); confetti(60, $("wp-check2"));
+  store.set("lastSentence", { i: wIndex, s });
+  markStep(wIndex, "write");
+}
+$("wp-check2").addEventListener("click", checkSentence);
+$("wp-sent").addEventListener("keydown", e => { if (e.key === "Enter") checkSentence(); });
+$("wp-sent-listen").addEventListener("click", () => speak($("wp-sent").value.trim(), .9));
+
+// 3 · Decirlo en voz alta (usa la sección Speak)
+let wpSay = null;   // recuerda qué frase se envió desde la palabra del día
+function goSpeak(text, meaning, m){
+  wpSay = { i: wIndex, text };
+  setMode(m, false); if (m === "own") $("own-in").value = text;
+  setTarget(text, meaning);
+  goTo("speak");
+}
+$("wp-say-word").addEventListener("click", () => { const [, w, es] = WORDS[wIndex]; goSpeak(w, "⭐ Word of the day · " + es, "words"); });
+$("wp-say-ex").addEventListener("click", () => { const [, w, es, ex] = WORDS[wIndex]; goSpeak(ex, "⭐ Word of the day: " + w + " (" + es + ")", "sentences"); });
+$("wp-sent-say").addEventListener("click", () => goSpeak($("wp-sent").value.trim(), "⭐ Tu oración con “" + WORDS[wIndex][1] + "”", "own"));
+$("w-challenge").addEventListener("click", () => {
+  qzForce = wIndex; newQuiz();
+  goTo("challenge");
+});
+showWord();
+
+/* =====================================================================
+   DESAFÍO RÁPIDO — conectado con la palabra del día
+   Preguntas sobre las palabras de los últimos 30 días (o las 365),
+   y la palabra de hoy aparece al inicio y cada 4 preguntas.
+   ===================================================================== */
+let qz = null, streak = 0, best = store.get("best", 0), qzMode = "recent", qzCount = 0, qzForce = null;
+const rnd1 = n => Math.floor(Math.random() * n);
+function quizPool(){
+  if (qzMode === "hard") return hardList();
+  if (qzMode === "all") return WORDS.map((_, i) => i);
+  return Array.from({ length: 30 }, (_, k) => (todayIndex - k + WORDS.length) % WORDS.length);
+}
+function distractors(a, field, n = 2){
+  const used = new Set([norm(WORDS[a][field])]), out = [];
+  while (out.length < n){
+    const i = rnd1(WORDS.length), v = norm(WORDS[i][field]);
+    if (i !== a && !used.has(v)){ used.add(v); out.push(i); }
+  }
+  return out;
+}
+function newQuiz(){
+  qzCount++;
+  let a;
+  const hardNow = hardList();
+  if (qzMode === "hard" && !hardNow.length){
+    toast("🎉 ¡No tienes palabras difíciles! Las que falles aparecerán aquí para repasarlas.");
+    qzMode = "recent"; $("qz-modes").querySelectorAll(".chip[data-q]").forEach(x => x.classList.toggle("on", x.dataset.q === "recent"));
+  }
+  if (qzForce !== null){ a = qzForce; qzForce = null; }
+  else if (qzMode !== "hard" && (qzCount === 1 || qzCount % 4 === 0)) a = todayIndex;
+  // Repaso: de vez en cuando vuelve una palabra que el alumno falló
+  else if (qzMode !== "hard" && hardNow.length && Math.random() < .3){ const p = hardNow.filter(i => !qz || i !== qz.a); a = p.length ? p[rnd1(p.length)] : hardNow[0]; }
+  else { let pool = quizPool().filter(i => !qz || i !== qz.a); if (!pool.length) pool = quizPool(); a = pool[rnd1(pool.length)]; }
+  const [e, w, es, ex] = WORDS[a];
+  const type = ["meaning", "reverse", "gap"][rnd1(3)];
+  const field = type === "meaning" ? 2 : 1;            // opciones en español o en inglés
+  const opts = [a, ...distractors(a, field)].sort(() => Math.random() - .5);
+  qz = { a, opts, done: false };
+  const tag = a === todayIndex ? `<span class="qtag">⭐ Word of the day</span>` : hard[a] ? `<span class="qtag hard">🎯 Repaso</span>` : "";
+  if (type === "meaning"){
+    $("qz-type").textContent = "What does it mean? · ¿Qué significa?";
+    $("qz-q").innerHTML = `${tag}${e} What does <em>${esc(w)}</em> mean?`;
+  } else if (type === "reverse"){
+    $("qz-type").textContent = "Say it in English · ¿Cómo se dice en inglés?";
+    $("qz-q").innerHTML = `${tag}${e} How do you say <em>${esc(es)}</em> in English?`;
+  } else {
+    $("qz-type").textContent = "Complete the sentence · Completa la oración";
+    $("qz-q").innerHTML = `${tag}${esc(ex).replace(wordRe(esc(w)), "<em>_____</em>")}`;
+  }
+  $("qz-opts").innerHTML = opts.map((i, k) => `<button class="opt" type="button" data-i="${i}"><i>${"ABC"[k]}</i>${esc(WORDS[i][field])}</button>`).join("");
+  $("qz-opts").querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => answer(b)));
+}
+function answer(b){
+  if (qz.done) return; qz.done = true;
+  const ok = +b.dataset.i === qz.a;
+  $("qz-opts").querySelectorAll(".opt").forEach(x => { if (+x.dataset.i === qz.a) x.classList.add("ok"); });
+  if (!ok){ b.classList.add("bad"); shake(b); sfx("wrong"); markHard(qz.a); }
+  else {
+    sfx("correct"); addXP(10); clearHard(qz.a);
+    stats.correct = (stats.correct || 0) + 1; store.set("stats", stats);
+    if ((streak + 1) % 5 === 0) confetti(120); else confetti(40, b);
+  }
+  streak = ok ? streak + 1 : 0; if (streak > best){ best = streak; store.set("best", best); }
+  $("qz-streak").textContent = streak; $("qz-best").textContent = best;
+  if (ok && !reduced){ const s = $("qz-streak"); s.classList.remove("bump"); void s.offsetWidth; s.classList.add("bump"); }
+  if (ok) speak(WORDS[qz.a][1]);
+  checkBadges();
+  setTimeout(() => { if (qz.done) newQuiz(); }, ok ? 1100 : 2200);
+}
+$("qz-modes").querySelectorAll(".chip[data-q]").forEach(c => c.addEventListener("click", () => {
+  qzMode = c.dataset.q;
+  $("qz-modes").querySelectorAll(".chip[data-q]").forEach(x => x.classList.toggle("on", x === c));
+  newQuiz();
+}));
+$("qz-next").addEventListener("click", newQuiz);
+$("qz-best").textContent = best;
+newQuiz();
+
+/* =====================================================================
+   PRÁCTICA DE PRONUNCIACIÓN — todo se calcula en el navegador (gratis)
+   ===================================================================== */
+let mode = "words", target = { text:"", meaning:"" }, attempts = store.get("attempts", []);
+
+function setTarget(text, meaning = ""){
+  target = { text, meaning };
+  $("t-phrase").textContent = text; $("t-meaning").textContent = meaning;
+  $("heard").textContent = ""; $("fb").classList.add("hidden");
+}
+function randomTarget(){
+  if (mode === "words"){ const w = WORDS[Math.floor(Math.random()*WORDS.length)]; setTarget(w[1], w[2]); }
+  else if (mode === "sentences"){ const w = WORDS[Math.floor(Math.random()*WORDS.length)]; setTarget(w[3], "Palabra clave: " + w[1] + " (" + w[2] + ")"); }
+  else if (mode === "twisters"){ const t = TWISTERS[Math.floor(Math.random()*TWISTERS.length)]; setTarget(t[0], t[1]); }
+}
+function setMode(m, pick = true){
+  mode = m;
+  $("modes").querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.m === m));
+  $("own").classList.toggle("hidden", m !== "own");
+  $("t-new").classList.toggle("hidden", m === "own");
+  if (m === "own"){ setTarget($("own-in").value.trim() || "Write your own sentence below ↓", ""); $("own-in").focus(); }
+  else if (pick) randomTarget();
+}
+$("modes").querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => setMode(c.dataset.m)));
+$("own-set").addEventListener("click", () => { const v = $("own-in").value.trim(); if (v) setTarget(v, "Tu frase · Your sentence"); });
+$("own-in").addEventListener("keydown", e => { if (e.key === "Enter") $("own-set").click(); });
+$("t-listen").addEventListener("click", () => speak(target.text, .9));
+$("t-slow").addEventListener("click", () => speak(target.text, .6));
+
+/* Selector de voz: la recomendada (más natural) queda primera y elegida por defecto */
+function renderVoices(){
+  const sel = document.getElementById("voice-sel"); if (!sel) return;
+  const list = englishVoices();
+  document.getElementById("voice-wrap").classList.toggle("hidden", list.length < 2);
+  const chosen = store.get("voice", "");
+  sel.innerHTML = list.map((v, i) => {
+    const nice = v.name.replace(/^Microsoft\s+/, "").replace(/\s*-\s*English.*$/, "").replace(/\s*\(.*?English.*?\)/, "");
+    return `<option value="${esc(v.name)}" ${(chosen ? v.name === chosen : i === 0) ? "selected" : ""}>${i === 0 ? "⭐ " : ""}${esc(nice)} · ${v.lang}${voiceScore(v) >= 70 ? " · natural" : ""}${!v.localService ? " · online" : ""}</option>`;
+  }).join("");
+}
+$("voice-sel").addEventListener("change", e => { store.set("voice", e.target.value); speak("Hello! This is my voice.", .95); });
+renderVoices();
+$("t-new").addEventListener("click", randomTarget);
+setTarget(WORDS[wIndex][1], WORDS[wIndex][2]);
+
+/* Reconocimiento de voz del navegador */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false, heardText = "", alternatives = [], confidence = 0;
+if (!SR){
+  $("sr-note").textContent = "Tu navegador no permite grabar voz aquí. Usa Google Chrome o Microsoft Edge (computador o Android) para practicar tu pronunciación.";
+  $("rec").disabled = true;
+} else {
+  $("sr-note").textContent = "Consejo: habla claro, cerca del micrófono y en un lugar sin ruido. El navegador pedirá permiso para usar el micrófono.";
+}
+function setListening(on){
+  listening = on;
+  $("rec").classList.toggle("live", on);
+  $("rec-label").textContent = on ? "■ Stop · Detener" : "● Record · Grabar";
+}
+$("rec").addEventListener("click", () => {
+  if (listening){ rec && rec.stop(); return; }
+  if (!target.text || mode === "own" && !$("own-in").value.trim() && target.text.startsWith("Write your own")){ $("own-in").focus(); return; }
+  if ("speechSynthesis" in window && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel();
+  heardText = ""; alternatives = []; confidence = 0;
+  rec = new SR(); rec.lang = "en-US"; rec.interimResults = true; rec.maxAlternatives = 3; rec.continuous = false;
+  rec.onresult = e => {
+    let fin = "", interim = "";
+    for (let i = 0; i < e.results.length; i++){
+      const r = e.results[i];
+      if (r.isFinal){ fin += r[0].transcript; confidence = r[0].confidence || 0; alternatives = Array.from({length:r.length}, (_, k) => r[k].transcript); }
+      else interim += r[0].transcript;
+    }
+    heardText = (fin || interim).trim();
+    $("heard").textContent = "I heard · Escuché: “" + heardText + "”";
+  };
+  rec.onerror = e => {
+    const msg = { "not-allowed":"Necesito permiso para usar el micrófono. Revisa el ícono 🔒 junto a la dirección del sitio.",
+      "no-speech":"No te escuché. Presiona Grabar y habla un poco más fuerte.", "audio-capture":"No encontré un micrófono conectado.",
+      "network":"Se necesita internet para reconocer tu voz." }[e.error] || "Hubo un problema con el micrófono. Intenta otra vez.";
+    $("heard").textContent = msg;
+  };
+  rec.onend = () => { setListening(false); if (heardText) evaluate(); };
+  try { rec.start(); setListening(true); $("heard").textContent = "Listening… · Te escucho…"; } catch(e){ setListening(false); }
+});
+
+/* Comparación palabra por palabra */
+const words = s => norm(s).replace(/[^a-z0-9'\s-]/g, " ").replace(/-/g, " ").split(/\s+/).filter(Boolean);
+function lev(a, b){
+  const m = a.length, n = b.length; if (!m || !n) return Math.max(m, n);
+  let prev = Array.from({length:n+1}, (_, j) => j);
+  for (let i = 1; i <= m; i++){ const cur = [i]; for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1)); prev = cur; }
+  return prev[n];
+}
+// Dos palabras cuentan como iguales si coinciden, o si difieren en 1 letra SIN que esa letra sea un error
+// de sonido típico (así "tree" ya no pasa por "three", ni "sit" por "seat")
+const same = (a, b) => a === b || a.replace(/'/g,"") === b.replace(/'/g,"") ||
+  (Math.max(a.length,b.length) > 4 && lev(a,b) <= 1 && !diagnose(a, b));
+function align(tw, hw){
+  const m = tw.length, n = hw.length, dp = Array.from({length:m+1}, () => new Array(n+1).fill(0));
+  for (let i = m-1; i >= 0; i--) for (let j = n-1; j >= 0; j--) dp[i][j] = same(tw[i], hw[j]) ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+  const out = []; let i = 0, j = 0, pendT = [], pendH = [];
+  const flush = () => { pendT.forEach((w, k) => out.push({ word:w, status: pendH[k] ? "unclear" : "missing", heard: pendH[k] || "" })); pendT = []; pendH = []; };
+  while (i < m && j < n){
+    if (same(tw[i], hw[j])){ flush(); out.push({ word:tw[i], status:"ok", heard:hw[j] }); i++; j++; }
+    else if (dp[i+1][j] >= dp[i][j+1]) pendT.push(tw[i++]); else pendH.push(hw[j++]);
+  }
+  while (i < m) pendT.push(tw[i++]); while (j < n) pendH.push(hw[j++]); flush();
+  return out;
+}
+
+/* =====================================================================
+   DIAGNÓSTICO DE SONIDOS
+   Compara la palabra que había que decir con la que entendió el reconocedor
+   y deduce qué sonido falló (ej. think → "tink" = /θ/ pronunciada como /t/).
+   ===================================================================== */
+const SOUNDS = {
+  th:  { ipa:"/θ/ · /ð/", label:"th", tw:"th", pair:["think","sink"],
+         how:"Pon la punta de la lengua entre los dientes y sopla sin cortar el aire. /θ/ es sin voz (think), /ð/ con voz (this). No es t, d ni s." },
+  v:   { ipa:"/v/", label:"v", tw:"v / w", pair:["very","berry"],
+         how:"Apoya los dientes de arriba sobre el labio inferior y haz vibrar la garganta. En la /b/ se juntan los dos labios; en la /v/ no." },
+  sc:  { ipa:"/s/ + consonante", label:"s inicial", tw:"s + consonante", pair:["school","eschool"],
+         how:"Empieza directo con un siseo largo, sin vocal antes: sss-chool, sss-pain. No digas “es”." },
+  h:   { ipa:"/h/", label:"h aspirada", tw:"h aspirada", pair:["hat","at"],
+         how:"La h inglesa es un soplido suave, como empañar un vidrio: h-hat. No la omitas, pero tampoco la hagas áspera como la j española." },
+  y:   { ipa:"/j/", label:"y", tw:"y / j", pair:["yes","Jess"],
+         how:"La lengua casi toca el paladar, como una “i” muy rápida: yes = /jes/. No la pronuncies como “sh” ni como “ll”." },
+  j:   { ipa:"/dʒ/", label:"j", tw:"y / j", pair:["jam","yam"],
+         how:"Pega la lengua al paladar y suéltala con voz, como una “ch” vibrante: jam /dʒæm/." },
+  sh:  { ipa:"/ʃ/", label:"sh", tw:"sh / s", pair:["ship","chip"],
+         how:"Labios redondeados hacia afuera y aire continuo, como pedir silencio: shhh. Si cortas el aire, suena “ch”." },
+  ch:  { ipa:"/tʃ/", label:"ch", tw:"ch", pair:["chair","share"],
+         how:"Empieza con la lengua pegada (como una t) y suelta de golpe: ch-air. Es un sonido corto, no continuo." },
+  z:   { ipa:"/z/", label:"z sonora", tw:"z sonora", pair:["zoo","Sue"],
+         how:"Mismo lugar que la s, pero vibrando la garganta como una abeja: zzz. Pon la mano en el cuello y siente la vibración." },
+  rl:  { ipa:"/r/ · /l/", label:"r / l", tw:"r / l / y", pair:["right","light"],
+         how:"/r/: curva la lengua hacia atrás sin tocar nada y sin vibrar. /l/: la punta toca justo detrás de los dientes de arriba." },
+  w:   { ipa:"/w/", label:"w", tw:"v / w", pair:["wood","good"],
+         how:"Redondea los labios como para decir “u” y ábrelos rápido: w-ood. No agregues “g” ni “b” antes." },
+  ng:  { ipa:"/ŋ/", label:"ng final", tw:"ng final", pair:["sing","sin"],
+         how:"Termina con la parte de atrás de la lengua contra el paladar blando, sin soltar una g fuerte: sing /sɪŋ/." },
+  fin: { ipa:"consonante final", label:"sonido final", tw:"b / l", pair:["big","bee"],
+         how:"En inglés la última consonante cambia el significado: pronúnciala clara y corta, sin agregar vocal: big /bɪɡ/, no “bi” ni “bigue”." },
+  s:   { ipa:"-s /s/ /z/", label:"-s final", tw:"s + consonante", pair:["cats","cat"],
+         how:"La -s del plural y de he/she/it (she plays) siempre se pronuncia: cats /s/, dogs /z/." },
+  ed:  { ipa:"-ed /t/ /d/ /ɪd/", label:"-ed", tw:"-ed", pair:["walked","walk"],
+         how:"Después de p, k, s, sh, ch, f suena /t/ (walked); después de t o d suena /ɪd/ (wanted); en los demás casos /d/ (played). Nunca “ed” completo." },
+  ii:  { ipa:"/ɪ/ · /iː/", label:"i corta / i larga", tw:"i corta / i larga", pair:["ship","sheep"],
+         how:"/ɪ/ (ship) es corta y relajada, casi entre “i” y “e”. /iː/ (sheep) es larga y tensa, sonriendo. Cambiar la duración cambia la palabra." },
+  ae:  { ipa:"/æ/", label:"a abierta", tw:"a abierta /æ/", pair:["cat","cut"],
+         how:"Abre bien la boca y estira los labios, entre “a” y “e”: cat /kæt/. No es la “a” del español." },
+  uh:  { ipa:"/ʌ/", label:"u corta", tw:"u corta /ʌ/", pair:["cup","cap"],
+         how:"Sonido corto y neutro, boca medio abierta, como una “a” relajada: cup /kʌp/. No es una “u”." },
+  weak:{ ipa:"/ə/ formas débiles", label:"palabras cortas", tw:"", pair:null,
+         how:"Palabras como the, a, to, of y and se dicen suaves y pegadas a la siguiente: to the park = /tə ðə pɑːk/. No las omitas, pero tampoco las acentúes." }
+};
+const WEAK = new Set(["the","a","an","to","of","and","for","at","can","was","were","are","is","from","some","them","her","his","as","but","or","than","that","you","your","do","does","has","have"]);
+
+// ¿Reemplazando "from" por alguna opción en la palabra correcta se obtiene lo que se escuchó?
+function swapNear(w, h, from, toList){
+  if (!w.includes(from)) return null;
+  for (const to of toList){
+    const c = w.split(from).join(to);
+    if (c === h || (c.length > 3 && h.length > 3 && lev(c, h) <= 1)) return to;
+  }
+  return null;
+}
+// Devuelve { key, detail } con el sonido que falló, o null si no se reconoce un patrón
+// Vocales "aproximadas" para comparar cómo suena (see≈si, sue≈zoo≈u)
+const loose = s => s.replace(/ee|ea|ie|ey|y$/g, "i").replace(/oo|ou|ue|ew/g, "u").replace(/e$/, "");
+function diagnose(w, h){
+  if (!w || !h || w === h) return null;
+  let r;
+  // Sonidos iniciales en palabras cortas (she → see, chair → share, would → good, zoo → sue)
+  if (/^sh/.test(w) && /^s[^h]/.test(h) && lev(loose(w.slice(2)), loose(h.slice(1))) <= 1)
+    return { key:"sh", detail:"Tu /ʃ/ (sh) sonó como /s/: redondea los labios." };
+  if (/^ch/.test(w) && /^sh/.test(h) && lev(loose(w.slice(2)), loose(h.slice(2))) <= 2)
+    return { key:"ch", detail:"Tu /tʃ/ (ch) sonó como “sh”: corta el aire al empezar." };
+  if (/^w/.test(w) && w.length >= 4 && /^(gu|g|b)/.test(h) && lev(loose(w.slice(1)), loose(h.replace(/^(gu|g|b)/, ""))) <= 2)
+    return { key:"w", detail:"Agregaste un sonido “g/b” antes de la /w/." };
+  if (/^z/.test(w) && /^s/.test(h) && lev(loose(w.slice(1)), loose(h.slice(1))) <= 1)
+    return { key:"z", detail:"Tu /z/ sonó como /s/: falta la vibración." };
+  if (/[bdgkptfvszmx]$/.test(w) && w.length <= 5 && h[0] === w[0] && /[aeiouy]$/.test(h) && lev(loose(w.slice(0, -1)), loose(h)) <= 1)
+    return { key:"fin", detail:"Se perdió la consonante final." };
+  if (/ed$/.test(w) && w.length > 4 && (h === w.slice(0, -2) || h === w.slice(0, -1)))
+    return { key:"ed", detail:"No se escuchó la terminación -ed." };
+  if (/[^s]s$/.test(w) && w.length > 3 && h === w.slice(0, -1))
+    return { key:"s", detail:"No se escuchó la -s final." };
+  if (!h.includes("th") && (r = swapNear(w, h, "th", ["t","d","f","s","z"])))
+    return { key:"th", detail:`Tu /θ/ sonó como /${r}/.` };
+  if (/^s[ptkcmnlw]/.test(w) && /^[ei]s/.test(h) && lev(h.slice(1), w) <= 1)
+    return { key:"sc", detail:"Agregaste una vocal antes de la s inicial." };
+  if (!h.includes("v") && swapNear(w, h, "v", ["b"]))
+    return { key:"v", detail:"Tu /v/ sonó como /b/." };
+  if (!h.includes("sh") && (r = swapNear(w, h, "sh", ["ch","s"])))
+    return { key:"sh", detail:`Tu /ʃ/ (sh) sonó como “${r}”.` };
+  if (!h.includes("ch") && swapNear(w, h, "ch", ["sh"]))
+    return { key:"ch", detail:"Tu /tʃ/ (ch) sonó como “sh”: corta el aire al empezar." };
+  if (/^y/.test(w) && /^(j|g[ei])/.test(h) && lev("j" + w.slice(1), h.replace(/^g/, "j")) <= 1)
+    return { key:"y", detail:"Tu /j/ (y) sonó como /dʒ/ (j)." };
+  if (/^j/.test(w) && /^y/.test(h) && lev("y" + w.slice(1), h) <= 1)
+    return { key:"j", detail:"Tu /dʒ/ (j) sonó como /j/ (y)." };
+  if (/^h/.test(w) && !/^(hour|honest|honou?r|heir)/.test(w) && /^[aeiou]/.test(h) && (lev(w.slice(1), h) <= 1 || lev(loose(w.slice(1)), loose(h)) <= 1))
+    return { key:"h", detail:"No se escuchó la h inicial." };
+  if (/^w/.test(w) && /^(gu|g|b)/.test(h) && lev(w.slice(1), h.replace(/^(gu|g|b)/, "")) <= 1)
+    return { key:"w", detail:"Agregaste un sonido “g/b” antes de la /w/." };
+  if ((r = swapNear(w, h, "r", ["l"])) || (r = swapNear(w, h, "l", ["r"])))
+    return { key:"rl", detail:`Se confundió /r/ con /l/.` };
+  if (!h.includes("z") && swapNear(w, h, "z", ["s"]))
+    return { key:"z", detail:"Tu /z/ sonó como /s/: falta la vibración." };
+  if (/ng$/.test(w) && (h === w.slice(0, -1) || h === w.slice(0, -2) + "n"))
+    return { key:"ng", detail:"Tu /ŋ/ final sonó como /n/." };
+  if (swapNear(w, h, "i", ["ee","ea"]) || swapNear(w, h, "ee", ["i"]) || swapNear(w, h, "ea", ["i"]))
+    return { key:"ii", detail:/ee|ea/.test(w) ? "Tu /iː/ larga sonó corta." : "Tu /ɪ/ corta sonó larga." };
+  if (/[^aeiou]a[^aeiouwyr]($|[^aeiou])/.test(w) && swapNear(w, h, "a", ["u","e","o"]))
+    return { key:"ae", detail:"Tu /æ/ no se abrió lo suficiente." };
+  if (/[^aeiou]u[^aeiou]($|[^aeiou])/.test(w) && swapNear(w, h, "u", ["a","o"]))
+    return { key:"uh", detail:"Tu /ʌ/ sonó como otra vocal." };
+  if (/[bdgkptfvszmx]$/.test(w) && h.length < w.length && w.startsWith(h.replace(/[aeiouy]$/, "")) && h.length >= 2)
+    return { key:"fin", detail:"Se perdió la consonante final." };
+  return null;
+}
+
+/* Consejo general según la ortografía (cuando no se detecta un error de sonido concreto) */
+function soundTip(w){
+  if (/th/.test(w)) return ["th", "Pon la punta de la lengua entre los dientes y sopla suavemente: think /θ/, this /ð/. No es 't' ni 'd'."];
+  if (/^s[ptkcmnlw]/.test(w)) return ["s + consonante", "No agregues una 'e' al inicio: di “s-chool”, no “eschool”. Empieza con un siseo: sss…"];
+  if (/v/.test(w)) return ["v", "Muerde suavemente el labio inferior con los dientes de arriba y haz vibrar: /v/. En inglés la v no suena como b."];
+  if (/sh/.test(w)) return ["sh", "Redondea los labios como cuando pides silencio: shhh."];
+  if (/^h/.test(w)) return ["h", "La h inglesa sí suena: es como una 'j' muy suave, un suspiro: h-ello."];
+  if (/^j|dg|ge$/.test(w)) return ["j /dʒ/", "La j inglesa suena como una 'ch' más vibrante: jump = /dʒʌmp/."];
+  if (/^y/.test(w)) return ["y", "La y inicial suena como una 'i' rápida: yes = “iés”, no “shés”."];
+  if (/^w|wh/.test(w)) return ["w", "Redondea los labios como para decir 'u' y abre rápido: w = 'u' rápida."];
+  if (/ed$/.test(w)) return ["-ed", "La terminación -ed tiene tres sonidos: /t/ (walked), /d/ (played), /ɪd/ (wanted). Casi nunca es “ed”."];
+  if (/r/.test(w)) return ["r", "La r inglesa no vibra: curva la lengua hacia atrás sin tocar el paladar."];
+  if (/z/.test(w)) return ["z", "La z inglesa zumba como una abeja: zzz."];
+  if (/[tdkpgbsz]$/.test(w)) return ["sonido final", "Pronuncia la consonante del final, no la elimines: “big”, no “bi”."];
+  if (/i[^aeiou]/.test(w)) return ["i corta /ɪ/", "La i corta es más relajada que la i española, casi entre 'i' y 'e'."];
+  return ["ritmo", "Escucha el modelo en modo 🐢 lento y repite sílaba por sílaba."];
+}
+
+function localFeedback(text, heard, conf){
+  const res = align(words(text), words(heard));
+  const n = res.length || 1, ok = res.filter(r => r.status === "ok").length, unc = res.filter(r => r.status === "unclear").length;
+  let score = Math.round((ok + unc * .35) / n * 100);
+  if (conf > 0 && score > 0) score = Math.round(score * .85 + conf * 15);
+  score = Math.max(0, Math.min(100, score));
+  const level = score >= 85 ? "excellent" : score >= 60 ? "good" : "keep_practicing";
+  // Diagnóstico palabra por palabra
+  const wordsOut = res.map(r => {
+    if (r.status === "ok") return r;
+    if (r.status === "missing" && WEAK.has(r.word)) return { ...r, issue: "weak", detail: `No se escuchó “${r.word}”.` };
+    const d = r.status === "unclear" ? diagnose(r.word, r.heard) : null;
+    if (d) return { ...r, issue: d.key, detail: d.detail };
+    const [hint, tip] = soundTip(r.word);                           // sin patrón claro: consejo general
+    return { ...r, issue: null, hint, tip,
+      detail: r.status === "missing" ? `No se escuchó “${r.word}”.` : `Sonó como “${r.heard}”.` };
+  });
+  const problems = wordsOut.filter(w => w.status !== "ok");
+  // Sonidos con error (sin repetir), ordenados por cuántas veces aparecen
+  const counts = {};
+  problems.forEach(p => { if (p.issue) counts[p.issue] = (counts[p.issue] || 0) + 1; });
+  const issues = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  const main = issues[0] ? SOUNDS[issues[0]] : null;
+  const summary_es = level === "excellent" ? "¡Excelente! Se entendió todo muy claro. Sigue así y prueba una frase más difícil."
+    : main ? `${level === "good" ? "¡Muy bien! Se entendió casi todo." : "¡Buen intento!"} Lo principal a mejorar es el sonido ${main.ipa} (${main.label}). Mira cómo hacerlo abajo.`
+    : level === "good" ? `¡Muy bien! Se entendió casi todo. Revisa ${problems.length === 1 ? "esta palabra" : "estas palabras"}: ${problems.map(p => p.word).join(", ")}.`
+    : "¡Buen intento! Escucha el modelo en modo lento, repite por partes y vuelve a grabar. ¡Tú puedes!";
+  const summary_en = level === "excellent" ? "Excellent! Very clear pronunciation." : level === "good" ? "Very good! Almost everything was clear." : "Good try! Listen again and practice slowly.";
+  const tips = problems.length
+    ? ["Escucha el modelo en 🐢 lento, repite primero las palabras marcadas y luego la frase completa."]
+    : ["Ahora intenta decirlo un poco más rápido y con más entonación, como en una conversación real."];
+  // Trabalenguas del sonido que más costó
+  const tw = main && main.tw ? TWISTERS.find(t => t[1].startsWith("Practica: " + main.tw)) : null;
+  return { score, level, summary_es, summary_en, words: wordsOut, issues, tips_es: tips,
+    next_phrase: tw && tw[0] !== text ? tw[0] : "", next_label: main ? `Trabalenguas para practicar ${main.ipa}` : "" };
+}
+
+function evaluate(){
+  const fb = $("fb"); fb.classList.remove("hidden");
+  const data = localFeedback(target.text, heardText, confidence);
+  renderFeedback(data);
+  attempts = [...attempts, data.score].slice(-8); store.set("attempts", attempts);
+  $("history").textContent = "Your last scores · Tus últimos puntajes: " + attempts.join(" · ");
+  stats.pronBest = Math.max(stats.pronBest || 0, data.score);
+  stats.pronCount = (stats.pronCount || 0) + 1; stats.pronSum = (stats.pronSum || 0) + data.score;
+  // Contar los sonidos con error, para el perfil y el panel del profe
+  stats.sounds = stats.sounds || {};
+  (data.issues || []).forEach(k => { stats.sounds[k] = (stats.sounds[k] || 0) + 1; });
+  store.set("stats", stats);
+  addXP(Math.round(data.score / 10));
+  if (data.score >= 85){ sfx("correct"); confetti(130); } else if (data.score < 60) sfx("wrong");
+  checkBadges();
+  // Si la frase venía de la palabra del día y salió bien, se marca el paso 3
+  if (wpSay && wpSay.text === target.text && data.score >= 60){
+    const already = (wpDone[wpSay.i] || {}).say;
+    markStep(wpSay.i, "say");
+    if (!already) toast("⭐ ¡Paso 3 listo! Dijiste la palabra del día en voz alta.");
+  }
+}
+
+function renderFeedback(d){
+  const label = { excellent:"Excellent · Excelente", good:"Good · Bien", keep_practicing:"Keep practicing · Sigue practicando" }[d.level] || "";
+  const problems = (d.words || []).filter(w => w.status !== "ok");
+  // Una tarjeta por sonido con error (máx. 3) + consejos generales para palabras sin patrón claro
+  const cards = (d.issues || []).slice(0, 3).map(k => {
+    const S = SOUNDS[k], ex = problems.filter(p => p.issue === k);
+    const twi = S.tw ? TWISTERS.findIndex(t => t[1].startsWith("Practica: " + S.tw)) : -1;
+    return `<div class="snd">
+      <div class="snd-h"><b>${esc(S.ipa)}</b><span>${esc(S.label)}</span></div>
+      <p class="snd-what">${ex.map(p => `<b>${esc(p.word)}</b>${p.heard ? ` → oí “${esc(p.heard)}”` : ""}`).join(" · ")}<br>${esc(ex[0].detail)}</p>
+      <p class="snd-how"><span class="cap">Cómo se hace</span>${esc(S.how)}</p>
+      <div class="row">
+        ${S.pair ? `<button class="btn ghost sm" type="button" data-pair="${esc(S.pair.join("|"))}">🔊 ${esc(S.pair[0])} / ${esc(S.pair[1])}</button>` : ""}
+        ${twi >= 0 ? `<button class="btn talk sm" type="button" data-tw="${twi}">🎯 Practicar <span class="ipa">${esc(S.ipa)}</span></button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+  const generic = problems.filter(p => !p.issue && p.tip).slice(0, 2);
+  $("fb").innerHTML = `
+    <div class="score"><b>${d.score}</b><div style="flex:1"><span class="cap">${label} · /100</span><div class="meter"><i style="width:0"></i></div></div></div>
+    <div class="teacher"><span class="avatar">${d.level === "excellent" ? "🏆" : d.level === "good" ? "👍" : "💪"}</span><div><p>${esc(d.summary_es)}</p>${d.summary_en ? `<p class="en">${esc(d.summary_en)}</p>` : ""}</div></div>
+    <div class="wchips">${(d.words || []).map(w => `<span class="wc ${w.status}" title="${w.heard ? "Escuché: " + esc(w.heard) : ""}">${w.status === "ok" ? "✓" : w.status === "unclear" ? "~" : "✕"} ${esc(w.word)}${w.status === "unclear" && w.heard ? ` → ${esc(w.heard)}` : ""}</span>`).join("")}</div>
+    ${cards ? `<div class="snds">${cards}</div>` : ""}
+    ${generic.length ? `<ul class="tips">${generic.map(w => `<li><span><b>${esc(w.word)}</b> <span class="hint">${esc(w.detail)}</span><br>${esc(w.tip)}</span></li>`).join("")}</ul>` : ""}
+    ${(d.tips_es || []).length ? `<div><span class="cap">Profe tips · Consejos</span><ul class="tips" style="margin-top:10px">${d.tips_es.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul></div>` : ""}
+    <div class="row">
+      <button class="btn talk" id="fb-again" type="button">↻ Try again</button>
+      <button class="btn ghost" id="fb-hear" type="button">🔊 Hear model</button>
+      ${d.next_phrase ? `<button class="btn ghost" id="fb-next" type="button">Next: “${esc(d.next_phrase)}” →</button>` : ""}
+    </div>
+    <p class="note">El reconocimiento de voz del navegador puede equivocarse a veces. Si crees que lo dijiste bien, ¡inténtalo otra vez!</p>`;
+  requestAnimationFrame(() => { const m = $("fb").querySelector(".meter i"); if (m) m.style.width = d.score + "%"; });
+  $("fb-again").addEventListener("click", () => $("rec").click());
+  $("fb-hear").addEventListener("click", () => speak(target.text, .8));
+  const nx = $("fb-next"); if (nx) nx.addEventListener("click", () => { setTarget(d.next_phrase, d.next_label || "Trabalenguas para practicar ese sonido"); });
+  // Par mínimo: escuchar las dos palabras seguidas para notar la diferencia
+  $("fb").querySelectorAll("[data-pair]").forEach(b => b.addEventListener("click", () => {
+    const [a, c] = b.dataset.pair.split("|"); speak(`${a}. ... ${c}. ... ${a}.`, .75);
+  }));
+  $("fb").querySelectorAll("[data-tw]").forEach(b => b.addEventListener("click", () => {
+    const t = TWISTERS[+b.dataset.tw]; setTarget(t[0], t[1]); $("t-phrase").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+  }));
+}
+if (attempts.length) $("history").textContent = "Your last scores · Tus últimos puntajes: " + attempts.join(" · ");
+
+/* =====================================================================
+   CHALLENGE ZONE — 7 tipos de ejercicio por nivel (contenido en ejercicios.js)
+   ===================================================================== */
+const ZLEVELS = {
+  A1: { label:"A1 · 5°–6° Básico", courses:["5basico","6basico"] },
+  A2: { label:"A2 · 7°–8° Básico", courses:["7basico","8basico"] },
+  B1: { label:"B1 · 1°–3° Medio",  courses:["1medio","3medio"] }
+};
+const ZTYPES = [
+  { id:"scramble", icon:"🧩", name:"Sentence scramble",     es:"Ordena las palabras",       n:5, skill:"Gramática" },
+  { id:"use",      icon:"✏️", name:"Language in use",       es:"Elige la forma correcta",   n:6, skill:"Gramática" },
+  { id:"vocab",    icon:"📖", name:"Vocabulary in context", es:"Completa el texto",         n:1, skill:"Vocabulario" },
+  { id:"mistake",  icon:"🔍", name:"Find the mistake",      es:"Toca la palabra incorrecta", n:5, skill:"Gramática" },
+  { id:"wf",       icon:"🔤", name:"Word formation",        es:"Transforma la palabra",     n:5, skill:"Vocabulario" },
+  { id:"dict",     icon:"🎧", name:"Dictation",             es:"Escucha y escribe",         n:5, skill:"Audición" },
+  { id:"read",     icon:"📚", name:"Mini reading",          es:"Lee y responde",            n:1, skill:"Lectura" }
+];
+function zDefaultLevel(){
+  const c = (store.get("session", null) || {}).course;
+  return Object.keys(ZLEVELS).find(k => ZLEVELS[k].courses.includes(c)) || "A1";
+}
+let zLevel = store.get("zLevel", "") || zDefaultLevel();
+let zr = null;                                                  // ronda en curso
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const zNorm = s => norm(s).replace(/[’']/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+
+function zRenderLevels(){
+  $("zn-levels").innerHTML = Object.entries(ZLEVELS).map(([k, L]) =>
+    `<button class="chip ${k === zLevel ? "on" : ""}" type="button" data-l="${k}">${L.label}</button>`).join("");
+  $("zn-levels").querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+    zLevel = b.dataset.l; store.set("zLevel", zLevel); zRenderLevels(); zMenu();
+  }));
+}
+function zMenu(){
+  zr = null;
+  $("zn-play").classList.add("hidden"); $("zn-end").classList.add("hidden"); $("zn-menu").classList.remove("hidden"); $("zn-levels").classList.remove("hidden");
+  const st = stats.zone || {};
+  $("zn-menu").innerHTML = ZTYPES.map(t => {
+    const s = st[t.id], pct = s && s.done ? Math.round(s.ok / s.done * 100) : null;
+    return `<button class="zn-card" type="button" data-t="${t.id}"><span class="ic">${t.icon}</span>
+      <span><b>${t.name}</b><small>${t.es}</small>${pct !== null ? `<em class="${pct >= 80 ? "good" : ""}">Logro ${pct}% · ${s.rounds || 0} ${s.rounds === 1 ? "ronda" : "rondas"}</em>` : `<em>Nuevo</em>`}</span></button>`;
+  }).join("");
+  $("zn-menu").querySelectorAll(".zn-card").forEach(b => b.addEventListener("click", () => zStart(b.dataset.t)));
+}
+// Elige ejercicios sin repetir los recientes (se recuerda qué vio el alumno en este nivel)
+function zPick(type, n){
+  const pool = EXERCISES[zLevel][type], key = zLevel + "." + type;
+  const seen = store.get("zSeen", {}); let used = seen[key] || [];
+  let fresh = pool.map((_, i) => i).filter(i => !used.includes(i));
+  if (fresh.length < n){ used = []; fresh = pool.map((_, i) => i); }
+  const pick = shuffle(fresh).slice(0, n);
+  seen[key] = [...used, ...pick]; rawSet("zSeen", seen);
+  return pick.map(i => pool[i]);
+}
+function zStart(type){
+  const T = ZTYPES.find(t => t.id === type);
+  zr = { T, items: zPick(type, T.n), i: 0, ok: 0, total: 0 };
+  $("zn-menu").classList.add("hidden"); $("zn-levels").classList.add("hidden"); $("zn-end").classList.add("hidden");
+  $("zn-play").classList.remove("hidden");
+  $("zn-title").textContent = `${T.icon} ${T.name} · ${zLevel}`;
+  zShow();
+  document.querySelector("#zone .panel").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+}
+$("zn-back").addEventListener("click", zMenu);
+
+function zShow(){
+  const it = zr.items[zr.i];
+  $("zn-count").textContent = `${zr.i + 1}/${zr.items.length}`;
+  $("zn-bar").style.width = (zr.i / zr.items.length * 100) + "%";
+  $("zn-msg").textContent = ""; $("zn-body").innerHTML = ""; $("zn-foot").innerHTML = "";
+  Z[zr.T.id](it);
+}
+// Registrar resultado del ejercicio actual y mostrar "Siguiente"
+function zDone(ok, total, why){
+  zr.ok += ok; zr.total += total;
+  if (ok === total){ sfx("correct"); confetti(30, $("zn-foot")); } else { sfx("wrong"); }
+  if (ok) addXP(5 * ok);
+  if (why) $("zn-body").insertAdjacentHTML("beforeend", `<div class="zn-why">💡 ${why}</div>`);
+  const last = zr.i >= zr.items.length - 1;
+  $("zn-foot").innerHTML = `<button class="btn play" id="zn-next" type="button">${last ? "Ver resultado 🏁" : "Siguiente →"}</button>`;
+  $("zn-next").addEventListener("click", () => { if (last) zEnd(); else { zr.i++; zShow(); } });
+  $("zn-next").focus();
+}
+function zCheckBtn(label, fn){
+  $("zn-foot").innerHTML = `<button class="btn play" id="zn-check" type="button">✓ ${label || "Check"}</button>`;
+  $("zn-check").addEventListener("click", fn);
+}
+
+const Z = {
+  /* 🧩 Ordenar palabras: tocar para mover entre las palabras sueltas y la oración */
+  scramble(it){
+    const end = (it.s.match(/[.?!]$/) || [""])[0];
+    // La primera palabra va en minúscula (para no dar pistas), salvo "I" / "I'm"
+    const toks = it.s.replace(/[.?!]$/, "").split(" ").map((w, i) => i === 0 && !/^I('|$)/.test(w) ? w[0].toLowerCase() + w.slice(1) : w);
+    let pool = shuffle(toks.map((w, i) => ({ w, i })));
+    if (pool.map(p => p.w).join(" ") === toks.join(" ")) pool = pool.reverse();
+    const line = [];
+    $("zn-body").innerHTML = `<p class="zn-q">Ordena las palabras para formar la oración <span class="cap">${end === "?" ? "· es una pregunta" : ""}</span></p>
+      <div class="zn-line" id="zs-line"></div><div class="zn-pool" id="zs-pool"></div>`;
+    const draw = () => {
+      $("zs-line").innerHTML = line.map((p, k) => `<button class="zn-chip" type="button" data-k="${k}">${esc(p.w)}</button>`).join("") + (line.length === toks.length ? `<span class="zn-chip" style="box-shadow:none;background:none">${end}</span>` : "");
+      $("zs-pool").innerHTML = pool.map((p, k) => `<button class="zn-chip" type="button" data-k="${k}">${esc(p.w)}</button>`).join("");
+      $("zs-line").querySelectorAll("button").forEach(b => b.onclick = () => { pool.push(...line.splice(+b.dataset.k, 1)); sfx("select"); draw(); });
+      $("zs-pool").querySelectorAll("button").forEach(b => b.onclick = () => { line.push(...pool.splice(+b.dataset.k, 1)); sfx("select"); draw(); });
+      $("zn-check").disabled = line.length !== toks.length;
+    };
+    zCheckBtn("Check", () => {
+      const ans = zNorm(line.map(p => p.w).join(" "));
+      const ok = [it.s, ...(it.alt || [])].some(x => zNorm(x) === ans);
+      $("zs-line").classList.add(ok ? "ok" : "bad"); $("zs-pool").innerHTML = "";
+      $("zs-line").querySelectorAll("button").forEach(b => b.disabled = true);
+      zDone(ok ? 1 : 0, 1, ok ? "" : `La oración correcta es: <b>${esc(it.s)}</b>`);
+      if (!ok) shake($("zs-line"));
+    });
+    draw();
+  },
+
+  /* ✏️ Language in use: elegir la opción correcta */
+  use(it){
+    const order = shuffle(it.o.map((o, i) => i));
+    $("zn-body").innerHTML = `<p class="zn-q">${esc(it.q).replace("___", '<span class="gapb">___</span>')}</p>
+      <div class="opts">${order.map((i, k) => `<button class="opt" type="button" data-i="${i}"><i>${"ABC"[k]}</i>${esc(it.o[i])}</button>`).join("")}</div>`;
+    $("zn-body").querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
+      const ok = +b.dataset.i === it.a;
+      $("zn-body").querySelectorAll(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("ok"); });
+      if (!ok){ b.classList.add("bad"); shake(b); }
+      $("zn-body").querySelector(".gapb").textContent = it.o[it.a];
+      zDone(ok ? 1 : 0, 1, esc(it.why));
+    }));
+  },
+
+  /* 📖 Vocabulario en contexto: completar los espacios del texto */
+  vocab(it){
+    const bank = shuffle([...it.a, ...it.x]);
+    const html = esc(it.t).replace(/\{(\d)\}/g, (_, n) =>
+      `<select data-g="${n - 1}" aria-label="Espacio ${n}"><option value="">(${n}) …</option>${bank.map(w => `<option>${esc(w)}</option>`).join("")}</select>`);
+    $("zn-body").innerHTML = `<p class="hint">Elige la palabra correcta para cada espacio. Palabras: <b>${bank.map(esc).join(" · ")}</b></p><p class="zn-text">${html}</p>`;
+    zCheckBtn("Check", () => {
+      const sels = [...$("zn-body").querySelectorAll("select")];
+      if (sels.some(s => !s.value)){ $("zn-msg").textContent = "Completa todos los espacios antes de revisar."; return; }
+      let ok = 0;
+      sels.forEach(s => {
+        const right = it.a[+s.dataset.g], good = s.value === right; ok += good;
+        s.classList.add(good ? "ok" : "bad"); s.disabled = true;
+        if (!good) s.insertAdjacentHTML("afterend", `<span class="fixw">→ ${esc(right)}</span>`);
+      });
+      zDone(ok, sels.length, ok === sels.length ? "" : `Acertaste ${ok} de ${sels.length}. Lee el texto otra vez con las palabras correctas.`);
+    });
+  },
+
+  /* 🔍 Encontrar el error: tocar la palabra incorrecta */
+  mistake(it){
+    const toks = it.s.split(" ");
+    const badIdx = toks.findIndex(t => t.replace(/[.,?!]/g, "").toLowerCase() === it.bad.toLowerCase());
+    $("zn-body").innerHTML = `<p class="zn-q">Toca la palabra que está mal</p>
+      <div class="zn-words">${toks.map((t, k) => `<button type="button" data-k="${k}">${esc(t)}</button>`).join("")}</div>`;
+    $("zn-body").querySelectorAll(".zn-words button").forEach(b => b.addEventListener("click", () => {
+      const k = +b.dataset.k, ok = k === badIdx;
+      $("zn-body").querySelectorAll(".zn-words button").forEach(x => x.disabled = true);
+      const wrongBtn = $("zn-body").querySelector(`[data-k="${badIdx}"]`);
+      wrongBtn.classList.add(ok ? "ok" : "bad");
+      if (!ok){ b.classList.add("miss"); shake(b); wrongBtn.classList.add("bad"); }
+      const fixed = toks.map((t, j) => j === badIdx ? (it.fix ? `<span class="zn-fix">${esc(t.replace(it.bad, it.fix))}</span>` : "") : esc(t)).filter(Boolean).join(" ");
+      zDone(ok ? 1 : 0, 1, `${ok ? "¡Bien visto! " : `El error estaba en “${esc(it.bad)}”. `}${it.fix ? "" : "Esa palabra sobra. "}${esc(it.why)}<br>✔ ${fixed}`);
+    }));
+  },
+
+  /* 🔤 Formación de palabras: escribir la forma correcta */
+  wf(it){
+    $("zn-body").innerHTML = `<p class="zn-q">${esc(it.s).replace("___", '<span class="gapb">___</span>')} <span class="zn-base">${esc(it.base)}</span></p>
+      <input class="zn-input" id="zw-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Escribe la palabra transformada…">`;
+    const check = () => {
+      const v = $("zw-in").value.trim().toLowerCase();
+      if (!v){ $("zn-msg").textContent = "Escribe una palabra."; return; }
+      const ok = it.a.includes(v);
+      $("zw-in").classList.add(ok ? "ok" : "bad"); $("zw-in").disabled = true;
+      $("zn-body").querySelector(".gapb").textContent = it.a[0];
+      zDone(ok ? 1 : 0, 1, `${ok ? "" : `Respuesta: <b>${esc(it.a[0])}</b>. `}${esc(it.why)}`);
+    };
+    $("zw-in").addEventListener("keydown", e => { if (e.key === "Enter" && !$("zw-in").disabled) check(); });
+    zCheckBtn("Check", check);
+    setTimeout(() => $("zw-in").focus(), 50);
+  },
+
+  /* 🎧 Dictado: escuchar y escribir (se aceptan errores mínimos de tipeo) */
+  dict(s){
+    $("zn-body").innerHTML = `<p class="zn-q">Escucha la oración y escríbela</p>
+      <div class="row"><button class="btn talk" type="button" id="zd-play">🔊 Listen</button><button class="btn ghost" type="button" id="zd-slow">🐢 Slow</button></div>
+      <input class="zn-input" id="zd-in" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="Escribe lo que escuchas…">`;
+    $("zd-play").addEventListener("click", () => speak(s, .9));
+    $("zd-slow").addEventListener("click", () => speak(s, .6));
+    const check = () => {
+      const v = $("zd-in").value.trim();
+      if (!v){ $("zn-msg").textContent = "Escribe la oración que escuchaste."; return; }
+      const res = align(words(s), words(v));
+      const good = res.filter(r => r.status === "ok").length, ok = good === res.length && words(v).length === res.length;
+      $("zd-in").classList.add(ok ? "ok" : "bad"); $("zd-in").disabled = true;
+      const shown = res.map(r => `<span class="${r.status === "ok" ? "w-ok" : r.status === "unclear" ? "w-bad" : "w-miss"}">${esc(r.word)}</span>`).join(" ");
+      zDone(ok ? 1 : 0, 1, `${ok ? "¡Perfecto! " : `Acertaste ${good} de ${res.length} palabras. `}<div class="zn-dict">${shown}</div>`);
+    };
+    $("zd-in").addEventListener("keydown", e => { if (e.key === "Enter" && !$("zd-in").disabled) check(); });
+    zCheckBtn("Check", check);
+    setTimeout(() => speak(s, .9), 400);
+  },
+
+  /* 📚 Lectura: texto breve con 3 preguntas */
+  read(it){
+    const picks = {};
+    $("zn-body").innerHTML = `<div class="zn-reading"><h4>${esc(it.title)}</h4><p>${esc(it.text)}</p></div>
+      ${it.qs.map((q, qi) => `<div class="zn-rq" data-q="${qi}"><p>${qi + 1}. ${esc(q.q)}</p>
+        ${q.o.map((o, oi) => `<button class="opt" type="button" data-o="${oi}"><i>${"ABC"[oi]}</i>${esc(o)}</button>`).join("")}</div>`).join("")}`;
+    $("zn-body").querySelectorAll(".zn-rq").forEach(box => box.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
+      picks[box.dataset.q] = +b.dataset.o; box.querySelectorAll(".opt").forEach(x => x.classList.toggle("pick", x === b)); sfx("select");
+    })));
+    zCheckBtn("Check", () => {
+      if (Object.keys(picks).length < it.qs.length){ $("zn-msg").textContent = "Responde las 3 preguntas antes de revisar."; return; }
+      let ok = 0;
+      $("zn-body").querySelectorAll(".zn-rq").forEach(box => {
+        const q = it.qs[+box.dataset.q], p = picks[box.dataset.q]; ok += p === q.a;
+        box.querySelectorAll(".opt").forEach(x => { x.disabled = true; x.classList.remove("pick");
+          if (+x.dataset.o === q.a) x.classList.add("ok"); else if (+x.dataset.o === p) x.classList.add("bad"); });
+      });
+      zDone(ok, it.qs.length, ok === it.qs.length ? "" : `Acertaste ${ok} de ${it.qs.length}. Vuelve al texto y busca la respuesta correcta.`);
+    });
+  }
+};
+
+// Fin de la ronda: puntaje, estrellas, XP extra y estadísticas
+function zEnd(){
+  const pct = zr.total ? Math.round(zr.ok / zr.total * 100) : 0, T = zr.T;
+  const bonus = pct === 100 ? 20 : pct >= 80 ? 10 : 0;
+  if (bonus) addXP(bonus);
+  stats.zone = stats.zone || {};
+  const s = stats.zone[T.id] = stats.zone[T.id] || { done: 0, ok: 0, best: 0, rounds: 0 };
+  s.done += zr.total; s.ok += zr.ok; s.rounds++; s.best = Math.max(s.best, pct);
+  stats.zoneRounds = (stats.zoneRounds || 0) + 1;
+  if (pct === 100) stats.zonePerfect = (stats.zonePerfect || 0) + 1;
+  store.set("stats", stats);
+  $("zn-bar").style.width = "100%";
+  $("zn-play").classList.add("hidden"); $("zn-end").classList.remove("hidden");
+  const stars = pct >= 90 ? 3 : pct >= 60 ? 2 : pct > 0 ? 1 : 0;
+  $("zn-end").innerHTML = `<div class="zn-end">
+      <span class="cap">${T.icon} ${T.name} · ${zLevel}</span>
+      <div class="big">${zr.ok}/${zr.total}</div>
+      <div class="stars">${"⭐".repeat(stars)}${"☆".repeat(3 - stars)}</div>
+      <p class="lead" style="margin:0 auto">${pct === 100 ? "¡Ronda perfecta! 💯" : pct >= 80 ? "¡Excelente trabajo!" : pct >= 60 ? "¡Bien! Sigue practicando para llegar a las 3 estrellas." : "¡Buen intento! Repite la ronda: cada vez será más fácil."}
+        ${bonus ? `<br><b>+${bonus} XP extra</b>` : ""}</p>
+      <div class="row" style="justify-content:center">
+        <button class="btn play" id="zn-again" type="button">↻ Otra ronda</button>
+        <button class="btn ghost" id="zn-menu-btn" type="button">Elegir otro ejercicio</button>
+      </div></div>`;
+  $("zn-again").addEventListener("click", () => zStart(T.id));
+  $("zn-menu-btn").addEventListener("click", zMenu);
+  if (pct >= 80){ sfx("badge"); confetti(pct === 100 ? 200 : 120); }
+  checkBadges();
+}
+// Resumen por habilidad para el reporte del profe (ej. "Gramática 80% · Lectura 67%")
+function zoneSummary(){
+  const by = {};
+  ZTYPES.forEach(t => { const s = (stats.zone || {})[t.id]; if (s && s.done){ by[t.skill] = by[t.skill] || { ok: 0, done: 0 }; by[t.skill].ok += s.ok; by[t.skill].done += s.done; } });
+  return Object.entries(by).map(([k, v]) => `${k} ${Math.round(v.ok / v.done * 100)}% (${v.done})`).join(" · ");
+}
+zRenderLevels(); zMenu();
+
+/* =====================================================================
+   PERFIL DEL ALUMNO (sin cuenta) + REPORTE PARA EL PROFE
+   ===================================================================== */
+const AVATARS = ["🙂","😎","🤖","🦊","🐼","🐸","🦄","🐱","🐶","🐲","👾","🧙","🦸","🥷","🧑‍🚀","⚽"];
+let pickAv = "🙂", lastFocus = null;
+
+/* ---- Base de datos: llamadas a las funciones eslt_* ---- */
+async function db(fn, args){
+  const r = await fetch(`${DB_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST", headers: { "apikey": DB_KEY, "Content-Type": "application/json" }, body: JSON.stringify(args) });
+  if (!r.ok) throw new Error("http " + r.status);
+  return r.json();
+}
+const getSession = () => store.get("session", null);
+// RUT chileno: valida el dígito verificador (módulo 11) antes de enviarlo
+function rutOk(rut){
+  const s = String(rut).toUpperCase().replace(/[^0-9K]/g, "");
+  if (s.length < 8 || s.length > 10) return false;
+  const body = s.slice(0, -1), dv = s.slice(-1);
+  if (!/^\d+$/.test(body)) return false;
+  let sum = 0, m = 2;
+  for (let i = body.length - 1; i >= 0; i--){ sum += +body[i] * m; m = m === 7 ? 2 : m + 1; }
+  const r = 11 - (sum % 11), exp = r === 11 ? "0" : r === 10 ? "K" : String(r);
+  return dv === exp;
+}
+function renderLogin(){
+  const s = getSession();
+  $("login").classList.toggle("hidden", !!s);
+  $("who").classList.toggle("hidden", !s);
+  if (s){
+    $("who-name").textContent = s.name; $("who-sec").textContent = s.section;
+    $("who-av").textContent = pickAv;
+  } else {
+    $("l-section").innerHTML = `<option value="">— Elige tu curso —</option>` + SECTIONS.map(x => `<option>${x.id}</option>`).join("");
+    const last = store.get("lastSection", ""); if (last) $("l-section").value = last;
+  }
+  $("p-report-note").textContent = s ? "“Enviar reporte al profe” manda tu progreso directo a tu profesor."
+                                     : "Para enviar tu reporte, primero ingresa con tu curso, RUT y clave.";
+}
+$("login").addEventListener("submit", async e => {
+  e.preventDefault();
+  const section = $("l-section").value, rut = $("l-rut").value.trim(), pin = $("l-pin").value.trim(), msg = $("l-msg");
+  if (!section){ msg.textContent = "Elige tu curso."; shake($("l-section")); return; }
+  if (!rutOk(rut)){ msg.textContent = "Revisa tu RUT. Escríbelo con guion, ej: 12345678-9"; shake($("l-rut")); return; }
+  if (!/^\d{4}$/.test(pin)){ msg.textContent = "La clave tiene 4 números."; shake($("l-pin")); return; }
+  $("l-go").disabled = true; msg.textContent = "Entrando…";
+  try {
+    const r = await db("eslt_login", { p_section: section, p_rut: rut, p_pin: pin });
+    if (r.ok){
+      // Si el progreso de este dispositivo es de OTRO alumno, no se mezcla
+      const owner = store.get("owner", null);
+      if (owner && owner !== r.sid) resetLocalProgress();
+      store.set("owner", r.sid); store.set("rev", 0);
+      store.set("session", { token: r.token, sid: r.sid, name: r.name, first_name: r.first_name, section: r.section, course: r.course });
+      store.set("lastSection", section);
+      $("l-rut").value = ""; $("l-pin").value = ""; msg.textContent = "";
+      sfx("correct"); confetti(80);
+      toast(`👋 ¡Hola, ${r.first_name}! Tu progreso se guardará en la nube.`);
+      if (COURSES.some(c => c.id === r.course && c.games.length)){ currentCourse = r.course; $("q").value = ""; renderCourses(); renderGames(); }
+      renderLogin(); renderMe();
+      pullProgress();
+    } else {
+      sfx("wrong"); shake($("login"));
+      msg.textContent = r.error === "locked" ? "Demasiados intentos. Espera 15 minutos o pide ayuda a tu profe."
+                                             : "Curso, RUT o clave incorrectos. Revisa e inténtalo otra vez.";
+    }
+  } catch (err){
+    msg.textContent = "No se pudo conectar. Revisa tu internet e inténtalo otra vez.";
+  } finally { $("l-go").disabled = false; }
+});
+// Al salir: se guarda lo último en la nube y se borra el progreso de este dispositivo
+// (así, en un computador compartido, el siguiente alumno parte desde su propio progreso)
+$("logout").addEventListener("click", async () => {
+  const s = getSession(); if (!s) return;
+  const b = $("logout"); b.disabled = true; b.textContent = "Guardando…";
+  const saved = await pushProgress(true);
+  if (!saved && !confirm("No se pudo guardar tu último avance en la nube (¿sin internet?). Si sales ahora, se perderá lo de hoy en este dispositivo. ¿Salir igual?")){
+    b.disabled = false; b.textContent = "Salir"; return;
+  }
+  db("eslt_logout", { p_token: s.token }).catch(() => {});
+  resetLocalProgress(); store.set("session", null); store.set("owner", null); store.set("rev", 0);
+  location.reload();
+});
+
+function openProfile(){
+  const profile = store.get("profile", {});
+  pickAv = profile.avatar || "🙂";
+  renderLogin();
+  $("p-avatars").innerHTML = AVATARS.map(a => `<button type="button" class="${a === pickAv ? "on" : ""}" data-a="${a}" aria-label="Avatar ${a}">${a}</button>`).join("");
+  $("p-avatars").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    pickAv = b.dataset.a; $("p-avatars").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+  }));
+  const s = badgeStats();
+  $("p-xp").textContent = xp; $("p-streak").textContent = s.streak; $("p-words").textContent = s.words;
+  $("p-badges").innerHTML = BADGES.map(([id, ic, name]) => `<div class="badge ${gotBadges.includes(id) ? "got" : ""}"><i>${ic}</i>${esc(name)}</div>`).join("");
+  const hl = hardList();
+  $("p-hard-wrap").classList.toggle("hidden", !hl.length);
+  $("p-hard").innerHTML = hl.map(i => `<span>${WORDS[i][0]} ${esc(WORDS[i][1])}</span>`).join("");
+  const ts = topSounds(5);
+  $("p-snd-wrap").classList.toggle("hidden", !ts.length);
+  $("p-snd").innerHTML = ts.map(([k, c]) => `<span title="${esc(SOUNDS[k].how)}">${esc(SOUNDS[k].ipa)} ${esc(SOUNDS[k].label)} · ${c}</span>`).join("");
+  lastFocus = document.activeElement;
+  $("profile").classList.add("on");
+  setTimeout(() => (getSession() ? $("p-close") : $("l-section")).focus(), 60);
+}
+function closeProfile(){
+  if (!$("profile").classList.contains("on")) return;
+  $("profile").classList.remove("on");
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+$("me").addEventListener("click", openProfile);
+$("tab-me").addEventListener("click", openProfile);
+$("p-close").addEventListener("click", closeProfile);
+$("profile").addEventListener("click", e => { if (e.target.id === "profile") closeProfile(); });
+$("p-save").addEventListener("click", () => {
+  store.set("profile", { ...store.get("profile", {}), avatar: pickAv }); renderMe();
+  sfx("correct"); toast("✅ ¡Perfil guardado!");
+  closeProfile();
+});
+// Envía el reporte a la base de datos del profe
+$("p-report").addEventListener("click", async () => {
+  const sess = getSession();
+  if (!sess){ toast("🔑 Primero ingresa con tu curso, RUT y clave (arriba)."); shake($("login")); $("l-section").focus(); return; }
+  const report = reportSummary();
+  const b = $("p-report"); b.disabled = true; const label = b.textContent; b.textContent = "Enviando…";
+  try {
+    const r = await db("eslt_submit_report", { p_token: sess.token, p_report: report });
+    if (r.ok){ sfx("badge"); confetti(140); toast("📤 ¡Reporte enviado! Tu profe ya puede verlo."); }
+    else if (r.error === "session"){
+      store.set("session", null); renderLogin(); renderMe();
+      toast("🔑 Tu sesión expiró. Ingresa otra vez con tu RUT y clave.");
+    }
+    else if (r.error === "wait") toast("⏳ Ya enviaste un reporte hace un momento. Espera unos segundos.");
+    else toast("No se pudo enviar el reporte. Inténtalo otra vez.");
+  } catch (err){
+    toast("📶 Sin conexión: no se pudo enviar el reporte. Inténtalo cuando tengas internet.");
+  } finally { b.disabled = false; b.textContent = label; }
+});
+
+/* =====================================================================
+   MODO PROYECTOR — palabra del día o desafío en pantalla completa
+   ===================================================================== */
+function projOn(id){
+  $(id).classList.add("proj"); document.body.classList.add("projecting");
+  const de = document.documentElement;
+  if (de.requestFullscreen && !document.fullscreenElement) de.requestFullscreen().catch(() => {});
+}
+function projOff(){
+  document.querySelectorAll(".panel.proj").forEach(p => p.classList.remove("proj"));
+  document.body.classList.remove("projecting");
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+}
+document.querySelectorAll("[data-proj]").forEach(b => b.addEventListener("click", () => projOn(b.dataset.proj)));
+document.querySelectorAll("[data-proj-exit]").forEach(b => b.addEventListener("click", projOff));
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && document.body.classList.contains("projecting")) projOff(); });
+addEventListener("keydown", e => { if (e.key === "Escape"){ projOff(); closeProfile(); } });
+
+/* =====================================================================
+   SONIDOS: botón silenciar + clic en botones y pestañas
+   ===================================================================== */
+function renderMute(){
+  $("mute").textContent = muted ? "🔇" : "🔊";
+  $("mute").setAttribute("aria-label", muted ? "Activar sonidos" : "Silenciar sonidos");
+}
+$("mute").addEventListener("click", () => { muted = !muted; store.set("muted", muted); renderMute(); if (!muted){ audioInit(); sfx("select"); } });
+document.addEventListener("click", e => {
+  const el = e.target.closest(".chip, .btn, .tabbar a, .tabbar button, .links a, .avatars button");
+  if (!el || el.id === "mute" || el.matches("#wp-check, #wp-check2, #rec, #p-save")) return;
+  sfx(el.classList.contains("chip") || el.closest(".avatars") ? "select" : "click");
+});
+
+/* =====================================================================
+   APP INSTALABLE (PWA) — se puede agregar a la pantalla de inicio
+   ===================================================================== */
+if ("serviceWorker" in navigator && location.protocol === "https:")
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+let installEvt = null;
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; $("install").classList.remove("hidden"); });
+if (isIOS && !standalone) $("install").classList.remove("hidden");
+$("install").addEventListener("click", async () => {
+  if (installEvt){ installEvt.prompt(); await installEvt.userChoice; installEvt = null; $("install").classList.add("hidden"); }
+  else toast("📲 En iPhone: toca el botón Compartir (cuadro con flecha ⬆️) y luego “Agregar a inicio”.");
+});
+addEventListener("appinstalled", () => { $("install").classList.add("hidden"); toast("🎉 ¡App instalada! Búscala en tu pantalla de inicio."); });
+
+/* =====================================================================
+   PROGRESO EN LA NUBE + REPORTE AUTOMÁTICO
+   - Con sesión iniciada, cada avance se guarda solo unos segundos después.
+   - Cada guardado actualiza el reporte del día en el panel del profe.
+   - Si el alumno usa dos dispositivos, se combinan (se queda lo mejor de cada uno).
+   ===================================================================== */
+const SYNC_KEYS = ["xp", "stats", "hard", "badges", "wpDone", "daysDone", "best", "attempts", "profile"];
+let applying = false, syncTimer = null, syncing = false, syncPending = false;
+
+function reportSummary(){
+  const s = badgeStats();
+  return { xp, streak: s.streak, days_total: daysDone.length, words: s.words, best, correct: s.correct,
+    pron_best: stats.pronBest || 0, pron_avg: stats.pronCount ? Math.round(stats.pronSum / stats.pronCount) : 0,
+    pron_count: stats.pronCount || 0, badges: gotBadges.length, hard_words: hardList().map(i => WORDS[i][1]).join(", "),
+    sound_issues: topSounds(5).map(([k, c]) => `${SOUNDS[k].label} (${c})`).join(", "),
+    zone_summary: zoneSummary() };
+}
+// Sonidos que más le cuestan al alumno: [[clave, veces], ...]
+const topSounds = (n = 3) => Object.entries(stats.sounds || {}).filter(([k]) => SOUNDS[k]).sort((a, b) => b[1] - a[1]).slice(0, n);
+const localData = () => ({ v: 1, xp, stats, hard, badges: gotBadges, wpDone, daysDone, best, attempts,
+  avatar: store.get("profile", {}).avatar || null });
+
+// Combina dos progresos quedándose con lo mejor de cada uno
+function mergeData(a, b){
+  if (!b) return a; if (!a) return b;
+  const n = v => +v || 0, sa = a.stats || {}, sb = b.stats || {};
+  const pron = n(sa.pronCount) >= n(sb.pronCount) ? sa : sb;          // el promedio debe venir de un mismo lado
+  const wp = { ...(b.wpDone || {}) };
+  Object.entries(a.wpDone || {}).forEach(([i, steps]) => { wp[i] = { ...(wp[i] || {}), ...steps }; });
+  const hd = { ...(b.hard || {}) };
+  Object.entries(a.hard || {}).forEach(([i, c]) => { hd[i] = Math.max(n(hd[i]), n(c)); });
+  return {
+    v: 1, xp: Math.max(n(a.xp), n(b.xp)), best: Math.max(n(a.best), n(b.best)),
+    stats: { correct: Math.max(n(sa.correct), n(sb.correct)), pronBest: Math.max(n(sa.pronBest), n(sb.pronBest)),
+             pronCount: n(pron.pronCount), pronSum: n(pron.pronSum), hardCleared: Math.max(n(sa.hardCleared), n(sb.hardCleared)),
+             sounds: [...new Set([...Object.keys(sa.sounds || {}), ...Object.keys(sb.sounds || {})])]
+                       .reduce((o, k) => (o[k] = Math.max(n((sa.sounds || {})[k]), n((sb.sounds || {})[k])), o), {}),
+             // Challenge Zone: por tipo se queda el lado con más ejercicios hechos
+             zone: [...new Set([...Object.keys(sa.zone || {}), ...Object.keys(sb.zone || {})])]
+                       .reduce((o, k) => { const x = (sa.zone || {})[k] || {}, y = (sb.zone || {})[k] || {};
+                         const m = n(x.done) >= n(y.done) ? x : y; o[k] = { ...m, best: Math.max(n(x.best), n(y.best)) }; return o; }, {}),
+             zoneRounds: Math.max(n(sa.zoneRounds), n(sb.zoneRounds)), zonePerfect: Math.max(n(sa.zonePerfect), n(sb.zonePerfect)) },
+    badges: [...new Set([...(a.badges || []), ...(b.badges || [])])],
+    daysDone: [...new Set([...(a.daysDone || []), ...(b.daysDone || [])])].sort().slice(-400),
+    wpDone: wp, hard: hd,
+    attempts: (a.attempts || []).length ? a.attempts : (b.attempts || []),
+    avatar: a.avatar || b.avatar || null
+  };
+}
+// Aplica un progreso a la página (variables, almacenamiento y pantalla)
+function applyData(d){
+  applying = true;
+  xp = d.xp || 0; stats = d.stats || {}; hard = d.hard || {}; gotBadges = d.badges || [];
+  wpDone = d.wpDone || {}; daysDone = d.daysDone || []; best = d.best || 0; attempts = d.attempts || [];
+  store.set("xp", xp); store.set("stats", stats); store.set("hard", hard); store.set("badges", gotBadges);
+  store.set("wpDone", wpDone); store.set("daysDone", daysDone); store.set("best", best); store.set("attempts", attempts);
+  if (d.avatar) store.set("profile", { ...store.get("profile", {}), avatar: d.avatar });
+  applying = false;
+  renderMe(); renderProgress(); updHardN();
+  $("qz-best").textContent = best;
+  $("history").textContent = attempts.length ? "Your last scores · Tus últimos puntajes: " + attempts.join(" · ") : "";
+}
+function resetLocalProgress(){
+  applyData({ xp: 0, stats: {}, hard: {}, badges: [], wpDone: {}, daysDone: [], best: 0, attempts: [] });
+  store.set("profile", {});
+}
+function setSync(text, warn){ const el = $("sync"); if (el){ el.textContent = text; el.classList.toggle("warn", !!warn); } }
+
+// Cada vez que cambia algo del progreso, se programa un guardado
+const rawSet = store.set;
+store.set = (k, v) => { rawSet(k, v); if (!applying && SYNC_KEYS.includes(k)) scheduleSync(); };
+function scheduleSync(delay = 4000){
+  if (!getSession()) return;
+  syncPending = true; setSync("⏳ Guardando…");
+  clearTimeout(syncTimer); syncTimer = setTimeout(() => pushProgress(), delay);
+}
+function endSession(){
+  store.set("session", null); renderLogin(); renderMe();
+  toast("🔑 Tu sesión expiró. Ingresa otra vez con tu RUT y clave para seguir guardando en la nube.");
+}
+// Envía el progreso a la nube. Devuelve true si quedó guardado.
+async function pushProgress(final = false){
+  const sess = getSession(); if (!sess) return false;
+  if (syncing){ if (!final) scheduleSync(2000); return false; }
+  syncing = true; clearTimeout(syncTimer);
+  try {
+    for (let tries = 0; tries < 4; tries++){
+      const r = await db("eslt_save_progress", { p_token: sess.token, p_data: localData(), p_summary: reportSummary(), p_rev: store.get("rev", 0) });
+      if (r.ok){ rawSet("rev", r.rev); syncPending = false; setSync("☁️ Guardado en la nube · " + new Date().toLocaleTimeString("es-CL", { hour:"2-digit", minute:"2-digit" })); return true; }
+      if (r.error === "conflict"){ applyData(mergeData(localData(), r.data)); rawSet("rev", r.rev); continue; }   // otro dispositivo guardó antes: combinar y reintentar
+      if (r.error === "wait"){ await new Promise(res => setTimeout(res, 3500)); continue; }
+      if (r.error === "session"){ endSession(); return false; }
+      break;
+    }
+    setSync("⚠️ No se pudo guardar. Se reintentará.", true); if (!final) scheduleSync(20000); return false;
+  } catch (e){
+    setSync("📶 Sin conexión: se guardará cuando vuelva internet.", true); if (!final) scheduleSync(30000); return false;
+  } finally { syncing = false; }
+}
+// Trae el progreso de la nube y lo combina con el de este dispositivo
+async function pullProgress(){
+  const sess = getSession(); if (!sess) return;
+  setSync("⏳ Sincronizando…");
+  try {
+    const r = await db("eslt_load_progress", { p_token: sess.token });
+    if (!r.ok){ if (r.error === "session") endSession(); return; }
+    // Misma forma y mismo orden de claves para poder comparar (la base de datos reordena las claves)
+    const stable = v => Array.isArray(v) ? v.map(stable) : v && typeof v === "object"
+      ? Object.keys(v).sort().reduce((o, k) => (o[k] = stable(v[k]), o), {}) : v;
+    const canon = d => JSON.stringify(stable(mergeData(d, d)));
+    const local = localData(), merged = r.data ? mergeData(local, r.data) : local;
+    if (r.data) applyData(merged);
+    rawSet("rev", r.rev || 0);
+    const hasLocal = local.xp > 0 || local.daysDone.length > 0 || Object.keys(local.wpDone).length > 0;
+    // Se sube solo si este dispositivo aportó algo que la nube no tenía
+    if (r.data ? canon(merged) !== canon(r.data) : hasLocal) pushProgress();
+    else setSync("☁️ Guardado en la nube");
+    checkBadges();
+  } catch (e){ setSync("📶 Sin conexión: se sincronizará después.", true); }
+}
+addEventListener("online", () => { if (syncPending) pushProgress(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && syncPending) pushProgress(true); });
+
+renderMute(); renderMe(); updHardN(); checkBadges();
+if (getSession()) pullProgress();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script type="module" src="js/game.js"></script>
 </body>
 </html>

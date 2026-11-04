@@ -42,6 +42,8 @@ button{font-family:inherit;cursor:pointer}
 .btn{-webkit-touch-callout:none}
 #setup .btn{white-space:nowrap}
 .note{font-size:14px;opacity:.8;margin-top:8px}
+#esltStatus{opacity:1;padding:8px 12px;border-radius:12px;background:rgba(88,204,2,.18);line-height:1.4}
+#esltStatus.warn{background:rgba(255,200,0,.25)}#esltStatus a{color:inherit;font-weight:800}
 #loading .bar{height:22px;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;margin-top:14px}
 #loading .bar div{height:100%;width:0;background:var(--leaf);transition:width .2s}
 
@@ -194,6 +196,7 @@ button{font-family:inherit;cursor:pointer}
     <button class="btn small" id="bCredits">Credits</button>
   </div>
   <div class="note" id="saveNote"></div>
+  <div class="note" id="esltStatus"></div>
 </div></div>
 
 <!-- SETUP (name + skin, room for online) -->

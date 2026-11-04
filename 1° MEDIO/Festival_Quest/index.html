@@ -97,6 +97,7 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px soli
 #tbtns .btn{width:74px;height:74px;border-radius:50%;padding:0;font-size:15px}
 @media (max-width:760px){.reading{grid-template-columns:1fr}.text{max-height:40vh}#menu{background:rgba(27,16,51,.7);justify-content:center}#menu h1{font-size:34px}#obj{font-size:13px;left:10px;top:10px;max-width:calc(100vw - 150px)}#mini{width:116px;height:116px;top:10px;right:10px}#stats{top:134px;right:10px;flex-direction:column;gap:6px}#stats .chip{font-size:14px;padding:5px 9px}#board{top:auto;bottom:90px;min-width:160px;font-size:12px}#mbox{padding:16px}.qcard .q{font-size:18px}.bubble{font-size:16px}}
 </style>
+<style>#esltStatus.warn{background:rgba(255,200,0,.22)!important}#esltStatus a{color:inherit;font-weight:800}</style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
 </script>
@@ -116,6 +117,7 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px soli
    <div class="chars" id="chars"></div>
    <label for="pname">Your name</label>
    <input type="text" id="pname" maxlength="14" placeholder="e.g. Sofía M." autocomplete="off">
+   <div id="esltStatus" class="small" style="margin-top:10px;padding:8px 10px;border-radius:10px;background:rgba(88,204,2,.15)"></div>
    <div class="modes">
     <button class="btn" id="bStory">📖 Story Mode</button>
     <button class="btn pink" id="bOnline">🌐 Online Festival</button>
