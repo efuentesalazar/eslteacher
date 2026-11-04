@@ -82,6 +82,21 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   background:linear-gradient(90deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.35) 45%,rgba(0,0,0,0) 75%),
              linear-gradient(0deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 40%)}
 
+/* ---------- Navegación por mundos (portal) ---------- */
+body.paged main > section{display:none}
+body.paged main > section.active{display:flex}
+body.paged .scene{transition:none}
+section.portal{position:fixed;inset:0;z-index:7;overflow:hidden;will-change:clip-path;background:radial-gradient(120% 90% at 70% 40%,var(--accent-d),#05060a 75%)}
+section.portal.tall{justify-content:flex-start}
+section.portal > .scene{z-index:-1}
+section.portal::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.35) 45%,rgba(0,0,0,0) 75%),
+             linear-gradient(0deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 40%)}
+#portal-ring{position:fixed;left:0;top:0;width:0;height:0;z-index:8;border-radius:50%;pointer-events:none;opacity:0;
+  transform:translate(-50%,-50%) scale(0);will-change:transform,opacity;
+  box-shadow:0 0 0 3px var(--accent),0 0 40px 8px color-mix(in srgb,var(--accent) 55%,transparent),inset 0 0 50px 10px color-mix(in srgb,var(--accent) 40%,transparent)}
+.next-world{align-self:flex-start;margin-top:4px}
+
 /* animaciones del arte */
 @keyframes drift{from{transform:translateX(-120px)}to{transform:translateX(120px)}}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
@@ -580,7 +595,7 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
       <a class="btn play" href="#worlds">▶ Explore worlds</a>
       <a class="btn talk" href="#speak">🎙 Practice speaking</a>
     </div>
-    <span class="cap scroll">Scroll ↓ · 06 worlds</span>
+    <span class="cap scroll">Choose a world · Elige un mundo ↑</span>
   </section>
 
   <!-- 02 CURSOS -->
@@ -1164,50 +1179,181 @@ const navLinks = [...document.querySelectorAll(".links a")];
 const tabLinks = [...document.querySelectorAll("#tabbar a")];
 let lastBest = -1;
 
-/* Al hacer scroll: el mundo de cada sección aparece, hace zoom y parallax */
-let ticking = false;
-function frame(){
-  ticking = false;
-  const vh = innerHeight, center = scrollY + vh / 2;
-  let best = 0, bestOp = -1;
-  sections.forEach((s, i) => {
-    const top = s.offsetTop, bottom = top + s.offsetHeight;
-    const a = top + vh / 2, b = bottom - vh / 2;               // zona donde el mundo está 100% visible
-    const dist = center < a ? (a - center) / vh : center > b ? (center - b) / vh : 0;
-    const signed = center < a ? -dist : dist;                  // negativo = aún no llegamos
-    const op = Math.max(0, Math.min(1, 1 - dist * 2));
-    s._op = op;
-    if (dist < 2.5) s._loadBg();
-    if (op > 0 && !reduced){
-      s._scene.style.transform = `scale(${1 + dist * .12})`;
-      const local = (center - (top + bottom) / 2) / vh;        // progreso dentro de la sección
-      if (s._scene.classList.contains("has-photo"))
-        s._img.style.transform = `translate3d(0, ${(-local * 50).toFixed(1)}px, 0) scale(${(1.1 + dist * .1).toFixed(3)})`;
-      else s._layers.forEach(l => { l.style.transform = `translate(0px, ${(-local * l.dataset.d * 90).toFixed(1)}px)`; });
-    }
-    if (op > bestOp){ bestOp = op; best = i; }
-  });
-  // el primer mundo visible queda opaco debajo; el siguiente aparece encima (sin fundido a negro)
-  const first = sections.findIndex(s => s._op > 0);
-  sections.forEach((s, i) => { s._scene.style.zIndex = i; s._scene.style.opacity = i === first ? 1 : s._op; });
-  hudLinks.forEach((a, i) => a.classList.toggle("on", i === best));
-  navLinks.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + sections[best].id));
-  tabLinks.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + sections[best].id));
-  // La barra superior, el perfil y los avisos toman el color del mundo actual
-  if (best !== lastBest){
-    lastBest = best;
-    const cs = getComputedStyle(sections[best]);
-    document.documentElement.style.setProperty("--accent", cs.getPropertyValue("--accent").trim());
-    document.documentElement.style.setProperty("--accent-d", cs.getPropertyValue("--accent-d").trim());
-  }
-}
-addEventListener("scroll", () => { if (!ticking){ ticking = true; requestAnimationFrame(frame); } }, { passive:true });
-addEventListener("resize", frame);
-frame();
+/* =====================================================================
+   NAVEGACIÓN POR MUNDOS
+   Cada sección es una pantalla. Al elegir otra, se abre un portal
+   circular desde el punto donde se hizo clic y aparece el nuevo mundo.
+   ===================================================================== */
+const ids = sections.map(s => s.id);
+const EASE_IO = "cubic-bezier(0.77, 0, 0.175, 1)";   // movimiento en pantalla
+const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";   // entradas y salidas
+const PORTAL_MS = 820;
+let current = -1, nav = null, lastPt = null;
+document.body.classList.add("paged");
+const ring = document.createElement("div"); ring.id = "portal-ring"; ring.setAttribute("aria-hidden", "true");
+document.body.appendChild(ring);
 
-/* Animación de entrada de títulos y paneles */
-const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add("in"); }), { threshold:.18 });
-sections.forEach(s => io.observe(s));
+addEventListener("pointerdown", e => { lastPt = { x: e.clientX, y: e.clientY, t: performance.now() }; }, { passive:true, capture:true });
+
+function setAccent(i){
+  const cs = getComputedStyle(sections[i]);
+  document.documentElement.style.setProperty("--accent", cs.getPropertyValue("--accent").trim());
+  document.documentElement.style.setProperty("--accent-d", cs.getPropertyValue("--accent-d").trim());
+}
+function markNav(i){
+  const id = sections[i].id;
+  hudLinks.forEach((a, k) => a.classList.toggle("on", k === i));
+  navLinks.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + id));
+  tabLinks.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + id));
+}
+function revealIn(s){ s.classList.remove("in"); void s.offsetWidth; s.classList.add("in"); }
+function preload(i){ sections[i]._loadBg(); const n = sections[(i + 1) % sections.length]; if (n) setTimeout(() => n._loadBg(), 1500); }
+
+// Mostrar una sección sin animación (al cargar la página)
+function showNow(i){
+  sections.forEach((s, k) => {
+    const on = k === i;
+    s.classList.toggle("active", on);
+    s._scene.classList.toggle("active", on);
+    s._scene.style.opacity = on ? 1 : 0; s._scene.style.transform = "";
+  });
+  current = i; preload(i); markNav(i); setAccent(i); revealIn(sections[i]);
+}
+
+// Paralaje suave del fondo al bajar dentro de una sección larga
+let ticking = false;
+function parallax(){
+  ticking = false;
+  const s = sections[current]; if (!s || reduced) return;
+  const y = Math.min(scrollY, innerHeight) * .06;
+  if (s._scene.classList.contains("has-photo")) s._img.style.transform = `translate3d(0, ${(-y).toFixed(1)}px, 0) scale(1.1)`;
+  else s._layers.forEach(l => { l.style.transform = `translate(0px, ${(-y * l.dataset.d * 2).toFixed(1)}px)`; });
+}
+addEventListener("scroll", () => { if (!ticking){ ticking = true; requestAnimationFrame(parallax); } }, { passive:true });
+
+// Sonido del portal (sintetizado, respeta el botón de silencio)
+function portalSound(){
+  if (muted || !actx) return;
+  try {
+    if (actx.state === "suspended") actx.resume();
+    const t = actx.currentTime, len = .7, buf = actx.createBuffer(1, actx.sampleRate * len, actx.sampleRate), d = buf.getChannelData(0);
+    for (let k = 0; k < d.length; k++) d[k] = (Math.random() * 2 - 1) * (1 - k / d.length);
+    const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+    src.buffer = buf; f.type = "bandpass"; f.Q.value = 6;
+    f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(2600, t + len * .8);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.22, t + .08); g.gain.exponentialRampToValueAtTime(.0001, t + len);
+    src.connect(f); f.connect(g); g.connect(actx.destination); src.start(t); src.stop(t + len);
+  } catch(e){}
+}
+
+// Volver arriba al instante (sin depender de scroll-behavior: instant, que Safari antiguo no conoce)
+function toTop(){ const h = document.documentElement, prev = h.style.scrollBehavior; h.style.scrollBehavior = "auto"; scrollTo(0, 0); h.style.scrollBehavior = prev; }
+
+// Origen del portal: el punto del clic, o el centro de la pantalla
+function originFor(el){
+  if (lastPt && performance.now() - lastPt.t < 900) return lastPt;
+  if (el && el.getBoundingClientRect){ const r = el.getBoundingClientRect(); if (r.width) return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+  return { x: innerWidth / 2, y: innerHeight / 2 };
+}
+
+function goTo(id, opts = {}){
+  const i = ids.indexOf(id); if (i < 0) return;
+  if (nav) nav.finish();                                   // si hay un portal abriéndose, se completa al instante
+  if (opts.push !== false){
+    const url = i === 0 ? location.pathname + location.search : "#" + id;
+    if (location.hash !== (i === 0 ? "" : "#" + id)) history.pushState({ id }, "", url);
+  }
+  if (i === current){ scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" }); return; }
+
+  const from = sections[current], to = sections[i], o = opts.origin || originFor(opts.el);
+  preload(i); markNav(i); setAccent(i);
+  // Si la imagen del nuevo mundo aún se descarga, se espera un momento (máx. 0,9 s) para que el portal no se abra vacío
+  const img = to._img;
+  if (!opts.ready && img && img.src && !img.complete){
+    nav = { finish(){ nav = null; } };
+    const token = nav;
+    Promise.race([img.decode ? img.decode().catch(() => {}) : null, new Promise(r => setTimeout(r, 900))])
+      .then(() => { if (nav === token){ nav = null; goTo(id, { ...opts, origin: o, push: false, ready: true }); } });
+    return;
+  }
+  portalSound();
+
+  // Preparar la nueva pantalla: queda fija encima, con su mundo dentro, recortada en un círculo
+  to.classList.add("active", "portal"); to.classList.remove("in");
+  to.insertBefore(to._scene, to.firstChild);
+  to._scene.classList.add("active"); to._scene.style.opacity = 1;
+  to.classList.toggle("tall", to.scrollHeight > to.clientHeight + 4);
+  const R = Math.hypot(Math.max(o.x, innerWidth - o.x), Math.max(o.y, innerHeight - o.y)) + 24;
+  const anims = [];
+  let done = false, revealT;
+
+  const cleanup = () => {
+    if (done) return; done = true; clearTimeout(revealT);
+    anims.forEach(a => { try { a.cancel(); } catch(e){} });
+    stage.appendChild(to._scene);
+    to.classList.remove("portal", "tall");
+    from.classList.remove("active"); from._scene.classList.remove("active"); from._scene.style.opacity = 0;
+    from.style.opacity = ""; from.style.transform = "";
+    ring.style.opacity = 0;
+    current = i; toTop();
+    if (!to.classList.contains("in")) to.classList.add("in");
+    parallax();
+    const h = to.querySelector(".title, h1, h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+    nav = null;
+  };
+  nav = { finish: cleanup };
+
+  if (reduced || !CSS.supports("clip-path", "circle(1px at 1px 1px)")){
+    // Movimiento reducido: solo un fundido corto
+    anims.push(to.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: "ease" }));
+    anims.push(from.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: "ease", fill: "forwards" }));
+    revealT = setTimeout(() => to.classList.add("in"), 60);
+    anims[0].finished.then(cleanup, () => {});
+    return;
+  }
+
+  const at = `at ${o.x.toFixed(0)}px ${o.y.toFixed(0)}px`;
+  // 1. El portal se abre desde el punto del clic
+  anims.push(to.animate([{ clipPath: `circle(0px ${at})` }, { clipPath: `circle(${R.toFixed(0)}px ${at})` }],
+    { duration: PORTAL_MS, easing: EASE_IO, fill: "forwards" }));
+  // 2. El nuevo mundo se acerca desde dentro del portal
+  anims.push(to._scene.animate([{ transform: "scale(1.25)" }, { transform: "scale(1)" }], { duration: PORTAL_MS + 200, easing: EASE_OUT }));
+  // 3. El mundo anterior se aleja
+  anims.push(from.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.94)" }], { duration: 420, easing: EASE_OUT, fill: "forwards" }));
+  anims.push(from._scene.animate([{ transform: "scale(1)" }, { transform: "scale(1.12)" }], { duration: PORTAL_MS, easing: EASE_OUT, fill: "forwards" }));
+  // 4. Anillo de luz en el borde del portal
+  ring.style.left = o.x + "px"; ring.style.top = o.y + "px";
+  ring.style.width = ring.style.height = (R * 2).toFixed(0) + "px";
+  anims.push(ring.animate([
+    { transform: "translate(-50%, -50%) scale(0)", opacity: 1 },
+    { transform: "translate(-50%, -50%) scale(.75)", opacity: 1, offset: .7 },
+    { transform: "translate(-50%, -50%) scale(1)", opacity: 0 }
+  ], { duration: PORTAL_MS, easing: EASE_IO }));
+  // 5. El título y los paneles entran escalonados cuando el portal ya está abierto a la mitad
+  revealT = setTimeout(() => to.classList.add("in"), PORTAL_MS * .38);
+  anims[0].finished.then(cleanup, () => {});
+}
+
+// Todos los enlaces internos (#worlds, #word, …) abren un portal en vez de bajar
+document.addEventListener("click", e => {
+  const a = e.target.closest('a[href^="#"]'); if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey) return;
+  const id = a.getAttribute("href").slice(1);
+  if (!ids.includes(id)) return;
+  e.preventDefault(); goTo(id, { el: a });
+});
+addEventListener("popstate", () => goTo(location.hash.slice(1) || ids[0], { push: false, origin: { x: innerWidth / 2, y: innerHeight / 2 } }));
+
+// Botón "siguiente mundo" al final de cada sección
+const NAMES = { hero: "Home · Inicio", worlds: "Worlds", word: "Word of the day", challenge: "Quick challenge", zone: "Challenge Zone", speak: "Speak", how: "How to play" };
+sections.forEach((s, k) => {
+  if (k === 0 || k === sections.length - 1) return;
+  const n = sections[k + 1], a = document.createElement("a");
+  a.className = "btn ghost sm next-world"; a.href = "#" + n.id;
+  a.innerHTML = `Next world · ${esc(NAMES[n.id] || n.dataset.name)} <span aria-hidden="true">→</span>`;
+  s.appendChild(a);
+});
+
+showNow(Math.max(0, ids.indexOf(location.hash.slice(1))));
 
 /* =====================================================================
    MUNDOS / CURSOS
@@ -1461,14 +1607,14 @@ function goSpeak(text, meaning, m){
   wpSay = { i: wIndex, text };
   setMode(m, false); if (m === "own") $("own-in").value = text;
   setTarget(text, meaning);
-  $("speak").scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+  goTo("speak");
 }
 $("wp-say-word").addEventListener("click", () => { const [, w, es] = WORDS[wIndex]; goSpeak(w, "⭐ Word of the day · " + es, "words"); });
 $("wp-say-ex").addEventListener("click", () => { const [, w, es, ex] = WORDS[wIndex]; goSpeak(ex, "⭐ Word of the day: " + w + " (" + es + ")", "sentences"); });
 $("wp-sent-say").addEventListener("click", () => goSpeak($("wp-sent").value.trim(), "⭐ Tu oración con “" + WORDS[wIndex][1] + "”", "own"));
 $("w-challenge").addEventListener("click", () => {
   qzForce = wIndex; newQuiz();
-  $("challenge").scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+  goTo("challenge");
 });
 showWord();
 
