@@ -295,6 +295,7 @@ mark.hl{background:linear-gradient(transparent 38%,#ffd75e 38%,#ffd75e 92%,trans
 .lanok i{width:11px;height:11px;border-radius:50%;background:#62d34a;flex:none;box-shadow:0 0 0 3px rgba(98,211,74,.3)}
 .worlds span{font-family:var(--f-disp);font-size:11px;padding:7px 8px;border:2px solid #000;border-radius:6px;color:#14161c;line-height:1.2}
 </style>
+<script src="../assets/js/eslt-log.js"></script>
 </head>
 <body>
 
@@ -2033,7 +2034,7 @@ function renderChest(msg){const v=chestQ.v,ty=VTY[v.ty],pt=chestParts(v);$('#che
  <div class="opts">${chestQ.ord.map((oi,i)=>`<button class="opt${chestQ.dis.has(oi)?' bad':''}" data-i="${oi}" ${chestQ.dis.has(oi)?'disabled':''}><b>${'ABC'[i]}</b><span>${v.o[oi]}</span></button>`).join('')}</div>${msg||''}
  <div class="row"><button class="btn" id="chClose">Cerrar</button></div>`;
  $('#chestB').querySelectorAll('.opt').forEach(b=>b.onclick=()=>answerChest(+b.dataset.i));$('#chClose').onclick=()=>{$('#chestP').hidden=true;canvas.focus()};$('#chSay').onclick=()=>sayEN(pt.say)}
-function answerChest(i){const v=chestQ.v;if(i===0){const c=CHESTS[chestQ.k];const first=chestQ.dis.size===0;S.chests.push(chestQ.k);S.tec.vocab=(S.tec.vocab||0)+1;pts(first?2:1);if(first)addOk();sGood();
+function answerChest(i){eslChest('festival-worlds-1m','C',chestQ.k,i,0);const v=chestQ.v;if(i===0){const c=CHESTS[chestQ.k];const first=chestQ.dis.size===0;S.chests.push(chestQ.k);S.tec.vocab=(S.tec.vocab||0)+1;pts(first?2:1);if(first)addOk();sGood();
   $('#chestB').innerHTML=`<div class="eyebrow">COFRE ABIERTO · ${v.z.toUpperCase()} · ${S.chests.length} DE ${CHESTS.length} PALABRAS</div><div class="fb yes"><h4>¡CORRECTO! +${first?2:1} DIAMANTES${first?' · +1 ACIERTO':''}</h4><div style="font-size:22px;font-weight:700;color:#f5b83d">${v.w} <span style="font-size:16px;color:#d7dbe3;font-weight:400">= ${v.es}</span></div><div><b>Meaning:</b> ${v.d}</div><div><b>Example:</b> <i>${v.s}</i></div></div><div class="row"><button class="btn" id="chSay2">🔊 Escuchar</button><button class="btn go" id="chOk">Seguir explorando</button></div>`;
   $('#chSay2').onclick=()=>sayEN(v.w+'. '+stripT(v.s));sayEN(v.w);
   $('#chOk').onclick=()=>{$('#chestP').hidden=true;canvas.focus()};c.open=1;c.gl.visible=false;burst(c.x,c.y,c.z,chestMat.gold,12);save();hud();checkSkins();
@@ -2103,7 +2104,7 @@ function renderQ(){const t=TEXTS[L.i];const q=t.qs[L.q],st=L.st[L.q];const lock=
  $('#qp').querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(+b.dataset.k));
  if(L.mode==='evidence')evidencePrompt();
  if(L.mode==='review')showWrong(q,t,[...st.dis].pop())}
-function answer(k){const t=TEXTS[L.i],q=t.qs[L.q],st=L.st[L.q];if(st.done)return;
+function answer(k){const t=TEXTS[L.i],q=t.qs[L.q],st=L.st[L.q];if(st.done)return;eslLog('festival-worlds-1m',{activity:'Lectura: '+t.title,item:{id:'r'+L.i+'-'+L.q,q:q.s,k:q.h},chosen:q.o[k],right:q.o[q.a],ok:k===q.a});
  if(st.tries===0){S.stats[q.h][1]++;learnTec(q.tec)}
  if(k===q.a){st.done=true;const first=st.tries===0;if(first){S.stats[q.h][0]++;L.first++;addOk()}S.brk+=2;pts(first?3:1);sGood();L.mode='answer';
   renderQ();$('#qp').querySelector(`.opt[data-k="${k}"]`).classList.add('good');

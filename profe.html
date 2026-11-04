@@ -192,8 +192,20 @@ const GAMES = {
   "festival-quest-1m": { name: "Festival Quest · 1° medio", sections: ["1°A HC","1°B HC"],
     skills: { E: "Lectura explícita", I: "Lectura inferencial", V: "Vocabulario en contexto", L: "Uso del lenguaje", Q: "Question tags" } },
   "weather-heroes-5b": { name: "Weather Heroes · 5° básico", sections: ["5°A","5°B"],
-    skills: { V: "Vocabulario", A: "Audición", R: "Lectura", G: "Gramática", O: "Ordenar oraciones", C: "Completar textos" } }
+    skills: { V: "Vocabulario", A: "Audición", R: "Lectura", G: "Gramática", O: "Ordenar oraciones", C: "Completar textos" } },
+  "weather-worlds-5b": { name: "Weather Worlds · 5° básico", sections: ["5°A","5°B"], skills: LECTURA("Vocabulario (cofres)") },
+  "travel-city-6b": { name: "Let's Travel City · 6° básico", sections: ["6°A","6°B"],
+    skills: { R: "Lectura", V: "Vocabulario y estructuras", S: "Deletrear", O: "Ordenar oraciones", P: "Encontrar lugares" } },
+  "green-quest-7b": { name: "Green Quest · 7° básico", sections: ["7°A","7°B"],
+    skills: { E: "Lectura explícita", I: "Lectura inferencial", A: "Modales: consejo (should/could)", R: "Modales: reglas (must/have to)", Z: "Zero conditional", V: "Vocabulario verde" } },
+  "future-worlds-8b": { name: "Future Worlds · 8° básico", sections: ["8°A","8°B"], skills: LECTURA("Condicionales (cofres)") },
+  "festival-worlds-1m": { name: "Festival Worlds · 1° medio", sections: ["1°A HC","1°B HC"], skills: LECTURA("Vocabulario (cofres)") },
+  "festival-worlds2-1m": { name: "Festival Worlds 2 · 1° medio", sections: ["1°A HC","1°B HC"], skills: LECTURA("Vocabulario (cofres)") },
+  "traditions-1m": { name: "Traditions · 1° medio", sections: ["1°A HC","1°B HC"], skills: LECTURA("Vocabulario (cofres)") },
+  "tiktok-vine-3m": { name: "TikTok vs. Vine · 3° medio", sections: ["3°B HC"], skills: LECTURA("Vocabulario (cofres)") }
 };
+// Juegos "Worlds": lectura en 3 niveles (como el Simce) + lo que practican los cofres
+function LECTURA(cofres){ return { L: "Lectura: localizar", I: "Lectura: interpretar", R: "Lectura: reflexionar", C: cofres }; }
 $("f-game").innerHTML = Object.entries(GAMES).map(([id, g]) => `<option value="${id}">${esc(g.name)}</option>`).join("");
 let an = null;
 const pct = (ok, t) => t ? Math.round(ok / t * 100) : null;
@@ -265,7 +277,7 @@ function renderAnalysis(){
   const itemTbl = `<table><thead><tr><th>Pregunta</th><th>Acierto al 1er intento</th><th>Alumnos</th><th>Error más elegido</th><th>Tiempo prom.</th></tr></thead><tbody>
     ${items.map(i => { const w = i.wrong && i.wrong[0]; return `<tr><td class="q"><span class="skill">${esc(skName(i.skill))}</span><br>${esc(i.question)}<br><span style="color:var(--mut);font-size:12px">✔ ${esc(i.right_answer)}</span></td>
       <td><div class="meter"><b>${i.pct_first ?? "—"}%</b><div class="bar"><i style="width:${i.pct_first || 0}%"></i></div></div></td>
-      <td class="num">${i.students}</td><td class="wrapcell">${w ? `“${esc(w.c)}” <span class="pill">${w.n}×</span>` : "—"}</td><td class="num">${secs(i.avg_ms)} s</td></tr>`; }).join("")}</tbody></table>`;
+      <td class="num">${i.students}</td><td class="wrapcell">${w ? `“${esc(w.c)}” <span class="pill">${w.n}×</span>` : "—"}</td><td class="num">${i.avg_ms ? secs(i.avg_ms) + " s" : "—"}</td></tr>`; }).join("")}</tbody></table>`;
 
   // ---- Logro por día ----
   const daily = an.daily.slice(-30);

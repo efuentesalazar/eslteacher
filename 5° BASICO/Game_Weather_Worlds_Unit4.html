@@ -294,6 +294,7 @@ label.l,.l{font-family:var(--f-disp);font-size:11px;color:var(--mute);letter-spa
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
+<script src="../assets/js/eslt-log.js"></script>
 </head>
 <body>
 <script>
@@ -1725,7 +1726,7 @@ function renderChest(msg){const v=chestQ.v,ty=VTY[v.ty],pt=chestParts(v),w=Math.
  <div class="opts">${chestQ.ord.map((oi,i)=>`<button class="opt${chestQ.dis.has(oi)?' bad':''}" data-i="${oi}" ${chestQ.dis.has(oi)?'disabled':''}><b>${'ABC'[i]}</b><span>${esc(v.o[oi])}</span></button>`).join('')}</div>${msg||''}
  <div class="row"><button class="btn" id="chClose">Cerrar</button><span class="small">Correcta al primer intento: +2 · Incorrecta: −1</span></div>`;
  $('#chestB').querySelectorAll('.opt').forEach(b=>b.onclick=()=>answerChest(+b.dataset.i));$('#chClose').onclick=closeAll;$('#chSay').onclick=()=>sayEN(spoken)}
-function answerChest(i){const v=chestQ.v,c=chestQ.c,w=Math.floor(chestQ.k/PERW);
+function answerChest(i){eslChest('weather-worlds-5b','C',chestQ.k,i,0);const v=chestQ.v,c=chestQ.c,w=Math.floor(chestQ.k/PERW);
  if(i===0){const first=chestQ.dis.size===0;S.chests.push(chestQ.k);if(first)addOk();const got=pts(first?2:1);sGood();
   $('#chestB').innerHTML=`<div class="eyebrow">CHEST OPEN · ${REG[w+1].n.toUpperCase()} · ${S.chests.length} DE ${NVOC} PALABRAS</div>
   <div class="fb yes"><h4>CORRECT! +${got} ${first?'· AL PRIMER INTENTO':''}</h4><div class="row" style="gap:14px;flex-wrap:nowrap"><span style="font-size:52px;line-height:1">${v.em}</span><div><div class="wordbig">${esc(v.w)} <span>= ${esc(v.es)}</span></div><div>${esc(v.d)}</div></div></div><div><b>Example:</b> <i>${v.s}</i></div></div>
@@ -1842,7 +1843,7 @@ function renderQ(msg,good){const t=TEXTS[L.i],q=t.qs[L.q],st=L.st[L.q];
  const nx=$('#next');if(nx)nx.onclick=()=>{$('#txt').querySelectorAll('.ev').forEach(e=>e.classList.remove('ev'));if(L.q+1<t.qs.length){L.q++;renderQ();$('#qp').scrollTop=0}else goStage('reto')};
  const fb=$('#fb');if(msg&&fb.scrollIntoView)fb.scrollIntoView({behavior:'smooth',block:'nearest'})}
 function markEv(p){$('#txt').querySelectorAll('.ev').forEach(e=>e.classList.remove('ev'));const el=$('#txt').querySelector(`[data-p="${p}"]`);if(el){el.classList.add('ev');if(window.innerWidth>860)el.scrollIntoView({behavior:'smooth',block:'nearest'})}return el}
-function answer(k){const t=TEXTS[L.i],q=t.qs[L.q],st=L.st[L.q];if(st.done)return;
+function answer(k){const t=TEXTS[L.i],q=t.qs[L.q],st=L.st[L.q];if(st.done)return;eslLog('weather-worlds-5b',{activity:'Lectura: '+t.title,item:{id:'r'+L.i+'-'+L.q,q:q.s,k:q.h},chosen:q.o[k],right:q.o[0],ok:k===0});
  if(st.tries===0&&!st.cnt){st.cnt=1;S.stats[q.h][1]++}
  if(k===0){st.done=true;const first=st.tries===0;if(first){S.stats[q.h][0]++;L.first++;addOk()}const got=pts(first?2:1);sGood();markEv(q.p);save();
   renderQ(`<div class="fb yes"><h4>${first?'CORRECT AT THE FIRST TRY!':'YOU DID IT!'}${got?' +'+got:''}</h4><div>${q.ok}</div><div class="small" style="color:#cfe9c4">La evidencia quedó marcada en amarillo en el texto.</div><button class="btn go" id="next">${L.q+1<t.qs.length?'Next question':'Ir al reto final'}</button></div>`,true);return}

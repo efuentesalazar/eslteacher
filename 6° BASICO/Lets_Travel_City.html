@@ -1,4 +1,5 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><style>html,body{height:100%}@supports(height:100dvh){body{height:100dvh}}</style></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><style>html,body{height:100%}@supports(height:100dvh){body{height:100dvh}}</style><script src="../assets/js/eslt-log.js"></script>
+</head><body>
 <title>Let's Travel City</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1004,7 +1005,7 @@ function renderStep(){
     shell(`<div class="q">${s.pic?`<span class="pic">${s.pic}</span>`:''}<span class="qt">${esc(s.q)}</span><button class="spk" id="qSay" aria-label="Listen">🔊</button></div>
       <div class="opts">${s.opts.map((o,i)=>`<button class="opt" data-i="${i}"><b>${'ABCD'[i]}</b><span>${esc(o)}</span></button>`).join('')}</div>`);
     $('qSay').onclick=()=>speak(say);if(s.say)speak(s.say);
-    win.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{if(run.locked)return;run.locked=true;const ok=s.opts[+btn.dataset.i]===s.ans;
+    win.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{if(run.locked)return;run.locked=true;const ok=s.opts[+btn.dataset.i]===s.ans;eslLog('travel-city-6b',{activity:MISSIONS[run.id].title,item:{id:run.id+'-'+eslHash(s.q),q:(s.pic?s.pic+' ':'')+s.q,k:(MISSIONS[run.id].text||MISSIONS[run.id].table)?'R':'V'},chosen:s.opts[+btn.dataset.i],right:s.ans,ok});
       win.querySelectorAll('.opt').forEach(b=>{b.disabled=true;if(s.opts[+b.dataset.i]===s.ans)b.classList.add('right');});if(!ok)btn.classList.add('wrong');
       const full=s.q.includes('__')&&s.say?s.say:null;feedback(ok,ok?(full?'Yes! '+full:'Correct!'):'The answer is: '+(full||s.ans));});
   }
@@ -1020,7 +1021,7 @@ function renderStep(){
       $('chk').disabled=s.fill.length<need||run.locked;$('clr').disabled=run.locked;};
     paint();
     $('clr').onclick=()=>{s.fill.forEach(f=>f.used=false);s.fill=[];paint();};
-    $('chk').onclick=()=>{if(run.locked)return;run.locked=true;const want=isOrder?s.words:s.parts,ok=s.fill.map(f=>f.t).join('|')===want.join('|');paint();
+    $('chk').onclick=()=>{if(run.locked)return;run.locked=true;const want=isOrder?s.words:s.parts,ok=s.fill.map(f=>f.t).join('|')===want.join('|');paint();eslLog('travel-city-6b',{activity:MISSIONS[run.id].title,item:{id:run.id+'-'+eslHash(want.join(' ')),q:isOrder?'Order: '+want.join(' '):'Spell: '+s.clue,k:isOrder?'O':'S'},chosen:s.fill.map(f=>f.t).join(isOrder?' ':''),right:isOrder?want.join(' '):want.join(''),ok});
       const answer=isOrder?want.join(' '):want.join('').toLowerCase();feedback(ok,ok?'Correct! '+answer:'The answer is: '+answer,answer);};
   }
 }
@@ -1038,7 +1039,7 @@ function beginSeek(s){
 }
 $('seekSay').onclick=()=>seek&&speak(seek.s.task);
 $('seekQuit').onclick=()=>{if(seek)endSeek(false,'The answer was: the '+BMAP[seek.s.target].name.toLowerCase()+'.');};
-function checkSeek(b){
+function checkSeek(b){if(seek)eslLog('travel-city-6b',{activity:MISSIONS[run.id].title,item:{id:run.id+'-'+eslHash(seek.s.task),q:'Find: '+seek.s.task,k:'P'},chosen:b.name,right:(BMAP[seek.s.target]||{}).name,ok:b.id===seek.s.target});
   if(b.id===seek.s.target){addBubble('player','Here it is! The '+b.name.toLowerCase()+'!');speak('Yes! This is the '+b.name.toLowerCase());const sk=seek;setTimeout(()=>{if(seek===sk)endSeek(true,'You found the '+b.name.toLowerCase()+'!');},900);}
   else{seek.tries++;addBubble('player','This is the '+b.name.toLowerCase()+'…');showToast('No, this is the '+b.name.toLowerCase()+'. Try again!');speak('No, this is the '+b.name.toLowerCase());
     if(seek.tries>=3){const sk=seek;setTimeout(()=>{if(seek===sk)endSeek(false,'The answer was: the '+BMAP[sk.s.target].name.toLowerCase()+'.');},1000);}}

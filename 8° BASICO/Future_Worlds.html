@@ -316,6 +316,7 @@ span.btile.on{background:#bfe8a8;border-color:#1f5a12}
 .crow .seg{flex-wrap:wrap}
 #tbtns .btn.on{background:#d99a22;color:#1d1204}
 </style>
+<script src="../assets/js/eslt-log.js"></script>
 </head>
 <body>
 
@@ -2353,7 +2354,7 @@ function renderChest(msg){const v=chestQ.v,ty=VTY[v.ty],pt=chestParts(v);$('#che
  <div class="opts">${chestQ.ord.map((oi,i)=>`<button class="opt${chestQ.dis.has(oi)?' bad':''}" data-i="${oi}" ${chestQ.dis.has(oi)?'disabled':''}><b>${'ABC'[i]}</b><span>${v.o[oi]}</span></button>`).join('')}</div>${msg||''}
  <div class="row"><button class="btn" id="chClose">Cerrar</button></div>`;
  $('#chestB').querySelectorAll('.opt').forEach(b=>b.onclick=()=>answerChest(+b.dataset.i));$('#chClose').onclick=()=>{$('#chestP').hidden=true;canvas.focus()};if($('#chSay'))$('#chSay').onclick=()=>sayEN(pt.say)}
-function answerChest(i){const v=chestQ.v;if(i===0){const c=CHESTS[chestQ.k];const first=chestQ.dis.size===0;S.chests.push(chestQ.k);S.tec.cond=(S.tec.cond||0)+1;pts(first?2:1);if(first)addOk();sGood();
+function answerChest(i){eslChest('future-worlds-8b','C',chestQ.k,i,0);const v=chestQ.v;if(i===0){const c=CHESTS[chestQ.k];const first=chestQ.dis.size===0;S.chests.push(chestQ.k);S.tec.cond=(S.tec.cond||0)+1;pts(first?2:1);if(first)addOk();sGood();
   $('#chestB').innerHTML=`<div class="eyebrow">COFRE ABIERTO · ${v.z.toUpperCase()} · ${S.chests.length} DE ${CHESTS.length}</div><div class="fb yes"><h4>¡CORRECTO! +${first?2:1} DIAMANTES${first?' · +1 ACIERTO':''}</h4><p class="vsent" style="font-size:19px">${v.full}</p><div><b>En español:</b> <i>${v.es}</i></div><div class="tec"><b>¿POR QUÉ?</b><div style="margin-top:4px">${v.x}</div></div></div><div class="row"><button class="btn" id="chSay2">🔊 Escuchar</button><button class="btn go" id="chOk">Seguir explorando</button></div>`;
   $('#chSay2').onclick=()=>sayEN(v.full);sayEN(v.full);
   $('#chOk').onclick=()=>{$('#chestP').hidden=true;canvas.focus()};c.open=1;c.gl.visible=false;burst(c.x,c.y,c.z,chestMat.gold,12);save();hud();checkSkins();
@@ -2455,7 +2456,7 @@ function renderQ(){const t=TEXTS[L.i];const q=t.qs[L.q],st=L.st[L.q];const lock=
  $('#qp').querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(+b.dataset.k));
  if(L.mode==='evidence')evidencePrompt();
  if(L.mode==='review')showWrong(q,t,[...st.dis].pop())}
-function answer(k){const t=TEXTS[L.i],q=t.qs[L.q],st=L.st[L.q];if(st.done)return;
+function answer(k){const t=TEXTS[L.i],q=t.qs[L.q],st=L.st[L.q];if(st.done)return;eslLog('future-worlds-8b',{activity:'Lectura: '+t.title,item:{id:'r'+L.i+'-'+L.q,q:q.s,k:q.h},chosen:q.o[k],right:q.o[q.a],ok:k===q.a});
  if(st.tries===0){if(!L.repl)S.stats[q.h][1]++;learnTec(q.tec)}
  if(k===q.a){st.done=true;const first=st.tries===0;if(first){if(!L.repl)S.stats[q.h][0]++;L.first++;addOk()}S.brk+=2;pts(first?3:1);sGood();L.mode='answer';
   renderQ();$('#qp').querySelector(`.opt[data-k="${k}"]`).classList.add('good');
