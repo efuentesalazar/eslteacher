@@ -88,3 +88,9 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - Los juegos de un solo archivo cargan `assets/js/eslt-log.js` (una línea antes de `</head>`) y llaman `eslLog(...)`. Al abrir el juego aparece arriba un aviso: si el alumno inició sesión ("Tu profe verá tu avance") o no.
 - **Chest Quest (English Week)** también envía cada respuesta al panel (id `chest-quest-ew`, todos los cursos; habilidades Vocabulario, Gramática y Lectura). Sigue funcionando igual con su propio servidor y su panel `english-week-2026-panel.html`; esto solo agrega una copia de cada respuesta para verla junto a los demás juegos.
 - Pendientes: Past Quest y Ludo World Tour (6° básico) y Realms of Knowledge están en otra dirección web y no ven la sesión de eslteacher.cl: necesitan que la portada les pase la sesión al abrirlos.
+
+## Novedades (04-11-2026, noche): juegos en otra dirección
+- **Past Quest** (pastquest6basico.eslteacher.cl, id `past-quest-6b`) y **Ludo World Tour** (juego.eslteacher.cl, id `ludo-world-6b`) registran respuestas.
+- Cómo reciben la sesión: `6° BASICO/Past_Quest.html` y `6° BASICO/Travel_Tycoon.html` piden a la base un **código de un solo uso** (vence en 3 min) y abren el juego con `#eslt=código`. El juego (archivo `eslt-remote.js`, copia de `assets/js/eslt-remote.js`) lo canjea por una **sesión de 6 horas** y borra el código de la dirección. Si el alumno abre el juego directo (sin pasar por eslteacher.cl), ve un aviso de que su profe no verá su avance.
+- Base de datos: tabla `eslt.handoffs` y funciones `eslt_handoff_create` / `eslt_handoff_redeem`.
+- Estos dos juegos se publican en Vercel desde sus carpetas (no desde GitHub).
