@@ -3,7 +3,7 @@
 // k = skill: E explicit reading, I implicit reading,
 //            A modals for advice (should / shouldn't / could),
 //            R modals for rules (must / mustn't / have to / don't have to),
-//            Z zero conditional.
+//            Z zero conditional, V green vocabulary (recycling).
 
 export const ZONES = [
 {
@@ -270,4 +270,141 @@ export const ONLINE_EXTRA = [
  {k:'Z', q:'If you heat water to 100 °C, it ___.', o:['boils','boil','will boils','boiled'], a:0, why:'Scientific fact: present simple. It → boils.'},
 ];
 
-export const SKILLS = {E:'Reading — explicit', I:'Reading — implicit', A:'Modals — advice (should / could)', R:'Modals — rules (must / have to)', Z:'Zero conditional'};
+
+// ---------- Side quests ("Helping hands") ----------
+// They appear along the roads. leg = road that arrives to zone [leg] (0 = plaza → forest, 1 = forest → bay, …).
+// t = position along that road (0 to 1), side = left (-1) or right (1) of the road.
+// collect = the player first picks up n things near the NPC, then answers the questions.
+export const SIDE = [
+{
+ id:'campfire', leg:0, t:0.34, side:1, title:'Campfire Trouble', icon:'🔥',
+ npc:{ name:'Tomás', model:'Barbarian', tint:'#d9822b' },
+ hello:"Help! I'm Tomás. My friends and I camped here last night and we forgot to put out our campfire! The grass is very dry and the wind is getting stronger…",
+ text:`Tomás and his friends camped here last night. In the morning they wanted to go to the lake, so they left very quickly. But their campfire is still burning! The grass around it is very dry, and the wind is starting to blow. Tomás has a bucket of water, but he is nervous and he doesn't know what to do. Remember: a small fire can become a big forest fire in a few minutes.`,
+ items:[
+  {k:'I', q:"Why is the campfire dangerous now?", o:["The grass is dry and the wind is blowing","It is raining very hard","Tomás is sleeping next to it","There are too many people at the lake"], a:0, why:'"The grass around it is very dry, and the wind is starting to blow."'},
+  {k:'R', q:"Campers ___ leave a fire burning when they go. It's very dangerous!", o:["mustn't","don't have to","must","could"], a:0, why:'"mustn\'t" = it is prohibited / very important NOT to do it.'},
+  {k:'Z', q:"If you pour water on a small fire, it ___ out.", o:["goes","went","is going to","go"], a:0, why:'Zero conditional: If + present simple, present simple → "it goes out".'},
+ ],
+ thanks:"Phew! The fire is out. From now on, I always check the fire before I leave. Thank you, Eco Hero!",
+},
+{
+ id:'seeds', leg:0, t:0.7, side:-1, title:'The Lost Seeds', icon:'🌱',
+ npc:{ name:'Rosa', model:'Mage', tint:'#e85d9c' },
+ collect:{ n:5, what:'seed packets', icon:'🌱', kind:'seed' },
+ hello:"Hello! I'm Rosa. I'm taking native seeds to Leo's forest, but there was a hole in my bag! I dropped five seed packets near the road. Can you find them for me?",
+ ready:"You found all five packets! Thank you! Before I go, read this about my seeds.",
+ text:`Rosa collects seeds from native trees, like quillay and boldo, and she gives them to schools. Native trees are important because birds and insects can live in them, and they don't need much water. Rosa says that people shouldn't plant only pine trees, because big pine forests burn very easily. You could plant a native tree in your school, too!`,
+ items:[
+  {k:'E', q:"Why are native trees important, according to Rosa?", o:["Birds and insects can live in them","They grow very fast","They are cheap","They have big fruit"], a:0, why:'"…birds and insects can live in them, and they don\'t need much water."'},
+  {k:'A', q:"Rosa says people ___ plant only pine trees.", o:["shouldn't","should","must","have to"], a:0, why:'"shouldn\'t" = it is not a good idea. Pine forests burn very easily.'},
+  {k:'A', q:"Your friend says: \"I want to help the forest.\" Choose the best advice.", o:["You could plant a native tree.","You could to plant a tree.","You couldn't planting a tree.","You plant could a tree."], a:0, why:'could + verb (without "to") = a possible idea.'},
+ ],
+ thanks:"Now Leo's forest will have hundreds of new trees. Look, I planted some seeds here, too!",
+},
+{
+ id:'picnic', leg:1, t:0.32, side:1, title:'Picnic Rubbish', icon:'🥤',
+ npc:{ name:'Diego', model:'Rogue', tint:'#f2c21a' },
+ collect:{ n:6, what:'pieces of rubbish', icon:'🥤', kind:'litter' },
+ hello:"Hi, I'm Diego. A big group had a picnic here yesterday and they left all their rubbish on the grass! The wind is blowing it towards the sea. Please help me pick up the six pieces!",
+ ready:"The grass is clean! Do you know where that rubbish goes when nobody picks it up? Read this.",
+ text:`Every year, millions of tonnes of plastic go into the oceans. A lot of this plastic comes from the land: from streets, beaches and picnic areas. When it rains, or when the wind blows, the rubbish travels to rivers and then to the sea. Plastic doesn't disappear. It breaks into very small pieces, called microplastics, and fish eat them.`,
+ items:[
+  {k:'E', q:"How does rubbish from the land get to the sea?", o:["Rain and wind take it to rivers, and then to the sea","Ships carry it to the sea","Fish take it to the sea","It never gets to the sea"], a:0, why:'"…the rubbish travels to rivers and then to the sea."'},
+  {k:'Z', q:"If plastic goes into the sea, fish ___ it.", o:["eat","ate","are eat","eating"], a:0, why:'Zero conditional: If + present, present → "fish eat it".'},
+  {k:'I', q:"What is the main idea of the text?", o:["Rubbish we leave on land can end up in the ocean","Picnics are bad for people","Fish like eating plastic","Plastic disappears in a few days"], a:0, why:'The text explains the journey of rubbish from the land to the sea.'},
+ ],
+ thanks:"And look, now there's a bin here. If people use a bin, the sea stays clean!",
+},
+{
+ id:'net', leg:1, t:0.68, side:-1, title:'The Ghost Net', icon:'🕸️',
+ npc:{ name:'Jack', model:'Knight', tint:'#3a7bd5' },
+ hello:"Ahoy! I'm Jack, a fisherman. Look at that poor seagull! It's stuck in an old fishing net. Help me to free it!",
+ text:`Fishermen sometimes lose their nets in the sea. People call them "ghost nets", because nobody uses them, but they keep catching animals for many years. Turtles, birds and dolphins get stuck in them and they can't escape. In Chile, some fishermen now take their old nets to recycling centres. The nets become new things, like skateboards and sunglasses!`,
+ items:[
+  {k:'I', q:"Why are they called \"ghost nets\"?", o:["Nobody uses them, but they still catch animals","They are white and invisible","They only appear at night","Ghosts use them to fish"], a:0, why:'"…nobody uses them, but they keep catching animals for many years."'},
+  {k:'R', q:"Fishermen ___ throw old nets into the sea. It's against the rules.", o:["mustn't","don't have to","must","should"], a:0, why:'"mustn\'t" = it is prohibited.'},
+  {k:'E', q:"What can old fishing nets become?", o:["Skateboards and sunglasses","Paper and cardboard","Food for fish","New boats"], a:0, why:'"The nets become new things, like skateboards and sunglasses!"'},
+ ],
+ thanks:"Look! The seagull is free! I'll take this net to the recycling centre. Thanks, friend!",
+},
+{
+ id:'sort', leg:2, t:0.33, side:1, title:'Sort It Out!', icon:'♻️',
+ npc:{ name:'Mia', model:'Rogue_Hooded', tint:'#9b59d0' },
+ hello:"Hi! I'm Mia. My class collected rubbish for Recycling Day, but everything is mixed up! Can you help me put each thing in the right bin?",
+ text:`Recycling bins in Chile often have different colours. The BLUE bin is for paper and cardboard, like newspapers and boxes. The YELLOW bin is for plastic, like bottles and yoghurt pots. The GREEN bin is for glass, like jars and glass bottles. Food waste, like banana skins, is not for these bins: you can put it in a compost bin to make soil for plants.`,
+ items:[
+  {k:'V', q:"Where does an empty glass jar go?", o:["In the green bin","In the blue bin","In the yellow bin","In the compost bin"], a:0, why:'"The GREEN bin is for glass, like jars and glass bottles."'},
+  {k:'V', q:"Where does a cardboard box go?", o:["In the blue bin","In the green bin","In the yellow bin","In the compost bin"], a:0, why:'"The BLUE bin is for paper and cardboard."'},
+  {k:'E', q:"What can you do with a banana skin?", o:["Put it in a compost bin","Put it in the yellow bin","Put it in the blue bin","Throw it in the river"], a:0, why:'"…you can put it in a compost bin to make soil for plants."'},
+  {k:'Z', q:"If you recycle paper, people ___ fewer trees.", o:["cut","cuts","cutting","are cut"], a:0, why:'Zero conditional: If + present, present → "people cut".'},
+ ],
+ thanks:"Perfect! Everything is in the right bin. If we sort our rubbish, we can recycle more!",
+},
+{
+ id:'car', leg:2, t:0.68, side:-1, title:'Engine Off!', icon:'🚗',
+ npc:{ name:'Hugo', model:'Barbarian', tint:'#7d8a96' },
+ hello:"Hi! I'm Hugo. I'm waiting for my sister. I always leave the engine on when I wait — it's more comfortable! Why are you looking at me like that?",
+ text:`When a car engine is on but the car isn't moving, we say it is "idling". An idling car uses fuel and produces smoke, but it doesn't go anywhere! This smoke is bad for the air and for our lungs. In some cities, drivers must turn off the engine when they stop for more than one minute. It is also a good way to save money.`,
+ items:[
+  {k:'E', q:"What does \"idling\" mean?", o:["The engine is on, but the car isn't moving","The car is very old","The car is moving very fast","The driver is sleeping"], a:0, why:'"When a car engine is on but the car isn\'t moving, we say it is idling."'},
+  {k:'R', q:"In some cities, drivers ___ turn off the engine when they stop for more than a minute.", o:["must","mustn't","don't have to","could"], a:0, why:'"must" = it is a rule. It is obligatory.'},
+  {k:'Z', q:"If you turn off the engine, the car ___ fuel.", o:["doesn't use","didn't use","not use","don't uses"], a:0, why:'Zero conditional: If + present, present → "the car doesn\'t use fuel".'},
+ ],
+ thanks:"You're right! Engine off. The air smells better already, and I'm saving money!",
+},
+{
+ id:'tap', leg:3, t:0.33, side:1, title:'The Leaking Tap', icon:'🚰',
+ npc:{ name:'Elena', model:'Mage', tint:'#8e7cc3' },
+ hello:"Hello, dear! I'm Elena. The tap in my garden doesn't stop dripping, and the farm is so dry this year! Can you help me?",
+ text:`A tap that drips one drop every second wastes more than 10,000 litres of water in a year. That is enough water for one person to drink for fourteen years! Fixing a tap is usually easy and cheap: you only have to change a small piece called a washer. Elena's family also collects rainwater in a big barrel. They use it to water the vegetables.`,
+ items:[
+  {k:'E', q:"How much water does a dripping tap waste in a year?", o:["More than 10,000 litres","About 100 litres","Fourteen litres","One drop"], a:0, why:'"…wastes more than 10,000 litres of water in a year."'},
+  {k:'I', q:"Why does Elena's family collect rainwater?", o:["To save tap water, because water is valuable","Because they like the sound of rain","To drink it every day","Because the barrel is pretty"], a:0, why:'They use the rainwater for the vegetables, so they don\'t waste tap water.'},
+  {k:'A', q:"Elena's tap is dripping. She ___ it as soon as possible.", o:["should fix","should to fix","should fixes","shoulds fix"], a:0, why:'should + verb (without "to", without -s).'},
+ ],
+ thanks:"No more drips! Thank you, dear. Every drop counts, as Pedro says.",
+},
+{
+ id:'bees', leg:3, t:0.68, side:-1, title:'Flowers for the Bees', icon:'🐝',
+ npc:{ name:'Nico', model:'Ranger', tint:'#f0b400' },
+ collect:{ n:4, what:'flowers planted', icon:'🌼', kind:'flower' },
+ hello:"Bzzz! I'm Nico, the beekeeper. My bees can't find any flowers here, so they're hungry. I prepared four places with soil. Can you plant flowers there?",
+ ready:"Beautiful flowers! My bees are already flying to them. Now, read why bees are so important.",
+ text:`Bees are very small, but they have a very big job. When they fly from flower to flower, they carry pollen. This helps plants make fruit and vegetables, like apples, tomatoes and avocados. But bees are in danger. Some chemicals that farmers use kill them, and there are fewer wild flowers every year. If there are no bees, we don't have many of our favourite foods.`,
+ items:[
+  {k:'E', q:"Why are bees important?", o:["They carry pollen, so plants can make fruit","They make the flowers grow taller","They eat the bad insects","They clean the air"], a:0, why:'"…they carry pollen. This helps plants make fruit and vegetables."'},
+  {k:'Z', q:"If there are no flowers, bees ___ food.", o:["don't find","didn't found","not find","doesn't find"], a:0, why:'Zero conditional: If + present, present → "bees don\'t find food".'},
+  {k:'A', q:"What could you do to help bees?", o:["You could plant wild flowers.","You could use more chemicals.","You could cut all the flowers.","You could kill the insects."], a:0, why:'Wild flowers give bees food.'},
+ ],
+ thanks:"Bzzz! Thank you! Happy bees, happy farm!",
+},
+{
+ id:'lights', leg:4, t:0.33, side:1, title:'Lights On, Nobody Home', icon:'💡',
+ npc:{ name:'Sofía', model:'Rogue', tint:'#1fb5a8' },
+ hello:"Hi! I'm Sofía. My neighbours went on holiday for a week… and they left all the lights on! I have their key. Can you help me save some energy?",
+ text:`In Chile, part of our electricity still comes from coal and gas. When we burn them, they produce CO2, a gas that makes the planet warmer. So when we save electricity, we also help the planet. Simple things make a difference: turn off the lights when you leave a room, unplug chargers, and use LED light bulbs. They use 80% less energy than old bulbs.`,
+ items:[
+  {k:'I', q:"Why does saving electricity help the planet?", o:["We burn less coal and gas, so there is less CO2","Electricity is very expensive","The lights are too bright","Coal is good for the planet"], a:0, why:'Coal and gas produce CO2 → less electricity = less CO2.'},
+  {k:'R', q:"In our school, the last person in the room ___ turn off the lights. It's a rule.", o:["has to","have to","doesn't have to","mustn't"], a:0, why:'"has to" (he / she / the person) = it is obligatory.'},
+  {k:'Z', q:"If you use LED bulbs, you ___ less energy.", o:["use","used","uses","are use"], a:0, why:'Zero conditional: If + present, present → "you use less energy".'},
+ ],
+ thanks:"All off! The house is dark and quiet now. My neighbours will be happy — and the planet, too!",
+},
+{
+ id:'bike', leg:4, t:0.68, side:-1, title:'The Broken Bike', icon:'🚲',
+ npc:{ name:'Ana', model:'Knight', tint:'#e2408f' },
+ collect:{ n:3, what:'bike parts', icon:'🔧', kind:'part' },
+ hello:"Hi, I'm Ana! I ride my bike to school every day, but I fell and three parts of my bike flew away! Can you find the wheel, the chain and the bell?",
+ ready:"You found everything! My bike is ready. Let me tell you why I love it.",
+ text:`Ana lives three kilometres from her school. Her dad wanted to take her by car, but Ana prefers her bike. "Bikes don't make smoke, they don't need petrol, and they make you strong," she says. In her city there is a new bike lane, so it is safe. Ana thinks her school should have more bike parking, because now there are only ten places for four hundred students.`,
+ items:[
+  {k:'I', q:"Why does Ana prefer her bike?", o:["It's clean, cheap and healthy","It's faster than a car","Her dad doesn't have a car","She doesn't like her school"], a:0, why:'No smoke (clean), no petrol (cheap), it makes you strong (healthy).'},
+  {k:'A', q:"Ana thinks her school ___ more bike parking.", o:["should have","should has","should to have","shoulds have"], a:0, why:'should + verb (base form).'},
+  {k:'Z', q:"If you ride a bike, you ___ any smoke.", o:["don't make","didn't make","doesn't make","not make"], a:0, why:'Zero conditional: If + present, present → "you don\'t make".'},
+ ],
+ thanks:"See you at school! Remember: if you cycle, you breathe cleaner air!",
+},
+];
+
+export const SKILLS = {E:'Reading — explicit', I:'Reading — implicit', A:'Modals — advice (should / could)', R:'Modals — rules (must / have to)', Z:'Zero conditional', V:'Green vocabulary'};

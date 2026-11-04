@@ -49,6 +49,9 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px soli
 #menuBtn{position:absolute;right:14px;bottom:14px;pointer-events:auto}
 #help{position:absolute;left:14px;bottom:14px;color:#fff;font-weight:700;font-size:13px;text-shadow:0 1px 2px #000;opacity:.85}
 /* online board */
+#mini{position:absolute;right:14px;top:66px;width:170px;height:170px;border-radius:50%;box-shadow:var(--shadow);border:4px solid rgba(255,248,236,.95);pointer-events:auto;cursor:pointer;background:#3fb3e8}
+#mini.big{width:min(86vw,82vh);height:min(86vw,82vh);right:50%;top:50%;transform:translate(50%,-50%);z-index:8}
+.sideHint{display:block;margin-top:4px;color:#1a8fa0;font-size:14px}
 #board{position:absolute;right:14px;top:66px;background:rgba(255,248,236,.94);border-radius:14px;padding:10px 12px;min-width:210px;box-shadow:var(--shadow);font-weight:700;font-size:14px}
 #board h3{margin:0 0 4px;font-size:16px}
 #board ol{margin:0;padding-left:22px}
@@ -92,7 +95,7 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px soli
 #stick i{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.75)}
 #tbtns{position:absolute;right:20px;bottom:90px;display:flex;flex-direction:column;gap:12px;pointer-events:auto}
 #tbtns .btn{width:74px;height:74px;border-radius:50%;padding:0;font-size:15px}
-@media (max-width:760px){.reading{grid-template-columns:1fr}.text{max-height:40vh}#menu{background:rgba(14,40,24,.7);justify-content:center}#menu h1{font-size:34px}#obj{font-size:13px}#board{top:auto;bottom:90px;min-width:160px;font-size:12px}#mbox{padding:16px}.qcard .q{font-size:18px}.bubble{font-size:16px}}
+@media (max-width:760px){.reading{grid-template-columns:1fr}.text{max-height:40vh}#menu{background:rgba(14,40,24,.7);justify-content:center}#menu h1{font-size:34px}#obj{font-size:13px}#board{top:auto;bottom:90px;min-width:160px;font-size:12px}#obj{left:10px;top:10px;max-width:calc(100vw - 150px)}#mini{width:116px;height:116px;top:10px;right:10px}#stats{top:134px;right:10px;flex-direction:column;align-items:flex-end;gap:5px}#arrow{top:150px}.chip{font-size:14px;padding:5px 9px}#mbox{padding:16px}.qcard .q{font-size:18px}.bubble{font-size:16px}}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
@@ -132,13 +135,14 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px soli
 
 <div id="hud" class="hidden">
  <div id="obj"><b id="objT">Objective</b><span id="objD"></span></div>
- <div id="stats"><div class="chip" id="cLan">💎 0/5</div><div class="chip" id="cStar">🗑️ 0/15</div></div>
+ <div id="stats"><div class="chip" id="cLan">💎 0/5</div><div class="chip" id="cStar">🗑️ 0/15</div><div class="chip" id="cSide">🤝 0/10</div></div>
+ <canvas id="mini" width="520" height="520" title="Map (M)"></canvas>
  <svg id="arrow" viewBox="0 0 40 40"><path d="M20 3 L35 34 L20 26 L5 34 Z" fill="#ffc23d" stroke="#24183a" stroke-width="3" stroke-linejoin="round"/></svg>
  <div id="prompt" class="hidden"></div>
  <div id="toast"></div>
  <div id="board" class="hidden"></div>
  <div id="emotes" class="hidden"><button class="btn alt" data-e="Waving">👋 Wave (1)</button><button class="btn alt" data-e="Cheering">🎉 Cheer (2)</button></div>
- <div id="help">WASD / arrows: move · Space: jump · Shift: run · Drag mouse: camera · E: talk</div>
+ <div id="help">WASD / arrows: move · Space: jump · Shift: run · Drag mouse: camera · E: talk · M: big map</div>
  <button class="btn alt" id="menuBtn" style="font-size:14px;padding:8px 12px">☰ Menu</button>
 </div>
 
