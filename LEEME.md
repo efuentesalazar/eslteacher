@@ -61,3 +61,6 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 
 ## Novedades (04-11-2026)
 - **Past Quest** (6° básico, pasado simple): aventura 3D con modo historia (6 capítulos) y modo online por salas. Publicado como proyecto Vercel aparte (`past-quest-6basico`, https://past-quest-6basico.vercel.app). En el sitio solo hay un acceso: `6° BASICO/Past_Quest.html` (redirige) y la captura `assets/games/past-quest.webp`. El código del juego está en `Documents\Salesianos\Past Quest 6 basico`.
+
+## Novedades (04-11-2026)
+- **Festival Quest** (1° medio, Unit 4 "Traditions and festivities"): juego 3D en `1° MEDIO/Festival_Quest/` con modo historia (5 festivales: Day of the Dead, Lunar New Year, Fiestas Patrias, Holi y We Tripantu) y modo online sin salas (se entra solo, máximo 6 por sala; código de curso opcional). Lecturas B1 con preguntas explícitas e implícitas, vocabulary in context, language in use y question tags. Los contenidos se editan en `1° MEDIO/Festival_Quest/js/content.js`. Captura en `assets/games/festival-quest.webp`.
