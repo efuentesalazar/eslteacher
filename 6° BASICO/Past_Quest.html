@@ -1,18 +1,4 @@
 <!doctype html><meta charset="utf-8"><title>Past Quest</title>
-<noscript><meta http-equiv="refresh" content="0; url=https://pastquest6basico.eslteacher.cl/"></noscript>
-<a href="https://pastquest6basico.eslteacher.cl/">Play Past Quest</a>
-<script>
-/* Abre el juego. Si el alumno inició sesión en eslteacher.cl, le pasa un código de un solo uso
-   (vence en 3 minutos) para que el juego registre sus respuestas en el Panel del profe. */
-(function () {
-  var url = "https://pastquest6basico.eslteacher.cl/", done = false;
-  function go(code) { if (done) return; done = true; location.replace(url + (code ? "#eslt=" + code : "")); }
-  var s = null; try { s = JSON.parse(localStorage.getItem("eslt_session") || "null"); } catch (e) {}
-  if (!s || !s.token) return go();
-  setTimeout(function () { go(); }, 3000);
-  fetch("https://tlihbmgokuhvppbchvrz.supabase.co/rest/v1/rpc/eslt_handoff_create", {
-    method: "POST", headers: { apikey: "sb_publishable_nGgOCuUUuXKK7gx957LYhg_Jf2V4TJC", "Content-Type": "application/json" },
-    body: JSON.stringify({ p_token: s.token })
-  }).then(function (r) { return r.json(); }).then(function (j) { go(j && j.ok ? j.code : null); }).catch(function () { go(); });
-})();
-</script>
+<meta http-equiv="refresh" content="0; url=Past_Quest/">
+<script>location.replace("Past_Quest/")</script>
+<a href="Past_Quest/">Play Past Quest</a>

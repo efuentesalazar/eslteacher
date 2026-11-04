@@ -1,0 +1,193 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Ludo World Tour</title>
+<meta name="description" content="Ludo World Tour — 3D Ludo to practice Unit 4: Let's Travel!">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--r:#e53935;--g:#43a047;--y:#f9c80e;--b:#1e88e5;--ink:#1f2937}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;font-family:"Fredoka",system-ui,sans-serif;color:var(--ink);background:#8fd3ff;-webkit-tap-highlight-color:transparent}
+#c3d{position:fixed;inset:0;width:100%;height:100%;display:block}
+[hidden]{display:none!important}
+button{font-family:inherit;cursor:pointer;border:none}
+.btn{border-radius:16px;padding:12px 20px;font-size:19px;font-weight:700;color:#fff;background:#64748b;box-shadow:0 5px 0 rgba(0,0,0,.25);transition:transform .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.btn:disabled{opacity:.5}
+.green{background:linear-gradient(#5be36a,#20a33a)}.blue{background:linear-gradient(#4fa7ff,#1e6fe0)}.orange{background:linear-gradient(#ffb547,#f57c00)}.red{background:linear-gradient(#ff6b6b,#d32f2f)}
+.link{background:none;box-shadow:none;color:#1e3a8a;text-decoration:underline;font-size:16px;padding:8px}
+input,select{font-family:inherit;font-size:19px;padding:11px 13px;border:3px solid #dbe4ef;border-radius:14px;width:100%;margin-top:4px;color:var(--ink);background:#fff}
+label{display:block;font-weight:600;margin:10px 0 2px}
+/* overlays */
+.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:20;background:radial-gradient(ellipse at center,rgba(15,23,42,.15),rgba(15,23,42,.55));overflow:auto}
+.card{background:rgba(255,255,255,.96);border-radius:26px;padding:20px;width:min(100%,430px);box-shadow:0 10px 0 rgba(0,0,0,.18),0 20px 50px rgba(0,0,0,.3);border:4px solid #fff;margin:auto}
+.logo{text-align:center;font-weight:700;font-size:40px;line-height:1;color:#fff;text-shadow:0 4px 0 #1e6fe0,0 8px 18px rgba(0,0,0,.35);margin-bottom:12px}
+.logo small{display:block;font-size:17px;color:#fef08a;text-shadow:0 2px 0 #1e40af;margin-top:6px}
+.dots{display:flex;justify-content:center;gap:6px;margin:6px 0 2px}.dots i{width:16px;height:16px;border-radius:50%;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.avatars{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:6px}
+.avatars button{font-size:26px;background:#f1f5f9;border:3px solid transparent;border-radius:12px;padding:5px 0}
+.avatars button.on{border-color:#20a33a;background:#dcfce7;transform:scale(1.08)}
+.big{width:100%;font-size:26px;margin-top:14px;padding:14px}
+.hint{text-align:center;color:#64748b;margin:6px 0 0}
+.or{display:flex;align-items:center;gap:8px;margin:14px 0 6px;color:#64748b;font-size:14px}.or::before,.or::after{content:"";flex:1;height:2px;background:#e2e8f0}
+.row{display:flex;gap:8px;align-items:stretch}.row input{margin:0;flex:1;min-width:0}
+.code{text-transform:uppercase;letter-spacing:5px;text-align:center;font-weight:700}
+.msg{min-height:1.2em;color:#d32f2f;font-weight:600;text-align:center;margin:8px 0 0}
+.center{text-align:center}
+.seats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.seat{border-radius:16px;padding:10px;color:#fff;font-weight:700;text-align:center;box-shadow:0 4px 0 rgba(0,0,0,.2);min-height:76px}
+.seat .av{font-size:30px;display:block}.seat.empty{background:#e2e8f0!important;color:#94a3b8}
+.pulse{animation:pulse 1.4s infinite}@keyframes pulse{50%{opacity:.45}}
+.rules{background:#f8fafc;border-radius:14px;padding:6px 12px;font-size:15px;text-align:left}.rules li{margin:4px 0}
+/* in-game HUD */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+#hud>*{pointer-events:auto}
+#chips{position:absolute;top:8px;left:8px;right:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:760px;margin:0 auto}
+.chip{background:rgba(255,255,255,.92);border-radius:14px;padding:5px 6px 7px;position:relative;box-shadow:0 4px 0 rgba(0,0,0,.18);border:3px solid #fff;overflow:hidden;transition:transform .25s}
+.chip .top{display:flex;align-items:center;gap:4px;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden}
+.chip .av{font-size:20px}.chip .nm{overflow:hidden;text-overflow:ellipsis}
+.chip .sub{font-size:12px;color:#475569;display:flex;justify-content:space-between}
+.chip .bar{position:absolute;left:0;bottom:0;height:5px;background:currentColor;transition:width .25s linear}
+.chip.turn{transform:scale(1.08);border-color:currentColor;box-shadow:0 0 0 3px #fff,0 0 18px currentColor}
+.chip.me .nm::after{content:" (you)";font-weight:500;color:#64748b}
+#tools{position:absolute;top:88px;right:10px;display:flex;flex-direction:column;gap:8px}
+.round{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.92);font-size:22px;box-shadow:0 4px 0 rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--ink)}
+#clock{font-size:14px;width:auto;border-radius:99px;padding:0 10px}
+#bottom{position:absolute;left:0;right:0;bottom:10px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 10px}
+#status{background:rgba(15,23,42,.78);color:#fff;border-radius:99px;padding:8px 18px;font-size:17px;font-weight:600;text-align:center;max-width:94vw}
+#rollBtn{font-size:34px;padding:12px 56px;border-radius:99px;border:4px solid #fff;letter-spacing:2px;animation:glow 1.2s infinite}
+@keyframes glow{50%{box-shadow:0 5px 0 rgba(0,0,0,.25),0 0 28px #fff59d}}
+#qPanel{width:min(96vw,560px);background:rgba(255,255,255,.97);border-radius:22px;padding:12px 14px 14px;box-shadow:0 8px 0 rgba(0,0,0,.15),0 16px 40px rgba(0,0,0,.25);border:4px solid #fff;max-height:58vh;overflow:auto;animation:up .3s}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;color:#64748b;font-weight:600}
+.topic{background:#e0e7ff;color:#3730a3;border-radius:99px;padding:2px 10px}
+.passage{background:#fefce8;border:2px solid #fde68a;border-radius:12px;padding:8px 10px;font-size:15px;line-height:1.35;max-height:22vh;overflow:auto;margin:6px 0}
+.q{font-size:20px;font-weight:700;margin:6px 0 8px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.opts button{background:#f1f5f9;border:3px solid #dbe4ef;border-radius:14px;padding:10px 8px;font-size:17px;font-weight:600;color:var(--ink);box-shadow:0 3px 0 #cbd5e1}
+.opts button.ok{background:#bbf7d0;border-color:#16a34a}.opts button.no{background:#fecaca;border-color:#dc2626}
+.opts button:disabled{cursor:default}
+.tip{margin-top:8px;font-weight:600;text-align:center}
+#banner{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:15;font-size:clamp(40px,11vw,86px);font-weight:700;color:#fff;white-space:nowrap;pointer-events:none;
+  -webkit-text-stroke:3px rgba(0,0,0,.25);text-shadow:0 6px 0 rgba(0,0,0,.25),0 0 30px rgba(255,255,255,.6)}
+#banner.show{animation:ban 1.6s forwards}
+@keyframes ban{0%{transform:translate(-50%,-50%) scale(.2) rotate(-8deg);opacity:0}15%{transform:translate(-50%,-50%) scale(1.15) rotate(3deg);opacity:1}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}
+.podium{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.pl{display:flex;align-items:center;gap:10px;border-radius:14px;padding:8px 12px;color:#fff;font-weight:700;box-shadow:0 4px 0 rgba(0,0,0,.2)}
+.pl .medal{font-size:28px}.pl .av{font-size:26px}.pl .sc{margin-left:auto;text-align:right;font-size:14px}
+/* teacher */
+.dash{width:min(100%,980px);display:grid;grid-template-columns:300px 1fr;gap:14px;margin:auto}
+@media(max-width:760px){.dash{grid-template-columns:1fr}}
+.bigcode{font-size:56px;font-weight:700;letter-spacing:6px;color:#f57c00;text-align:center}
+#tQr{display:flex;justify-content:center;margin:8px 0}#tQr img,#tQr canvas{width:180px;height:180px}
+table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px}.checks label{margin:0;font-weight:500;display:flex;gap:6px;align-items:center;background:#f1f5f9;padding:7px;border-radius:10px}.checks input{width:auto;margin:0}
+.timerbig{font-size:34px;font-weight:700;text-align:center}
+</style>
+</head>
+<body>
+<canvas id="c3d"></canvas>
+
+<!-- HOME -->
+<div id="home" class="ov">
+  <div style="width:min(100%,430px);margin:auto">
+    <div class="logo">🎲 Ludo World Tour<small>Unit 4 · Let's Travel!</small></div>
+    <div class="card">
+      <label>Your name<input id="nm" maxlength="14" autocomplete="off" placeholder="First name"></label>
+      <div style="font-weight:600;margin-top:10px">Choose your traveler</div>
+      <div id="avs" class="avatars"></div>
+      <button id="playBtn" class="btn green big">▶ PLAY NOW!</button>
+      <p class="hint">Play with travelers from everywhere · 15 minutes</p>
+      <div class="or">or join your teacher's game</div>
+      <div class="row"><input id="code" class="code" maxlength="5" placeholder="CODE" autocomplete="off"><button id="joinBtn" class="btn blue">Join</button></div>
+      <p id="msg" class="msg"></p>
+    </div>
+    <div class="center"><button id="teachBtn" class="btn link" style="color:#fff">👩‍🏫 I'm the teacher</button></div>
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby" class="ov" hidden>
+  <div class="card center">
+    <h2 style="margin:0">✈️ Boarding…</h2>
+    <div id="lobbySeats" class="seats"></div>
+    <p id="lobbyMsg" class="pulse" style="font-weight:700;color:#1e6fe0"></p>
+    <ul class="rules">
+      <li>❓ Answer the question correctly to <b>roll the dice</b>.</li>
+      <li>🎲 A <b>1</b> or a <b>6</b> takes a piece out of base.</li>
+      <li>💥 Land on another piece to send it home!</li>
+      <li>⭐ Stars are safe. 🎲 A 6 gives you another turn.</li>
+      <li>🏠 Get your 4 pieces to the center to win!</li>
+    </ul>
+    <button id="leaveBtn" class="btn link">Leave</button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud" hidden>
+  <div id="chips"></div>
+  <div id="tools"><button id="sndBtn" class="round">🔊</button><div id="clock" class="round">--:--</div></div>
+  <div id="bottom">
+    <div id="qPanel" hidden></div>
+    <button id="rollBtn" class="btn green" hidden>ROLL 🎲</button>
+    <div id="status"></div>
+  </div>
+</div>
+<div id="banner"></div>
+
+<!-- FINAL -->
+<div id="final" class="ov" hidden>
+  <div class="card center">
+    <h2 id="finTitle" style="margin:0;font-size:30px">🏆 Trip over!</h2>
+    <div id="podium" class="podium"></div>
+    <button id="againBtn" class="btn green big">🎲 Play again</button>
+    <button id="homeBtn" class="btn link">Back to start</button>
+  </div>
+</div>
+
+<!-- TEACHER SETUP -->
+<div id="tSetup" class="ov" hidden>
+  <div class="card">
+    <h2 style="margin:0">👩‍🏫 Class game</h2>
+    <label>Game time<select id="tMin"><option>10</option><option>15</option><option selected>20</option><option>30</option><option>40</option></select></label>
+    <div style="font-weight:600;margin:10px 0 4px">Question topics</div>
+    <div id="tTopics" class="checks"></div>
+    <button id="createBtn" class="btn green big">Create game</button>
+    <p id="tMsg" class="msg"></p>
+    <div class="center"><button id="tBack" class="btn link">← Back</button></div>
+  </div>
+</div>
+
+<!-- TEACHER DASHBOARD -->
+<div id="tDash" class="ov" hidden>
+  <div class="dash">
+    <div class="card center">
+      <div>Go to <b id="tUrl"></b></div>
+      <div class="bigcode" id="tCode"></div>
+      <div id="tQr"></div>
+      <div class="timerbig" id="tTimer">--:--</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px">
+        <button id="tStart" class="btn green">▶ Start</button><button id="tMore" class="btn blue">+5 min</button>
+        <button id="tEnd" class="btn red">■ End</button><button id="tCsv" class="btn">⬇ CSV</button>
+      </div>
+      <button id="tNew" class="btn link">New game</button>
+    </div>
+    <div class="card" style="width:auto">
+      <h2 style="margin:0 0 6px">🏆 Players <span id="tCount" style="color:#64748b;font-size:16px"></span></h2>
+      <div style="overflow:auto;max-height:70vh"><table><thead><tr><th>#</th><th>Player</th><th>Table</th><th>Score</th><th>Answers</th></tr></thead><tbody id="tRows"></tbody></table></div>
+      <p style="color:#64748b;font-size:14px">Students are grouped in tables of 4 automatically. Empty seats are filled with robots 🤖.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="config.js"></script>
+<script src="questions.js"></script>
+<script src="../../assets/js/eslt-log.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

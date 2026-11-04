@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Past Quest – The Memory Thief</title>
+<meta name="description" content="Juego de aventura 3D para practicar el pasado simple en inglés (6° básico).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+/* Avance de la historia traído desde la dirección antigua (pastquest6basico.eslteacher.cl).
+   Solo se usa si en este navegador todavía no hay avance guardado aquí. */
+(function () {
+  var m = location.hash.match(/(?:^#|&)pqsave=([A-Za-z0-9_-]+)/); if (!m) return;
+  try {
+    var b64 = m[1].replace(/-/g, '+').replace(/_/g, '/'); while (b64.length % 4) b64 += '=';
+    var data = JSON.parse(decodeURIComponent(escape(atob(b64))));
+    if (data.save && !localStorage.getItem('pastquest-6b-v1')) localStorage.setItem('pastquest-6b-v1', JSON.stringify(data.save));
+    if (data.sound != null && localStorage.getItem('pq-sound') == null) localStorage.setItem('pq-sound', data.sound);
+  } catch (e) {}
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+})();
+</script>
+<script src="../../assets/js/eslt-log.js"></script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- Loading -->
+<div id="loading" class="screen">
+  <div class="logo">Past<span>Quest</span></div>
+  <div class="sub">The Memory Thief</div>
+  <div class="bar"><div id="loadbar"></div></div>
+  <div id="loadtxt">Loading the village… / Cargando la aldea…</div>
+</div>
+
+<!-- Title menu -->
+<div id="title" class="screen hidden">
+  <div class="logo">Past<span>Quest</span></div>
+  <div class="sub">The Memory Thief · <small>Past simple adventure</small></div>
+  <div class="menu">
+    <button class="btn big" data-act="story">📖 Story Mode <small>Modo historia</small></button>
+    <button class="btn big blue" data-act="online">🌐 Online Mode <small>Modo en línea</small></button>
+    <button class="btn" data-act="avatar">🧑 My Explorer <small>Mi personaje</small></button>
+    <button class="btn" data-act="teacher">🍎 Teacher Guide <small>Guía docente</small></button>
+  </div>
+  <div class="foot">6° básico · Inglés · Assets: Quaternius, Kenney & friends (CC0) · <a href="#" data-act="credits">Credits</a></div>
+</div>
+
+<!-- Avatar creator -->
+<div id="creator" class="screen hidden clear">
+  <div class="panel side">
+    <h2>Create your explorer <small>Crea tu explorador/a</small></h2>
+    <label>Name / Nombre<input id="cr-name" maxlength="14" placeholder="Your name" autocomplete="off"></label>
+    <div class="opt"><span>Body</span><div id="cr-sex" class="chips"></div></div>
+    <div class="opt"><span>Outfit</span><div id="cr-outfit" class="chips"></div></div>
+    <div class="opt"><span>Colour</span><div id="cr-alt" class="chips"></div></div>
+    <div class="opt"><span>Hair</span><div id="cr-hair" class="chips"></div></div>
+    <div class="opt"><span>Hair colour</span><div id="cr-hc" class="chips swatches"></div></div>
+    <div class="opt"><span>Skin</span><div id="cr-skin" class="chips swatches"></div></div>
+    <div class="row"><button class="btn ghost" data-act="back">← Back</button><button class="btn" id="cr-ok">Ready! ✔</button></div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="hud-left">
+    <div id="hud-ch"></div>
+    <div id="hud-obj"></div>
+  </div>
+  <div id="hud-right">
+    <div class="pill" title="Memory stars">⭐ <b id="hud-stars">0</b></div>
+    <div class="pill" title="Verb scrolls">📜 <b id="hud-scrolls">0</b></div>
+    <button class="icon" data-act="book" title="Book (B)">📘</button>
+    <button class="icon" data-act="map" title="Map (M)">🗺️</button>
+    <button class="icon" data-act="sound" id="btn-sound" title="Sound">🔊</button>
+    <button class="icon" data-act="pause" title="Menu (Esc)">☰</button>
+  </div>
+  <div id="hearts" class="hidden"></div>
+  <div id="bossbar" class="hidden"><span>Mortimer</span><div><i id="bosshp"></i></div></div>
+  <div id="online-hud" class="hidden">
+    <div id="on-timer">5:00</div>
+    <ol id="on-board"></ol>
+  </div>
+  <div id="help-keys">WASD / arrows: move · Shift: run · Space: jump · E: talk · drag: camera</div>
+</div>
+<div id="bubbles"></div>
+<div id="prompt" class="hidden"></div>
+<div id="toast"></div>
+<div id="banner" class="hidden"><div class="b1"></div><div class="b2"></div></div>
+
+<!-- Mobile controls -->
+<div id="touch" class="hidden">
+  <div id="stick"><div id="knob"></div></div>
+  <button id="t-act">💬</button>
+  <button id="t-jump">⤒</button>
+</div>
+
+<!-- Dialog -->
+<div id="dialog" class="hidden">
+  <div id="dlg-name"></div>
+  <div id="dlg-text"></div>
+  <div id="dlg-es"></div>
+  <div id="dlg-btns"></div>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="hidden"><div id="modal-box"></div></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

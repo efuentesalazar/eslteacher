@@ -94,3 +94,9 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - Cómo reciben la sesión: `6° BASICO/Past_Quest.html` y `6° BASICO/Travel_Tycoon.html` piden a la base un **código de un solo uso** (vence en 3 min) y abren el juego con `#eslt=código`. El juego (archivo `eslt-remote.js`, copia de `assets/js/eslt-remote.js`) lo canjea por una **sesión de 6 horas** y borra el código de la dirección. Si el alumno abre el juego directo (sin pasar por eslteacher.cl), ve un aviso de que su profe no verá su avance.
 - Base de datos: tabla `eslt.handoffs` y funciones `eslt_handoff_create` / `eslt_handoff_redeem`.
 - Estos dos juegos se publican en Vercel desde sus carpetas (no desde GitHub).
+
+## Novedades (04-11-2026): Past Quest y Ludo World Tour ahora viven en eslteacher.cl
+- **Past Quest** está en `6° BASICO/Past_Quest/` y **Ludo World Tour** en `6° BASICO/Ludo_World_Tour/`. Se publican con GitHub como todo lo demás y usan directamente la sesión del alumno (`assets/js/eslt-log.js`).
+- Las direcciones antiguas (pastquest6basico.eslteacher.cl y juego.eslteacher.cl) redirigen a las nuevas. Past Quest trae el avance de la historia guardado en el navegador del alumno (`#pqsave=`), solo si en la nueva dirección aún no hay avance.
+- `6° BASICO/Past_Quest.html` y `Travel_Tycoon.html` quedan como redirecciones a las nuevas carpetas.
+- Regla desde ahora: **todo juego nuevo se publica dentro de eslteacher.cl** (ver `Documents\Salesianos\CLAUDE.md`).
