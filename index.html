@@ -3,155 +3,267 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Festival Quest — The Lost Lanterns</title>
+<title>Weather Heroes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#24183a;--paper:#fff8ec;--gold:#ffc23d;--orange:#ff7a1a;--pink:#e2408f;--teal:#1fb5a8;--ok:#2ea64f;--bad:#d9433b;--shadow:0 6px 0 rgba(36,24,58,.35)}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:#20163a;font-family:Nunito,system-ui,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent;touch-action:none}
-canvas{display:block}
-#c{position:fixed;inset:0;width:100%;height:100%;transition:filter 1.2s}
+:root{
+  --ink:#1f2a44; --paper:#fffdf7; --line:#1f2a44; --sky:#4aa8ff; --sun:#ffc93c; --leaf:#38b26a; --red:#ef5a4c; --snow:#e9f4ff;
+  --shadow:0 5px 0 rgba(31,42,68,.9);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;background:#87c8ff;font-family:Fredoka,system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none}
+canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+button{font-family:inherit;cursor:pointer}
 .hidden{display:none!important}
-h1,h2,h3,.btn,.title{font-family:'Baloo 2',Nunito,sans-serif}
-.btn{border:0;border-radius:14px;padding:12px 20px;font-size:18px;font-weight:800;cursor:pointer;background:var(--gold);color:var(--ink);box-shadow:var(--shadow);transition:transform .08s}
-.btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(36,24,58,.35)}
-.btn.alt{background:#fff;}.btn.teal{background:var(--teal);color:#fff}.btn.pink{background:var(--pink);color:#fff}
-.btn:disabled{opacity:.5;cursor:default}
-/* loading */
-#loading{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#4a2c7a,#1b1033);color:#fff;z-index:50}
-#loading .bar{width:min(320px,70vw);height:14px;border-radius:9px;background:#ffffff22;overflow:hidden;margin-top:14px}
-#loading .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--orange),var(--pink))}
-/* menu */
-#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:flex-start;padding:24px 4vw;z-index:20;background:linear-gradient(90deg,rgba(27,16,51,.85),rgba(27,16,51,.2) 60%,transparent);overflow:auto}
-.panel{background:var(--paper);border-radius:22px;padding:22px 24px;box-shadow:0 10px 0 rgba(0,0,0,.25);max-width:460px;width:100%}
-#menu h1{margin:0;font-size:44px;line-height:1;color:#fff;text-shadow:0 4px 0 #7a2d8f,0 8px 0 rgba(0,0,0,.25)}
-#menu .sub{color:#ffe7a8;font-weight:800;margin:6px 0 16px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.chars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 14px}
-.chars button{border:3px solid transparent;border-radius:12px;background:#f1e4cf;padding:8px 4px;font-weight:800;font-family:inherit;cursor:pointer;font-size:14px}
-.chars button.on{border-color:var(--orange);background:#ffe1b8}
-label{font-weight:800;font-size:14px;display:block;margin:6px 0 4px}
-input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px solid #d9c7a8;font-size:17px;font-family:inherit;background:#fff}
-.small{font-size:13px;opacity:.75}
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.modes .btn{font-size:17px;padding:14px 8px}
-/* hud */
-#hud{position:fixed;inset:0;pointer-events:none;z-index:5}
-#obj{position:absolute;left:14px;top:14px;background:rgba(255,248,236,.94);padding:10px 14px;border-radius:14px;max-width:min(420px,60vw);box-shadow:var(--shadow);font-weight:700}
-#objT{font-family:'Baloo 2';color:#7a2d8f;display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
-#stats{position:absolute;right:198px;top:14px;display:flex;gap:8px}
-#mini{position:absolute;right:14px;top:14px;width:170px;height:170px;border-radius:50%;box-shadow:var(--shadow);border:4px solid rgba(255,248,236,.95);pointer-events:auto;cursor:pointer;background:#3fb3e8}
-#mini.big{width:min(86vw,82vh);height:min(86vw,82vh);right:50%;top:50%;transform:translate(50%,-50%);z-index:8}
-.sideHint{display:block;margin-top:4px;color:#1a8fa0;font-size:14px}
-.chip{background:rgba(255,248,236,.94);border-radius:12px;padding:8px 12px;font-weight:800;box-shadow:var(--shadow);font-family:'Baloo 2';font-size:18px}
-#arrow{position:absolute;left:50%;top:70px;width:46px;height:46px;margin-left:-23px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.35))}
-#prompt{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:14px;font-weight:800;font-size:18px;pointer-events:auto;cursor:pointer}
-#prompt kbd{background:var(--gold);color:var(--ink);border-radius:6px;padding:1px 8px;margin-right:6px}
-#toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-family:'Baloo 2';font-weight:800;font-size:34px;color:#fff;text-shadow:0 3px 0 #7a2d8f,0 6px 10px rgba(0,0,0,.4);text-align:center;opacity:0;transition:opacity .3s;white-space:nowrap}
-#menuBtn{position:absolute;right:14px;bottom:14px;pointer-events:auto}
-#help{position:absolute;left:14px;bottom:14px;color:#fff;font-weight:700;font-size:13px;text-shadow:0 1px 2px #000;opacity:.85}
-/* online board */
-#board{position:absolute;right:14px;top:66px;background:rgba(255,248,236,.94);border-radius:14px;padding:10px 12px;min-width:210px;box-shadow:var(--shadow);font-weight:700;font-size:14px}
-#board h3{margin:0 0 4px;font-size:16px}
-#board ol{margin:0;padding-left:22px}
-#board li.me{color:var(--pink)}
-#emotes{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
-#emotes .btn{font-size:14px;padding:8px 12px}
-/* modal */
-#modal{position:fixed;inset:0;background:rgba(20,10,40,.6);display:grid;place-items:center;z-index:30;padding:14px}
-#mbox{background:var(--paper);border-radius:22px;width:min(980px,100%);max-height:94vh;overflow:auto;box-shadow:0 12px 0 rgba(0,0,0,.3);padding:22px 26px;position:relative}
-#mbox h2{margin:0 0 6px;font-size:28px;line-height:1.1}
-.speaker{display:flex;gap:14px;align-items:flex-start}
-.avatar{flex:0 0 64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:34px;color:#fff;font-family:'Baloo 2';font-weight:800;box-shadow:var(--shadow)}
-.bubble{background:#fff;border-radius:16px;padding:14px 16px;font-size:19px;line-height:1.45;flex:1;border:2px solid #eadbc2}
-.reading{display:grid;grid-template-columns:1.25fr 1fr;gap:20px}
-.text{background:#fff;border:2px solid #eadbc2;border-radius:14px;padding:14px 18px;font-size:17px;line-height:1.6;max-height:66vh;overflow:auto}
-.text p{margin:0 0 12px}
-.qcard .tag{display:inline-block;font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;color:#fff;margin-bottom:8px;letter-spacing:.04em;text-transform:uppercase}
-.qcard .q{font-size:20px;font-weight:700;line-height:1.4;margin-bottom:12px}
-.qcard .q .mini{background:#fff;border-left:5px solid var(--teal);padding:8px 12px;border-radius:8px;font-weight:600;font-size:17px;margin:0 0 10px}
-.opts{display:grid;gap:8px}
-.opt{text-align:left;border:2px solid #e2d2b6;background:#fff;border-radius:12px;padding:11px 14px;font-size:17px;font-family:inherit;font-weight:700;cursor:pointer;color:var(--ink)}
-.opt:hover{border-color:var(--orange)}
-.opt.ok{background:#d9f5df;border-color:var(--ok)}.opt.no{background:#fbdcd9;border-color:var(--bad)}
-.opt:disabled{cursor:default}
-.why{margin-top:10px;padding:10px 12px;border-radius:10px;font-weight:700;font-size:16px}
-.why.ok{background:#e6f8ea;color:#1d6b33}.why.no{background:#fde7e5;color:#8d2620}
-.progress{display:flex;gap:5px;margin:4px 0 12px}
-.progress i{height:8px;flex:1;border-radius:4px;background:#e8dac2}
-.progress i.ok{background:var(--ok)}.progress i.no{background:var(--bad)}.progress i.cur{background:var(--gold)}
-.foot{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap}
-.duel{display:flex;justify-content:space-between;gap:20px;margin-bottom:12px;font-weight:800}
-.hp{height:16px;border-radius:9px;background:#e8dac2;overflow:hidden;width:220px;max-width:38vw}
-.hp i{display:block;height:100%;background:linear-gradient(90deg,#8a8a99,#555566);transition:width .4s}
-.cert{text-align:center}
-.cert table{margin:12px auto;border-collapse:collapse;font-size:16px}
-.cert td{padding:6px 14px;border-bottom:1px solid #e8dac2;text-align:left}
-.cert td:last-child{text-align:right;font-weight:800}
-/* touch */
-#touch{position:fixed;inset:0;pointer-events:none;z-index:6}
-#stick{position:absolute;left:24px;bottom:24px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.4);pointer-events:auto}
-#stick i{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.75)}
-#tbtns{position:absolute;right:20px;bottom:90px;display:flex;flex-direction:column;gap:12px;pointer-events:auto}
-#tbtns .btn{width:74px;height:74px;border-radius:50%;padding:0;font-size:15px}
-@media (max-width:760px){.reading{grid-template-columns:1fr}.text{max-height:40vh}#menu{background:rgba(27,16,51,.7);justify-content:center}#menu h1{font-size:34px}#obj{font-size:13px;left:10px;top:10px;max-width:calc(100vw - 150px)}#mini{width:116px;height:116px;top:10px;right:10px}#stats{top:134px;right:10px;flex-direction:column;gap:6px}#stats .chip{font-size:14px;padding:5px 9px}#board{top:auto;bottom:90px;min-width:160px;font-size:12px}#mbox{padding:16px}.qcard .q{font-size:18px}.bubble{font-size:16px}}
+
+/* blocky buttons and panels */
+.btn{border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-weight:600;font-size:18px;padding:10px 18px;box-shadow:var(--shadow);transition:transform .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(31,42,68,.9)}
+.btn.primary{background:var(--sun)} .btn.blue{background:var(--sky);color:#fff} .btn.green{background:var(--leaf);color:#fff} .btn.red{background:var(--red);color:#fff}
+.btn.small{font-size:15px;padding:6px 12px;border-radius:10px}
+.panel{background:var(--paper);border:3px solid var(--line);border-radius:18px;box-shadow:0 7px 0 rgba(31,42,68,.9)}
+
+/* full screens */
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:40;background:linear-gradient(#5fb6ff,#bfe6ff 60%,#9fdc8a 60%,#7cc56c)}
+#title,#setup,#info{background:linear-gradient(rgba(95,182,255,.25),rgba(20,40,90,.45))}
+.screen .box{width:min(560px,100%);max-height:100%;overflow:auto;touch-action:pan-y;overscroll-behavior:contain;padding:24px;text-align:center}
+.logo{font-size:clamp(38px,8vw,64px);font-weight:700;line-height:1;margin:6px 0 4px;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 6px 0 var(--ink)}
+.subtitle{font-size:18px;margin-bottom:18px}
+.menu{display:grid;gap:12px;margin-top:12px}
+.menu .btn{font-size:21px;padding:14px}
+.weather-strip{font-size:34px;letter-spacing:6px;margin:4px 0 8px}
+.field{display:grid;gap:6px;text-align:left;margin:10px 0}
+.field input{font:inherit;font-size:18px;padding:10px 12px;border:3px solid var(--line);border-radius:12px}
+.skins{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.skins button{aspect-ratio:1;border:3px solid var(--line);border-radius:12px;font-size:12px;font-weight:600;background:#fff;padding:0;overflow:hidden}
+.skins button.sel{background:var(--sun);transform:scale(1.06)}
+.skins img{width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+.btn{-webkit-touch-callout:none}
+#setup .btn{white-space:nowrap}
+.note{font-size:14px;opacity:.8;margin-top:8px}
+#esltStatus{opacity:1;padding:8px 12px;border-radius:12px;background:rgba(88,204,2,.18);line-height:1.4}
+#esltStatus.warn{background:rgba(255,200,0,.25)}#esltStatus a{color:inherit;font-weight:800}
+#loading .bar{height:22px;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;margin-top:14px}
+#loading .bar div{height:100%;width:0;background:var(--leaf);transition:width .2s}
+
+/* HUD */
+#hud{position:fixed;inset:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);pointer-events:none;z-index:10}
+#hud > *{pointer-events:auto}
+#zoneCard{position:absolute;left:12px;top:12px;padding:10px 14px;min-width:220px;max-width:min(330px,60vw)}
+#zoneCard .zn{font-weight:700;font-size:19px}
+#zoneCard .zw{font-size:15px;margin-top:2px}
+#zoneCard .row{display:flex;gap:10px;align-items:center;margin-top:6px;font-size:14px}
+.meter{flex:1;height:12px;border:2px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.meter div{height:100%;background:var(--leaf);transition:width .2s}
+#topRight{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#minimap{width:170px;height:170px;border-radius:50%;border:3px solid var(--line);box-shadow:0 5px 0 rgba(31,42,68,.9);background:#9fdc8a}
+#stats{padding:6px 12px;font-weight:600;font-size:17px;display:flex;gap:12px}
+#quest{position:absolute;left:12px;top:140px;padding:10px 14px;max-width:min(330px,62vw);font-size:15px}
+#quest b{display:block;font-size:13px;text-transform:uppercase;letter-spacing:1px;opacity:.7}
+#prompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);padding:8px 16px;font-weight:600;font-size:18px;white-space:nowrap}
+#toast{position:absolute;left:50%;top:16px;transform:translateX(-50%);padding:10px 18px;font-weight:600;font-size:18px;max-width:90vw;text-align:center;transition:opacity .3s}
+#bottomBar{position:absolute;right:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#feel{position:absolute;left:50%;top:40%;transform:translateX(-50%);font-size:32px;pointer-events:none;filter:drop-shadow(0 3px 0 #0005)}
+#callBox{position:absolute;left:50%;top:70px;transform:translateX(-50%);padding:10px 16px;font-size:17px;font-weight:600;text-align:center;max-width:92vw;background:#fff4c9}
+#board{position:absolute;right:12px;top:240px;padding:8px 12px;font-size:14px;min-width:170px;max-height:40vh;overflow:auto}
+#board b{display:block;margin-bottom:4px}
+#chatLog{position:absolute;left:12px;bottom:12px;width:min(320px,55vw);font-size:14px;display:flex;flex-direction:column;gap:4px;pointer-events:none}
+#chatLog div{background:#fffdf7e6;border:2px solid var(--line);border-radius:10px;padding:4px 8px}
+
+/* dialog */
+#dialog{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(720px,calc(100% - 32px));padding:16px 18px 14px;z-index:30}
+#dialog .who{font-weight:700;font-size:18px;color:#2a63c9}
+#dialog .txt{font-size:20px;margin:6px 0 10px;line-height:1.35}
+#dialog .es{font-size:14px;opacity:.75;margin:-4px 0 10px}
+#dialog .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+
+/* modal (exercises, wardrobe) */
+#modal{position:fixed;inset:0;z-index:35;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(20,30,60,.45)}
+#modal .box{width:min(760px,100%);max-height:100%;overflow:auto;touch-action:pan-y;overscroll-behavior:contain;padding:20px 22px}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.mhead .kind{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;background:var(--sun);border:2px solid var(--line);border-radius:8px;padding:2px 8px}
+.mhead h2{margin:0;font-size:22px}
+.progress{display:flex;gap:4px;margin:6px 0 12px}
+.progress span{flex:1;height:8px;border-radius:5px;background:#dde3ee;border:1px solid #0002}
+.progress span.on{background:var(--leaf)}
+.q{font-size:22px;font-weight:600;margin:8px 0 12px}
+.pic{font-size:64px;text-align:center;margin:4px 0}
+.opts{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+.opts .btn{text-align:left;font-size:18px;font-weight:500}
+.opts .btn.ok{background:var(--leaf);color:#fff} .opts .btn.no{background:#f3b1aa;opacity:.6}
+.reading{background:#fff;border:2px dashed #8aa;border-radius:12px;padding:12px 16px;font-size:18px;line-height:1.5;margin-bottom:10px}
+.reading p{margin:0 0 8px}
+.feedback{margin-top:12px;font-size:17px;min-height:24px;font-weight:500}
+.feedback.good{color:#1f8a4c} .feedback.bad{color:#b8382c}
+.bank,.built{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;padding:8px;border-radius:12px}
+.built{border:3px dashed #9ab;background:#fff;margin-bottom:10px}
+.chip{border:3px solid var(--line);border-radius:10px;background:#fff;font-size:19px;font-weight:600;padding:6px 12px;box-shadow:0 3px 0 rgba(31,42,68,.9)}
+.chip.used{visibility:hidden}
+.gaptext{font-size:20px;line-height:2.1;background:#fff;border-radius:12px;padding:10px 14px;border:2px solid #cbd}
+.slot{display:inline-block;min-width:90px;border-bottom:3px solid var(--ink);text-align:center;font-weight:700;color:#2a63c9;padding:0 6px;cursor:pointer}
+.slot.cur{background:#fff4c9}
+.slot.ok{color:#1f8a4c;border-color:#1f8a4c} .slot.bad{color:#b8382c;border-color:#b8382c}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.match .col{display:grid;gap:8px}
+.match .chip{text-align:center;width:100%}
+.match .chip.sel{background:var(--sun)} .match .chip.done{background:var(--leaf);color:#fff;opacity:.7}
+.match .emo{font-size:30px;padding:2px}
+.mfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.hint{font-size:14px;opacity:.8}
+.stars{font-size:44px;letter-spacing:6px;text-align:center;margin:10px 0}
+.wardrobe{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.wardrobe .chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;font-size:16px}
+.wardrobe .chip .e{font-size:34px}
+.wardrobe .chip.on{background:var(--leaf);color:#fff}
+.need{background:#fff;border:2px solid #cbd;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:16px}
+.cert{border:6px double var(--ink);border-radius:16px;padding:20px;text-align:center;background:#fffbe6}
+.cert h1{margin:0;font-size:34px}
+.cert .nm{font-size:30px;font-weight:700;color:#2a63c9;margin:10px 0}
+.phr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* touch controls */
+#touch{position:fixed;inset:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);pointer-events:none;z-index:12}
+#joy{position:absolute;left:24px;bottom:24px;width:130px;height:130px;border-radius:50%;background:#ffffff55;border:3px solid #1f2a4488;pointer-events:auto}
+#joy .k{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#fff;border:3px solid var(--line)}
+#tbtns{position:absolute;right:20px;bottom:90px;display:grid;grid-template-columns:repeat(2,64px);gap:10px;pointer-events:auto}
+#tbtns button{width:64px;height:64px;border-radius:50%;border:3px solid var(--line);background:#fffd;font-size:24px;font-weight:700}
+@media (max-width:700px){
+  #minimap{width:120px;height:120px}
+  #zoneCard{min-width:0}
+  #quest{top:150px;font-size:14px}
+  .opts{grid-template-columns:1fr}
+  #board{top:190px;min-width:0;width:150px;font-size:12px;padding:6px 8px}
+  #callBox{top:auto;bottom:240px;width:calc(100% - 24px);font-size:15px}
+  #hud:has(#board:not(.hidden)) #quest{max-width:calc(100% - 190px)}
+  .q{font-size:19px}
+  #dialog .txt{font-size:18px}
+}
+
+/* phone in landscape: short screen, keep HUD and touch buttons apart */
+@media (max-height:500px){
+  #zoneCard{left:8px;top:8px;padding:6px 10px;min-width:0;max-width:40vw}
+  #zoneCard .zn{font-size:16px} #zoneCard .zw{font-size:13px} #zoneCard .row{font-size:13px;margin-top:3px}
+  #quest{left:8px;top:96px;padding:6px 10px;font-size:13px;max-width:40vw}
+  #quest b{font-size:11px}
+  #topRight{right:8px;top:8px;gap:6px}
+  #minimap{width:92px;height:92px}
+  #stats{font-size:14px;padding:4px 8px;gap:8px}
+  #board{top:8px;right:112px;max-height:45vh;min-width:140px;font-size:13px}
+  #joy{left:16px;bottom:14px;width:110px;height:110px}
+  #joy .k{left:30px;top:30px}
+  #tbtns{right:12px;bottom:58px;grid-template-columns:repeat(2,52px);gap:8px}
+  #tbtns button{width:52px;height:52px;font-size:20px}
+  #tbtns #tAct{width:112px!important;height:46px}
+  #bottomBar{right:8px;bottom:8px}
+  #bottomBar .btn.small{padding:4px 10px;font-size:14px}
+  #callBox{top:8px;font-size:14px;max-width:46vw;padding:6px 10px}
+  #toast{font-size:15px;padding:6px 12px}
+  #prompt{bottom:18%;font-size:15px}
+  #chatLog{left:140px;bottom:8px;width:min(260px,34vw);font-size:12px}
+  #dialog{bottom:8px;padding:10px 14px 10px}
+  #dialog .txt{font-size:16px;margin:4px 0 6px} #dialog .who{font-size:15px}
+  #modal{padding:8px} #modal .box{padding:12px 16px}
+  .q{font-size:17px;margin:4px 0 8px} .pic{font-size:40px} .stars{font-size:32px}
+  .reading{font-size:15px;padding:8px 12px} .gaptext{font-size:16px;line-height:1.9}
+  .opts .btn{font-size:16px;padding:7px 12px} .chip{font-size:16px;padding:4px 10px}
+  .screen{padding:8px} .screen .box{padding:14px 18px}
+  .logo{font-size:36px} .weather-strip{font-size:24px;margin:0} .menu{grid-template-columns:1fr 1fr;gap:8px} .menu .btn{font-size:17px;padding:10px}
+  .skins{grid-template-columns:repeat(9,1fr);gap:6px}
+}
 </style>
-<style>#esltStatus.warn{background:rgba(255,200,0,.22)!important}#esltStatus a{color:inherit;font-weight:800}</style>
-<script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
-<canvas id="c"></canvas>
+<canvas id="game"></canvas>
 
-<div id="loading"><div style="text-align:center"><h1 style="font-family:'Baloo 2';margin:0">Festival Quest</h1><div>Preparing the festival…</div><div class="bar"><i id="lbar"></i></div></div></div>
+<!-- LOADING -->
+<div id="loading" class="screen"><div class="box panel">
+  <div class="weather-strip">☀️🌧️❄️🌬️</div>
+  <div class="logo">Weather Heroes</div>
+  <div>Loading the world…</div>
+  <div class="bar"><div id="loadBar"></div></div>
+</div></div>
 
-<div id="menu" class="hidden">
- <div class="panel" style="background:transparent;box-shadow:none;padding:0">
-  <h1>Festival Quest</h1>
-  <div class="sub">The Lost Lanterns · Unit 4: Traditions and Festivities</div>
-  <div class="panel">
-   <label>Choose your hero</label>
-   <div class="chars" id="chars"></div>
-   <label for="pname">Your name</label>
-   <input type="text" id="pname" maxlength="14" placeholder="e.g. Sofía M." autocomplete="off">
-   <div id="esltStatus" class="small" style="margin-top:10px;padding:8px 10px;border-radius:10px;background:rgba(88,204,2,.15)"></div>
-   <div class="modes">
-    <button class="btn" id="bStory">📖 Story Mode</button>
-    <button class="btn pink" id="bOnline">🌐 Online Festival</button>
-   </div>
-   <details style="margin-top:12px"><summary class="small" style="cursor:pointer;font-weight:800">Online options (optional)</summary>
-    <label for="pcode">Class code</label>
-    <input type="text" id="pcode" maxlength="12" placeholder="Leave empty to play with everyone">
-    <div class="small">No room needed: players join automatically. A class code only keeps a group together.</div>
-   </details>
-   <div class="row" style="margin-top:12px;justify-content:space-between">
-    <span class="small" id="progressTxt"></span>
-    <span class="row" style="gap:6px"><button class="btn alt" style="font-size:13px;padding:6px 10px" id="bCred">Credits</button><button class="btn alt" style="font-size:13px;padding:6px 10px" id="bReset">Reset story</button></span>
-   </div>
+<!-- TITLE -->
+<div id="title" class="screen hidden"><div class="box panel">
+  <div class="weather-strip">☀️🌧️❄️🌬️</div>
+  <div class="logo">Weather Heroes</div>
+  <div class="subtitle">Unit 4 · What's the weather like?</div>
+  <div class="menu">
+    <button class="btn primary" id="bStory">📖 Story Mode</button>
+    <button class="btn blue" id="bOnline">🌐 Play Online</button>
+    <button class="btn" id="bHow">🎮 How to play</button>
+    <button class="btn small" id="bCredits">Credits</button>
   </div>
- </div>
-</div>
+  <div class="note" id="saveNote"></div>
+  <div class="note" id="esltStatus"></div>
+</div></div>
 
+<!-- SETUP (name + skin, room for online) -->
+<div id="setup" class="screen hidden"><div class="box panel">
+  <h2 id="setupTitle" style="margin:0 0 6px">Create your hero</h2>
+  <div class="field"><label for="inName"><b>What's your name?</b></label><input id="inName" maxlength="14" placeholder="Your name" autocomplete="off"></div>
+  <div class="field" id="roomField"><label for="inRoom"><b>Room code</b> <span class="hint">(your teacher gives you the code)</span></label><input id="inRoom" maxlength="12" placeholder="5A" autocomplete="off"></div>
+  <div class="field"><b>Choose your character</b><div class="skins" id="skins"></div></div>
+  <div class="menu" style="grid-template-columns:1fr 2fr">
+    <button class="btn" id="bBack">⬅ Back</button>
+    <button class="btn primary" id="bGo">Let's go! ▶</button>
+  </div>
+  <div class="note" id="setupNote"></div>
+</div></div>
+
+<!-- HOW TO PLAY / CREDITS -->
+<div id="info" class="screen hidden"><div class="box panel" style="text-align:left">
+  <div id="infoBody"></div>
+  <div style="text-align:center;margin-top:14px"><button class="btn primary" id="bInfoOk">OK</button></div>
+</div></div>
+
+<!-- HUD -->
 <div id="hud" class="hidden">
- <div id="obj"><b id="objT">Objective</b><span id="objD"></span></div>
- <div id="stats"><div class="chip" id="cLan">🏮 0/5</div><div class="chip" id="cStar">⭐ 0</div><div class="chip" id="cSide">🤝 0/10</div></div>
- <canvas id="mini" width="520" height="520" title="Map (M)"></canvas>
- <svg id="arrow" viewBox="0 0 40 40"><path d="M20 3 L35 34 L20 26 L5 34 Z" fill="#ffc23d" stroke="#24183a" stroke-width="3" stroke-linejoin="round"/></svg>
- <div id="prompt" class="hidden"></div>
- <div id="toast"></div>
- <div id="board" class="hidden"></div>
- <div id="emotes" class="hidden"><button class="btn alt" data-e="Waving">👋 Wave (1)</button><button class="btn alt" data-e="Cheering">🎉 Cheer (2)</button></div>
- <div id="help">WASD / arrows: move · Space: jump · Shift: run · Drag mouse: camera · E: talk · M: map</div>
- <button class="btn alt" id="menuBtn" style="font-size:14px;padding:8px 12px">☰ Menu</button>
+  <div id="zoneCard" class="panel">
+    <div class="zn" id="zName">Sunnyvale Town</div>
+    <div class="zw" id="zWeather">It's sunny and warm.</div>
+    <div class="row"><span id="zTemp">🌡️ 20°C</span><span title="Comfort">😊</span><div class="meter"><div id="comfort" style="width:100%"></div></div></div>
+  </div>
+  <div id="quest" class="panel"><b id="qHead">Quest</b><span id="qText"></span></div>
+  <div id="topRight">
+    <canvas id="minimap" width="340" height="340"></canvas>
+    <div id="stats" class="panel"><span id="sStars">⭐ 0</span><span id="sCrys">💎 0/4</span><span id="sScore" class="hidden">🏆 0</span></div>
+  </div>
+  <div id="board" class="panel hidden"></div>
+  <div id="callBox" class="panel hidden"></div>
+  <div id="prompt" class="panel hidden"></div>
+  <div id="toast" class="panel hidden"></div>
+  <div id="feel" class="hidden"></div>
+  <div id="chatLog"></div>
+  <div id="bottomBar">
+    <button class="btn small hidden" id="bChat">💬 Say</button>
+    <button class="btn small" id="bListen" title="Listen to the weather">🔊</button>
+    <button class="btn small" id="bMenu">☰ Menu</button>
+  </div>
 </div>
 
-<div id="touch" class="hidden"><div id="stick"><i></i></div><div id="tbtns"><button class="btn" id="tJump">Jump</button><button class="btn teal" id="tAct">Talk</button></div></div>
+<div id="touch" class="hidden">
+  <div id="joy"><div class="k"></div></div>
+  <div id="tbtns"><button id="tRun">🏃</button><button id="tJump">⤒</button><button id="tAct" style="grid-column:span 2;width:138px;border-radius:32px">E · Talk</button></div>
+</div>
 
-<div id="modal" class="hidden"><div id="mbox"></div></div>
+<div id="dialog" class="panel hidden">
+  <div class="who" id="dWho"></div>
+  <div class="txt" id="dTxt"></div>
+  <div class="es hidden" id="dEs"></div>
+  <div class="acts" id="dActs"></div>
+</div>
 
-<script type="module" src="js/main.js"></script>
+<div id="modal" class="hidden"><div class="box panel" id="mBox"></div></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script type="module" src="js/game.js"></script>
 </body>
 </html>

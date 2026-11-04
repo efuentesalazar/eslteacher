@@ -190,7 +190,9 @@ document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () =>
 // Para agregar un juego: su id (el mismo GAME del juego), nombre, cursos y nombres de habilidades.
 const GAMES = {
   "festival-quest-1m": { name: "Festival Quest · 1° medio", sections: ["1°A HC","1°B HC"],
-    skills: { E: "Lectura explícita", I: "Lectura inferencial", V: "Vocabulario en contexto", L: "Uso del lenguaje", Q: "Question tags" } }
+    skills: { E: "Lectura explícita", I: "Lectura inferencial", V: "Vocabulario en contexto", L: "Uso del lenguaje", Q: "Question tags" } },
+  "weather-heroes-5b": { name: "Weather Heroes · 5° básico", sections: ["5°A","5°B"],
+    skills: { V: "Vocabulario", A: "Audición", R: "Lectura", G: "Gramática", O: "Ordenar oraciones", C: "Completar textos" } }
 };
 $("f-game").innerHTML = Object.entries(GAMES).map(([id, g]) => `<option value="${id}">${esc(g.name)}</option>`).join("");
 let an = null;
