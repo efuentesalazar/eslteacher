@@ -21,6 +21,7 @@ const COURSES = [
     ]},
   { id:"8basico", num:"8°", level:"Básico", folder:"8° BASICO", icon:"🌍",
     games:[
+      { title:"Wordbound", desc:"3D open-world RPG! Explore five realms, meet elves, dwarves, orcs and friendly skeletons, and complete 40 missions: talk, listen, read and follow directions in English. Equip armour and weapons, fight monsters and bring back the Crown of Words.", icon:"⚔️", unit:"Adventure", file:"Wordbound/index.html", shot:"wordbound", isNew:true },
       { title:"Mission 2050", desc:"Cooperative 3D open world! Create a team with a code, explore Skyport 2050 together and defeat GLITCH: B1 readings, future will, first conditional and vocabulary in context. Team or solo.", icon:"🤖", unit:"Unit 4", file:"Mission_2050/index.html", shot:"mission-2050", isNew:true },
       { title:"Future Worlds", desc:"Explore Neo City, Green Valley and Fossil Valley!", icon:"🚀", file:"Future_Worlds.html", shot:"future-worlds", isNew:true },
       { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English!", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
