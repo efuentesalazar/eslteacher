@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Mission 2050 — Future Agents</title>
+<meta name="description" content="Cooperative 3D open-world adventure for 8° básico (Unit 4: Future matters). Future will, first conditional and vocabulary in context, B1.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#14203a;--paper:#f6fbff;--gold:#ffd23f;--cyan:#22b8ff;--pink:#ff4d8d;--violet:#8b5cf6;--ok:#2ea64f;--bad:#d9433b;--shadow:0 6px 0 rgba(10,20,50,.35)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0d1a33;font-family:Nunito,system-ui,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent;touch-action:none}
+canvas{display:block}
+#c{position:fixed;inset:0;width:100%;height:100%}
+.hidden{display:none!important}
+h1,h2,h3,.btn{font-family:'Baloo 2',Nunito,sans-serif}
+.btn{border:0;border-radius:14px;padding:12px 20px;font-size:18px;font-weight:800;cursor:pointer;background:var(--gold);color:var(--ink);box-shadow:var(--shadow);transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(10,20,50,.35)}
+.btn.alt{background:#fff}.btn.cyan{background:var(--cyan);color:#fff}.btn.pink{background:var(--pink);color:#fff}.btn.violet{background:var(--violet);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#1d4f8f,#081227);color:#fff;z-index:50}
+#loading .bar{width:min(320px,70vw);height:14px;border-radius:9px;background:#ffffff22;overflow:hidden;margin-top:14px}
+#loading .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--gold),var(--pink))}
+#menu,#lobby{position:fixed;inset:0;display:flex;align-items:flex-start;padding:24px 4vw;z-index:20;background:linear-gradient(90deg,rgba(8,18,40,.88),rgba(8,18,40,.25) 62%,transparent);overflow:auto}
+#menu>.wrap,#lobby>.wrap{margin:auto 0;max-width:500px;width:100%}
+.panel{background:var(--paper);border-radius:22px;padding:20px 22px;box-shadow:0 10px 0 rgba(0,0,0,.25);width:100%}
+h1.title{margin:0;font-size:46px;line-height:1;color:#fff;text-shadow:0 4px 0 #1b6fd0,0 8px 0 rgba(0,0,0,.3)}
+.sub{color:#bfe8ff;font-weight:800;margin:6px 0 14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.chars{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;margin:6px 0 12px}
+.chars button{border:3px solid transparent;border-radius:10px;background:#e6eefb;padding:2px;cursor:pointer;aspect-ratio:1;min-width:0}
+.chars button img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.chars button.on{border-color:var(--pink);background:#ffe1ee}
+label{font-weight:800;font-size:14px;display:block;margin:6px 0 4px}
+input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px solid #c9d7ec;font-size:17px;font-family:inherit;background:#fff}
+#jcode,#lcode{text-transform:uppercase;letter-spacing:.25em;font-weight:800}
+.small{font-size:13px;opacity:.8}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.modes .btn{font-size:17px;padding:13px 8px}
+.joinrow{display:flex;gap:8px;margin-top:10px}
+.joinrow input{flex:1}
+.code{font-family:'Baloo 2';font-size:56px;font-weight:800;letter-spacing:.18em;text-align:center;background:var(--ink);color:var(--gold);border-radius:16px;padding:4px 0;margin:6px 0 4px}
+.mlist{list-style:none;padding:0;margin:10px 0}
+.mlist li{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:12px;background:#e9f1fc;margin-bottom:6px;font-weight:800}
+.mlist img{width:36px;height:36px;image-rendering:pixelated}
+.dot{width:14px;height:14px;border-radius:50%;flex:0 0 14px;box-shadow:0 0 0 3px #fff}
+#esltStatus{margin-top:10px;padding:8px 10px;border-radius:10px;background:rgba(46,166,79,.14)}
+#esltStatus.warn{background:rgba(255,200,0,.25)}#esltStatus a{color:inherit;font-weight:800}
+/* hud */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+#obj{position:absolute;left:14px;top:14px;background:rgba(246,251,255,.94);padding:10px 14px;border-radius:14px;max-width:min(430px,58vw);box-shadow:var(--shadow);font-weight:700}
+#objT{font-family:'Baloo 2';color:#1b6fd0;display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+#stats{position:absolute;left:14px;top:96px;display:flex;gap:8px}
+.chip{background:rgba(246,251,255,.94);border-radius:12px;padding:6px 11px;font-weight:800;box-shadow:var(--shadow);font-family:'Baloo 2';font-size:17px}
+#mini{position:absolute;right:14px;top:14px;width:176px;height:176px;border-radius:50%;box-shadow:var(--shadow);border:4px solid rgba(246,251,255,.95);pointer-events:auto;cursor:pointer;background:#2b8fd6}
+#mini.big{width:min(88vw,84vh);height:min(88vw,84vh);right:50%;top:50%;transform:translate(50%,-50%);z-index:8;border-radius:24px}
+#team{position:absolute;right:14px;top:200px;background:rgba(246,251,255,.94);border-radius:14px;padding:8px 10px;min-width:190px;box-shadow:var(--shadow);font-weight:800;font-size:14px}
+#team h3{margin:0 0 4px;font-size:15px;color:#1b6fd0}
+#team div{display:flex;align-items:center;gap:7px;margin:3px 0}
+#team .d{margin-left:auto;font-size:12px;opacity:.7}
+#arrow{position:absolute;left:50%;top:64px;width:46px;height:46px;margin-left:-23px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.35))}
+#prompt{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:14px;font-weight:800;font-size:18px;pointer-events:auto;cursor:pointer;white-space:nowrap}
+#prompt kbd{background:var(--gold);color:var(--ink);border-radius:6px;padding:1px 8px;margin-right:6px}
+#toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-family:'Baloo 2';font-weight:800;font-size:32px;color:#fff;text-shadow:0 3px 0 #1b6fd0,0 6px 10px rgba(0,0,0,.45);text-align:center;opacity:0;transition:opacity .3s;width:min(92vw,900px)}
+#feed{position:absolute;left:14px;bottom:60px;display:flex;flex-direction:column;gap:4px;max-width:min(380px,60vw)}
+#feed div{background:rgba(14,26,51,.82);color:#fff;border-radius:10px;padding:5px 10px;font-weight:700;font-size:14px;animation:fade 7s forwards}
+@keyframes fade{0%,80%{opacity:1}100%{opacity:0}}
+#bar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
+#bar .btn{font-size:14px;padding:8px 12px}
+#phrases{position:absolute;left:50%;bottom:66px;transform:translateX(-50%);background:rgba(246,251,255,.97);border-radius:16px;padding:10px;box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr;gap:6px;pointer-events:auto;width:min(560px,94vw)}
+#phrases button{border:2px solid #c9d7ec;background:#fff;border-radius:10px;padding:7px 8px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;text-align:left}
+#phrases button:hover{border-color:var(--cyan)}
+#help{position:absolute;left:14px;bottom:14px;color:#fff;font-weight:700;font-size:13px;text-shadow:0 1px 2px #000;opacity:.9}
+#menuBtn{position:absolute;right:14px;bottom:14px;pointer-events:auto}
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(8,18,40,.6);display:grid;place-items:center;z-index:30;padding:14px}
+#mbox{background:var(--paper);border-radius:22px;width:min(1020px,100%);max-height:94vh;overflow:auto;box-shadow:0 12px 0 rgba(0,0,0,.3);padding:20px 24px;position:relative}
+#mbox h2{margin:0 0 6px;font-size:27px;line-height:1.1}
+.speaker{display:flex;gap:14px;align-items:flex-start}
+.avatar{flex:0 0 64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:32px;color:#fff;font-family:'Baloo 2';font-weight:800;box-shadow:var(--shadow);overflow:hidden;background:#cfe0f7}
+.avatar img{width:100%;height:100%;image-rendering:pixelated}
+.bubble{background:#fff;border-radius:16px;padding:14px 16px;font-size:19px;line-height:1.45;flex:1;border:2px solid #d6e3f5}
+.role{font-size:14px;opacity:.7;font-weight:800;margin:-4px 0 6px}
+.reading{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}
+.parts{display:flex;flex-direction:column;gap:8px;max-height:68vh;overflow:auto}
+.part{background:#fff;border:2px solid #d6e3f5;border-radius:14px;padding:10px 14px;font-size:17px;line-height:1.55}
+.part b.pn{display:block;font-family:'Baloo 2';font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#1b6fd0}
+.part.locked{background:#eef3fb;color:#5a6a85;font-weight:700;font-size:15px}
+.part.locked button{margin-top:6px}
+.qcard .tag{display:inline-block;font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;color:#fff;margin-bottom:8px;letter-spacing:.04em;text-transform:uppercase}
+.qcard .q{font-size:20px;font-weight:700;line-height:1.4;margin-bottom:12px}
+.qcard .hidq{background:#eef3fb;border:2px dashed #9fb6d8;border-radius:12px;padding:10px 12px;font-size:16px;font-weight:700;margin-bottom:12px}
+.opts{display:grid;gap:8px}
+.opt{position:relative;text-align:left;border:2px solid #d6e3f5;background:#fff;border-radius:12px;padding:11px 14px;padding-right:96px;font-size:17px;font-family:inherit;font-weight:700;cursor:pointer;color:var(--ink)}
+.opt:hover{border-color:var(--cyan)}
+.opt.mine{border-color:var(--violet);background:#f1ebff}
+.opt.ok{background:#d9f5df;border-color:var(--ok)}.opt.no{background:#fbdcd9;border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.votes{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:3px}
+.votes i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;font-style:normal;font-size:12px;font-weight:800;box-shadow:0 0 0 2px #fff}
+.tstat{margin-top:10px;padding:9px 12px;border-radius:10px;font-weight:800;font-size:15px;background:#eef3fb}
+.tstat.warn{background:#fff1c9}
+.why{margin-top:10px;padding:10px 12px;border-radius:10px;font-weight:700;font-size:16px}
+.why.ok{background:#e6f8ea;color:#1d6b33}.why.no{background:#fde7e5;color:#8d2620}
+.progress{display:flex;gap:5px;margin:4px 0 12px}
+.progress i{height:8px;flex:1;border-radius:4px;background:#dfe7f3}
+.progress i.ok{background:var(--ok)}.progress i.no{background:var(--bad)}.progress i.cur{background:var(--gold)}
+.foot{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap}
+.hp{height:16px;border-radius:9px;background:#dfe7f3;overflow:hidden;width:260px;max-width:50vw}
+.hp i{display:block;height:100%;background:linear-gradient(90deg,#ff3b6b,#8b5cf6);transition:width .4s}
+.cert{text-align:center}
+.cert table{margin:12px auto;border-collapse:collapse;font-size:16px}
+.cert td{padding:6px 14px;border-bottom:1px solid #dfe7f3;text-align:left}
+.cert td:last-child{text-align:right;font-weight:800}
+/* touch */
+#touch{position:fixed;inset:0;pointer-events:none;z-index:6}
+#stick{position:absolute;left:24px;bottom:24px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.4);pointer-events:auto}
+#stick i{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.75)}
+#tbtns{position:absolute;right:20px;bottom:90px;display:flex;flex-direction:column;gap:12px;pointer-events:auto}
+#tbtns .btn{width:72px;height:72px;border-radius:50%;padding:0;font-size:14px}
+#tbtns .btn.on{background:var(--pink);color:#fff}
+@media (max-width:760px){.reading{grid-template-columns:1fr}.parts{max-height:38vh}#menu,#lobby{background:rgba(8,18,40,.75);justify-content:center}h1.title{font-size:36px}.chars{grid-template-columns:repeat(6,1fr)}#obj{font-size:13px;max-width:calc(100vw - 150px)}#mini{width:118px;height:118px;top:10px;right:10px}#team{top:136px;right:10px;min-width:150px;font-size:12px}#stats{top:auto;bottom:170px;flex-direction:column;gap:5px}.chip{font-size:14px;padding:4px 8px}#arrow{top:150px}#mbox{padding:14px}.qcard .q{font-size:17px}.bubble{font-size:16px}#help{display:none}}
+@media (max-height:520px){#menu,#lobby{padding:10px 3vw}h1.title{font-size:30px}.sub{margin:2px 0 6px;font-size:13px}.panel{padding:12px 14px}.chars{grid-template-columns:repeat(9,1fr);gap:4px;margin:4px 0 6px}input[type=text]{padding:7px 10px;font-size:15px}.modes .btn{padding:9px 6px;font-size:15px}.code{font-size:38px}
+#obj{font-size:12px;left:8px;top:8px;padding:6px 10px}#objT{font-size:11px}#mini{width:100px;height:100px;top:8px;right:8px;border-width:3px}#team{top:114px;right:8px;font-size:11px;padding:5px 7px;min-width:130px}#team h3{font-size:12px}#stats{left:8px;top:auto;bottom:100px;flex-direction:column;gap:4px}#stats .chip{font-size:12px;padding:3px 7px}#arrow{top:4px;width:34px;height:34px;margin-left:-17px}#help{display:none}#prompt{bottom:60px;font-size:15px;padding:7px 12px}#toast{font-size:22px;top:28%}#bar{bottom:8px}#bar .btn{font-size:12px;padding:6px 8px}#phrases{bottom:48px;font-size:12px}#phrases button{font-size:12px;padding:5px}#feed{bottom:150px}
+#stick{left:14px;bottom:14px;width:110px;height:110px}#stick i{left:30px;top:30px}#tbtns{right:10px;bottom:56px;flex-direction:row}#tbtns .btn{width:60px;height:60px;font-size:12px}
+#modal{padding:6px}#mbox{max-height:98vh;padding:12px 16px;border-radius:16px}#mbox h2{font-size:20px}.bubble{font-size:15px;padding:10px 12px}.avatar{flex-basis:44px;height:44px}.part{font-size:14px;padding:7px 10px}.parts{max-height:72vh}.qcard .q{font-size:16px;margin-bottom:8px}.opt{font-size:14px;padding:7px 10px;padding-right:90px}.opts{gap:5px}.why,.tstat{font-size:13px;padding:6px 9px}.foot{margin-top:8px}.foot .btn{padding:8px 14px;font-size:15px}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../../assets/js/eslt-fullscreen.js" defer></script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="loading"><div style="text-align:center"><h1 style="font-family:'Baloo 2';margin:0;font-size:40px">Mission 2050</h1><div>Travelling to the future…</div><div class="bar"><i id="lbar"></i></div></div></div>
+
+<div id="menu" class="hidden">
+ <div class="wrap">
+  <h1 class="title">Mission 2050</h1>
+  <div class="sub">Future Agents · Unit 4: Future matters · 8° básico</div>
+  <div class="panel">
+   <label>Choose your agent</label>
+   <div class="chars" id="chars"></div>
+   <label for="pname">Your name</label>
+   <input type="text" id="pname" maxlength="14" placeholder="e.g. Sofía M." autocomplete="off">
+   <div id="esltStatus" class="small"></div>
+   <div class="modes">
+    <button class="btn pink" id="bCreate">👥 Create a team</button>
+    <button class="btn alt" id="bSolo">🎮 Play solo</button>
+   </div>
+   <div class="joinrow"><input type="text" id="jcode" maxlength="4" placeholder="CODE" autocomplete="off"><button class="btn cyan" id="bJoin">🔑 Join team</button></div>
+   <div class="small" style="margin-top:6px">One agent creates the team and shares the 4-letter code. Teams of up to 4 agents.</div>
+   <div class="row" style="margin-top:10px;justify-content:space-between">
+    <span class="small" id="progressTxt"></span>
+    <span class="row" style="gap:6px"><button class="btn alt" style="font-size:13px;padding:6px 10px" id="bCred">Credits</button><button class="btn alt" style="font-size:13px;padding:6px 10px" id="bReset">Reset progress</button></span>
+   </div>
+  </div>
+ </div>
+</div>
+
+<div id="lobby" class="hidden">
+ <div class="wrap">
+  <h1 class="title">Your team</h1>
+  <div class="sub">Tell your teammates this code:</div>
+  <div class="panel">
+   <div class="code" id="lcode">----</div>
+   <ul class="mlist" id="lmembers"></ul>
+   <div id="lwait" class="small" style="font-weight:800"></div>
+   <div class="row" style="margin-top:12px;justify-content:space-between">
+    <button class="btn alt" id="bLeave">✖ Leave</button>
+    <button class="btn pink" id="bGo">🚀 Start mission</button>
+   </div>
+  </div>
+ </div>
+</div>
+
+<div id="hud" class="hidden">
+ <div id="obj"><b id="objT">Mission</b><span id="objD"></span></div>
+ <div id="stats"><div class="chip" id="cCore">⚡ 0/4</div><div class="chip" id="cCell">🔋 0/32</div><div class="chip" id="cCit">🤝 0/12</div></div>
+ <canvas id="mini" width="520" height="520" title="Map (M)"></canvas>
+ <div id="team" class="hidden"></div>
+ <svg id="arrow" viewBox="0 0 40 40"><path d="M20 3 L35 34 L20 26 L5 34 Z" fill="#ffd23f" stroke="#14203a" stroke-width="3" stroke-linejoin="round"/></svg>
+ <div id="prompt" class="hidden"></div>
+ <div id="toast"></div>
+ <div id="feed"></div>
+ <div id="phrases" class="hidden"></div>
+ <div id="bar"><button class="btn alt" id="bSay">💬 Say (T)</button><button class="btn alt" id="bWave">👋 (1)</button><button class="btn alt" id="bYes">🎉 (2)</button></div>
+ <div id="help">WASD / arrows: move · Shift: run · Space: jump · Drag mouse: camera · E: talk · M: map · T: say</div>
+ <button class="btn alt" id="menuBtn" style="font-size:14px;padding:8px 12px">☰ Menu</button>
+</div>
+
+<div id="touch" class="hidden"><div id="stick"><i></i></div><div id="tbtns"><button class="btn" id="tJump">Jump</button><button class="btn alt" id="tRun">Run</button><button class="btn cyan" id="tAct">Talk</button></div></div>
+
+<div id="modal" class="hidden"><div id="mbox"></div></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

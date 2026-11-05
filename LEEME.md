@@ -120,3 +120,10 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - Archivo `assets/js/eslt-fullscreen.js`, cargado en todos los juegos del sitio (una línea antes de `</head>`). Para un juego nuevo: `<script src="../assets/js/eslt-fullscreen.js" defer></script>` (o `../../` si el juego está en su propia carpeta).
 - Menús que se cortaban arriba en horizontal: corregidos en Trend City, Festival Quest, Green Quest y Past Quest (además, versión compacta de menú, HUD y preguntas para pantallas bajas).
 - Realms of Knowledge está en otro sitio (realms*.eslteacher.cl) y no se cambió.
+
+## Novedades (05-11-2026)
+- **Mission 2050** (8° básico, Unit 4 "Future matters"): juego 3D cooperativo de mundo abierto en `8° BASICO/Mission_2050/`. Isla de Skyport (~700 m) con 4 distritos (Robot Lab, Eco Dome, Mars Base, Smart City), torre final de GLITCH, 12 ciudadanos con misiones cortas y 32 celdas de energía (algunas en plataformas a las que se llega con resortes).
+- **Equipos**: un alumno presiona "Create a team" y recibe un código de 4 letras; los demás lo escriben en "Join team" (máximo 4). Se ven moverse en tiempo real, con nombre y color, en el mapa y en el minimapa. Se comunican con frases rápidas en inglés (sin chat libre). También hay modo solo.
+- **Cooperación**: en la lectura cada agente recibe partes distintas del texto; en gramática y vocabulario cada pregunta la "lee" un agente distinto; la respuesta se confirma solo cuando todo el equipo elige la misma opción. Para encender cada distrito, cada agente debe pararse en una almohadilla distinta.
+- Nivel B1: future will (predicciones, promesas, ofertas, decisiones), first conditional (if / unless) y vocabulario en contexto. Los contenidos se editan en `8° BASICO/Mission_2050/js/content.js`.
+- Los equipos usan canales en vivo de Supabase (sin tablas: no se guarda nada de quien juega sin sesión). Las respuestas de alumnos con sesión van al Panel del profe ("mission-2050-8b": READ, INF, VOC, WILL, COND). Captura en `assets/games/mission-2050.webp`.
