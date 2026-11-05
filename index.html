@@ -142,6 +142,23 @@ nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:cent
 .btn.hint.ghost{--fg:var(--yellow);box-shadow:inset 0 0 0 2px rgba(255,200,0,.5),0 4px 0 var(--bd)}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none}
 .btn.sm{min-height:40px;padding:8px 14px;font-size:12px;border-radius:12px}
+/* Menú de compartir */
+.sh-card{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;margin:14px 0;padding:8px;border-radius:16px;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1)}
+.sh-card img{width:120px;aspect-ratio:1200/630;object-fit:cover;border-radius:10px}
+.sh-card b{display:block;font-family:var(--display);font-weight:600;font-size:16px;line-height:1.2}
+.sh-card small{color:var(--accent);font-weight:600}
+.sh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sh-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:74px;border-radius:16px;font-weight:600;font-size:13px;
+  background:color-mix(in srgb,var(--c) 18%,transparent);border:2px solid color-mix(in srgb,var(--c) 55%,transparent);transition:transform .15s,background .2s}
+.sh-btn span{font-size:24px;line-height:1}
+.sh-btn:hover{transform:translateY(-2px);background:color-mix(in srgb,var(--c) 30%,transparent)}
+.sh-copy{display:flex;gap:8px;margin-top:12px}
+.sh-copy input{flex:1;min-width:0;min-height:44px;background:rgba(0,0,0,.3);border:2px solid var(--line);border-radius:12px;color:var(--bone);font-family:var(--mono);font-size:14px;padding:8px 12px;outline:0}
+.sh-more{width:100%;margin-top:10px}
+.sh-qr{display:grid;justify-items:center;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.sh-qr-box{width:200px;height:200px;border-radius:14px;background:#fff;display:grid;place-items:center;padding:10px;color:#333}
+.sh-qr-box img,.sh-qr-box svg{width:100%;height:100%;image-rendering:pixelated}
+.icon-btn svg{display:block}
 .icon-btn{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:18px;background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18);transition:background .2s}
 .icon-btn:hover{background:rgba(255,255,255,.2)}
 .links a{white-space:nowrap}
@@ -512,6 +529,9 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
   </div>
   <div class="tools">
     <button class="icon-btn" id="mute" type="button" aria-label="Silenciar sonidos" title="Sonidos">🔊</button>
+    <button class="icon-btn" data-share type="button" aria-label="Compartir eslteacher.cl" title="Share · Compartir">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+    </button>
     <button class="me" id="me" type="button" aria-label="Mi perfil">
       <span class="av" id="me-av">🙂</span>
       <span class="pill" id="me-streak" title="Racha de días">🔥<span>0</span></span>
@@ -581,6 +601,37 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
   </div>
 </div>
 
+<!-- Compartir la página (en celular se abre el menú de compartir del teléfono) -->
+<div class="modal" id="share" role="dialog" aria-modal="true" aria-labelledby="sh-title">
+  <div class="box">
+    <button class="icon-btn x" id="sh-close" type="button" aria-label="Cerrar">✕</button>
+    <h3 id="sh-title">Share · Compartir</h3>
+    <p class="hint">Invita a tus compañeros, familia o profes a practicar inglés.</p>
+    <a class="sh-card" href="https://eslteacher.cl/" target="_blank" rel="noopener">
+      <img src="assets/og-image.jpg" alt="" loading="lazy">
+      <span><b>ESL Teacher · Play. Learn. Speak.</b><small>eslteacher.cl</small></span>
+    </a>
+    <div class="sh-grid">
+      <a class="sh-btn" data-net="whatsapp" target="_blank" rel="noopener" style="--c:#25d366"><span>💬</span>WhatsApp</a>
+      <button class="sh-btn" data-net="instagram" type="button" style="--c:#e1306c"><span>📸</span>Instagram</button>
+      <a class="sh-btn" data-net="facebook" target="_blank" rel="noopener" style="--c:#1877f2"><span>👍</span>Facebook</a>
+      <a class="sh-btn" data-net="telegram" target="_blank" rel="noopener" style="--c:#229ed9"><span>✈️</span>Telegram</a>
+      <a class="sh-btn" data-net="x" target="_blank" rel="noopener" style="--c:#8a8a8a"><span>𝕏</span>X</a>
+      <a class="sh-btn" data-net="email" style="--c:#ffb347"><span>✉️</span>Email</a>
+    </div>
+    <div class="sh-copy">
+      <input id="sh-url" readonly value="https://eslteacher.cl/" aria-label="Enlace de eslteacher.cl">
+      <button class="btn play sm" id="sh-copy" type="button">📋 Copiar</button>
+    </div>
+    <button class="btn ghost sh-more hidden" id="sh-more" type="button">📲 Más apps · More apps</button>
+    <div class="sh-qr" id="sh-qr-wrap">
+      <span class="cap">Código QR · para proyectar en clases</span>
+      <div class="sh-qr-box" id="sh-qr"><span class="loading">Generando</span></div>
+      <a class="btn ghost sm hidden" id="sh-qr-dl" download="eslteacher-qr.png">⬇ Descargar QR</a>
+    </div>
+  </div>
+</div>
+
 <canvas id="fx" aria-hidden="true"></canvas>
 
 <div id="hud"></div>
@@ -594,6 +645,7 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
     <div class="row reveal d2">
       <a class="btn play" href="#worlds">▶ Explore worlds</a>
       <a class="btn talk" href="#speak">🎙 Practice speaking</a>
+      <button class="btn ghost" data-share type="button">📤 Share · Compartir</button>
     </div>
     <span class="cap scroll">Choose a world · Elige un mundo ↑</span>
   </section>
@@ -767,6 +819,7 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
     </div>
     <div class="row reveal d3">
       <button class="btn hidden" id="install" type="button">📲 Instalar app · Install</button>
+      <button class="btn talk" data-share type="button">📤 Share eslteacher.cl · Compartir</button>
     </div>
     <div class="foot">
       <span class="cap">© eslteacher.cl · Made with ❤️ for my students</span>
@@ -2616,6 +2669,79 @@ async function pullProgress(){
 }
 addEventListener("online", () => { if (syncPending) pushProgress(); });
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && syncPending) pushProgress(true); });
+
+/* =====================================================================
+   COMPARTIR — en celular abre el menú del teléfono (WhatsApp, Instagram,
+   Telegram…); en computador muestra enlaces, copiar enlace y código QR.
+   ===================================================================== */
+const SHARE = {
+  url: "https://eslteacher.cl/",
+  title: "ESL Teacher · Play & Learn English",
+  text: "🎮 ESL Teacher: juegos para aprender inglés, palabra del día, desafíos y práctica de pronunciación. ¡Pruébalo!"
+};
+const SHARE_LINKS = {
+  whatsapp: `https://wa.me/?text=${encodeURIComponent(SHARE.text + " " + SHARE.url)}`,
+  facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE.url)}`,
+  telegram: `https://t.me/share/url?url=${encodeURIComponent(SHARE.url)}&text=${encodeURIComponent(SHARE.text)}`,
+  x:        `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE.text)}&url=${encodeURIComponent(SHARE.url)}`,
+  email:    `mailto:?subject=${encodeURIComponent(SHARE.title)}&body=${encodeURIComponent(SHARE.text + "\n\n" + SHARE.url)}`
+};
+document.querySelectorAll("#share [data-net]").forEach(a => { if (SHARE_LINKS[a.dataset.net]) a.href = SHARE_LINKS[a.dataset.net]; });
+const canNativeShare = !!navigator.share;
+const isTouch = matchMedia("(pointer: coarse)").matches;
+async function copyLink(msg){
+  try { await navigator.clipboard.writeText(SHARE.url); }
+  catch(e){ const i = $("sh-url"); i.select(); try { document.execCommand("copy"); } catch(_){} }
+  sfx("correct"); toast(msg || "📋 ¡Enlace copiado! Pégalo donde quieras compartirlo.");
+}
+async function nativeShare(){
+  try { await navigator.share({ title: SHARE.title, text: SHARE.text, url: SHARE.url }); return true; }
+  catch(e){ return e && e.name === "AbortError"; }        // si el alumno cancela, no se abre nada más
+}
+let qrDone = false, shareFocus = null;
+function makeQR(){
+  if (qrDone) return; qrDone = true;
+  const draw = () => {
+    try {
+      const qr = qrcode(0, "M"); qr.addData(SHARE.url); qr.make();
+      const url = qr.createDataURL(8, 2);
+      $("sh-qr").innerHTML = `<img src="${url}" alt="Código QR de eslteacher.cl">`;
+      $("sh-qr-dl").href = url; $("sh-qr-dl").classList.remove("hidden");
+    } catch(e){ $("sh-qr-wrap").classList.add("hidden"); }
+  };
+  if (window.qrcode) return draw();
+  const s = document.createElement("script");
+  s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";
+  s.onload = draw; s.onerror = () => $("sh-qr-wrap").classList.add("hidden");
+  document.head.appendChild(s);
+}
+function openShare(){
+  shareFocus = document.activeElement;
+  $("sh-more").classList.toggle("hidden", !canNativeShare);
+  $("share").classList.add("on"); makeQR();
+  setTimeout(() => $("sh-close").focus(), 60);
+}
+function closeShare(){
+  if (!$("share").classList.contains("on")) return;
+  $("share").classList.remove("on");
+  if (shareFocus && shareFocus.focus) shareFocus.focus();
+}
+document.querySelectorAll("[data-share]").forEach(b => b.addEventListener("click", async () => {
+  // En celular: directo al menú de compartir del teléfono (incluye WhatsApp e Instagram)
+  if (canNativeShare && isTouch && await nativeShare()) return;
+  openShare();
+}));
+$("sh-close").addEventListener("click", closeShare);
+$("share").addEventListener("click", e => { if (e.target.id === "share") closeShare(); });
+$("sh-copy").addEventListener("click", () => copyLink());
+$("sh-url").addEventListener("focus", e => e.target.select());
+$("sh-more").addEventListener("click", nativeShare);
+// Instagram no permite compartir enlaces desde una página web: se copia el enlace y se explica cómo pegarlo
+$("share").querySelector('[data-net="instagram"]').addEventListener("click", async () => {
+  if (canNativeShare && isTouch && await nativeShare()) return;
+  copyLink("📸 Enlace copiado. En Instagram, pégalo en un mensaje o en tu historia con el sticker “Enlace”.");
+});
+addEventListener("keydown", e => { if (e.key === "Escape") closeShare(); });
 
 renderMute(); renderMe(); updHardN(); checkBadges();
 if (getSession()) pullProgress();
