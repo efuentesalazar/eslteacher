@@ -74,7 +74,7 @@ cv.addEventListener('pointerdown', e => { if (e.target === cv) { drag = { x: e.c
 cv.addEventListener('pointermove', e => { if (!drag || drag.id !== e.pointerId) return; cam.yaw -= (e.clientX - drag.x) * 0.006; cam.pitch = THREE.MathUtils.clamp(cam.pitch + (e.clientY - drag.y) * 0.004, 0.05, 1.25); drag.x = e.clientX; drag.y = e.clientY; });
 cv.addEventListener('pointerup', () => drag = null); cv.addEventListener('pointercancel', () => drag = null);
 cv.addEventListener('wheel', e => { cam.dist = THREE.MathUtils.clamp(cam.dist + e.deltaY * 0.01, 4, 20); }, { passive: true });
-const isTouch = matchMedia('(pointer: coarse)').matches;
+const isTouch = matchMedia('(pointer: coarse)').matches || location.search.includes('touch');
 if (isTouch) {
   const st = $('stick'), knob = st.firstElementChild; let sid = null;
   st.addEventListener('pointerdown', e => { sid = e.pointerId; st.setPointerCapture(sid); move(e); });

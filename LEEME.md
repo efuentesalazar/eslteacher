@@ -114,3 +114,9 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Modo online "Trend Rush"**: sin salas ni profe conectado: los alumnos entran solos (máximo 6 por sala; código de curso opcional). Rondas de 3 minutos tomando fichas # en Hype Square.
 - Habilidades en el panel: E lectura explícita, I lectura inferencial, V vocabulario en contexto, L language in use, W formación de palabras.
 - Los contenidos se editan en `3° MEDIO/Trend_City/js/content.js`. Captura en `assets/games/trend-city.webp`. Créditos (Kenney CC0, Poly Pizza CC-BY, música CoMiGo CC0) en el botón Credits del juego y en `CREDITOS.md` de la carpeta.
+
+## Novedades (05-11-2026): celular en horizontal
+- **Pantalla completa automática**: en celular o tablet, al girar la pantalla a horizontal el juego pasa a pantalla completa (con el primer toque, porque el navegador lo exige; aparece el aviso "Toca la pantalla…"). Al volver a vertical, sale de la pantalla completa. En computador no cambia nada. En iPhone Safari no existe esta función, así que ahí no hace nada.
+- Archivo `assets/js/eslt-fullscreen.js`, cargado en todos los juegos del sitio (una línea antes de `</head>`). Para un juego nuevo: `<script src="../assets/js/eslt-fullscreen.js" defer></script>` (o `../../` si el juego está en su propia carpeta).
+- Menús que se cortaban arriba en horizontal: corregidos en Trend City, Festival Quest, Green Quest y Past Quest (además, versión compacta de menú, HUD y preguntas para pantallas bajas).
+- Realms of Knowledge está en otro sitio (realms*.eslteacher.cl) y no se cambió.

@@ -188,3 +188,5 @@ input{font-family:inherit}
 #online-hud.big{top:70px;width:min(520px,90vw);right:50%;transform:translateX(50%);font-size:22px}
 #online-hud.big #on-timer{font-size:48px}
 #online-hud.big #on-board{font-size:22px;max-height:70vh;columns:2}
+/* Pantallas bajas (celular en horizontal): el menú se puede desplazar y no se corta arriba */
+@media (max-height:520px){.screen{justify-content:flex-start;overflow-y:auto;gap:8px}.screen>:first-child{margin-top:auto}.screen>:last-child{margin-bottom:auto}.logo{font-size:44px}.sub{font-size:16px}#title .menu{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(620px,94vw);margin-top:4px}.btn.big{font-size:18px;padding:10px}}
