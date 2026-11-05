@@ -107,3 +107,10 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Chest Quest** (English Week) mantiene su servidor y panel propios, con los datos de quienes juegan el evento.
 - **Realms of Knowledge** tiene cuentas propias (pendiente de unir a la sesión de eslteacher.cl).
 - Corrección: en Ludo World Tour el código QR y el botón de salir apuntaban a la portada tras la mudanza; ahora apuntan al juego.
+
+## Novedades (05-11-2026)
+- **Trend City: The Hype Files** (3° medio, Unit 4 "What impact do trends have?"): juego 3D de mundo abierto en `3° MEDIO/Trend_City/` (id del panel `trend-city-3m`). Ciudad de 6×6 manzanas con 5 distritos (Hype Square, Pixel District, Mega Mall, Factory Row, Suburbs), autos, peatones, paraderos de bus para viajar rápido y una carretera al desierto de Atacama (ZOFRI y montañas de ropa).
+- **Modo historia**: el alumno es reportero del diario "The Critical Eye" e investiga a HYPE, una IA que controla las tendencias. 5 misiones principales (The impact of trends on us · Social media: how it helps and hurts us · The impact of trends on society · Labour laws and fast fashion · Fast fashion in Chile), cada una con una lectura B1 larga (8 preguntas explícitas, inferenciales y de vocabulario) y 3 "archivos de evidencia" estilo FCE: Vocabulary in context, Language in use (con key word transformations escritas y un recuadro de gramática) y Word formation (respuestas escritas). Debate final contra HYPE y 12 misiones secundarias con lecturas cortas.
+- **Modo online "Trend Rush"**: sin salas ni profe conectado: los alumnos entran solos (máximo 6 por sala; código de curso opcional). Rondas de 3 minutos tomando fichas # en Hype Square.
+- Habilidades en el panel: E lectura explícita, I lectura inferencial, V vocabulario en contexto, L language in use, W formación de palabras.
+- Los contenidos se editan en `3° MEDIO/Trend_City/js/content.js`. Captura en `assets/games/trend-city.webp`. Créditos (Kenney CC0, Poly Pizza CC-BY, música CoMiGo CC0) en el botón Credits del juego y en `CREDITOS.md` de la carpeta.

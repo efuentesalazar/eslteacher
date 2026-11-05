@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Trend City — The Hype Files</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1b1a3a;--paper:#fbf8ff;--gold:#ffc23d;--pink:#ff3d8b;--violet:#7b5cff;--cyan:#35e6ff;--teal:#1fb5a8;--ok:#2ea64f;--bad:#d9433b;--shadow:0 6px 0 rgba(27,26,58,.35)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#140f2e;font-family:Nunito,system-ui,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent;touch-action:none}
+canvas{display:block}
+#c{position:fixed;inset:0;width:100%;height:100%;transition:filter 1.2s}
+.hidden{display:none!important}
+h1,h2,h3,.btn{font-family:'Baloo 2',Nunito,sans-serif}
+.btn{border:0;border-radius:14px;padding:12px 20px;font-size:18px;font-weight:800;cursor:pointer;background:var(--gold);color:var(--ink);box-shadow:var(--shadow);transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(27,26,58,.35)}
+.btn.alt{background:#fff}.btn.teal{background:var(--teal);color:#fff}.btn.pink{background:var(--pink);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#3a2580,#120c2a);color:#fff;z-index:50}
+#loading .bar{width:min(320px,70vw);height:14px;border-radius:9px;background:#ffffff22;overflow:hidden;margin-top:14px}
+#loading .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink))}
+#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:flex-start;padding:24px 4vw;z-index:20;background:linear-gradient(90deg,rgba(20,15,46,.88),rgba(20,15,46,.25) 60%,transparent);overflow:auto}
+.panel{background:var(--paper);border-radius:22px;padding:22px 24px;box-shadow:0 10px 0 rgba(0,0,0,.25);max-width:470px;width:100%}
+#menu h1{margin:0;font-size:46px;line-height:1;color:#fff;text-shadow:0 4px 0 var(--pink),0 8px 0 rgba(0,0,0,.25)}
+#menu .sub{color:var(--cyan);font-weight:800;margin:6px 0 16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.chars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 14px}
+.chars button{border:3px solid transparent;border-radius:12px;background:#ece6fb;padding:8px 4px;font-weight:800;font-family:inherit;cursor:pointer;font-size:14px}
+.chars button.on{border-color:var(--pink);background:#ffd9e8}
+label{font-weight:800;font-size:14px;display:block;margin:6px 0 4px}
+input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px solid #cfc6e6;font-size:17px;font-family:inherit;background:#fff}
+.small{font-size:13px;opacity:.78}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.modes .btn{font-size:17px;padding:14px 8px}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+#obj{position:absolute;left:14px;top:14px;background:rgba(251,248,255,.95);padding:10px 14px;border-radius:14px;max-width:min(430px,56vw);box-shadow:var(--shadow);font-weight:700}
+#objT{font-family:'Baloo 2';color:var(--violet);display:block;font-size:13px;letter-spacing:.05em;text-transform:uppercase}
+.sideHint{display:block;margin-top:4px;color:#1a8fa0;font-size:14px}
+#stats{position:absolute;right:14px;top:172px;display:flex;gap:8px}
+#mini{position:absolute;right:14px;top:14px;width:240px;height:153px;border-radius:14px;box-shadow:var(--shadow);border:4px solid rgba(251,248,255,.95);pointer-events:auto;cursor:pointer;background:#86b85a}
+#mini.big{width:min(94vw,145vh);height:auto;aspect-ratio:627/400;max-height:88vh;right:50%;top:50%;transform:translate(50%,-50%);z-index:8}
+.chip{background:rgba(251,248,255,.95);border-radius:12px;padding:7px 11px;font-weight:800;box-shadow:var(--shadow);font-family:'Baloo 2';font-size:17px}
+#arrowBox{position:absolute;left:50%;top:66px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+#arrow{width:46px;height:46px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.35))}
+#dist{color:#fff;font-weight:800;font-size:13px;text-shadow:0 1px 3px #000}
+#prompt{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:14px;font-weight:800;font-size:18px;pointer-events:auto;cursor:pointer}
+#prompt kbd{background:var(--gold);color:var(--ink);border-radius:6px;padding:1px 8px;margin-right:6px}
+#toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-family:'Baloo 2';font-weight:800;font-size:34px;color:#fff;text-shadow:0 3px 0 var(--violet),0 6px 10px rgba(0,0,0,.4);text-align:center;opacity:0;transition:opacity .3s;white-space:nowrap}
+#menuBtn{position:absolute;right:14px;bottom:14px;pointer-events:auto}
+#help{position:absolute;left:14px;bottom:14px;color:#fff;font-weight:700;font-size:13px;text-shadow:0 1px 2px #000;opacity:.88}
+#board{position:absolute;right:14px;top:180px;background:rgba(251,248,255,.95);border-radius:14px;padding:10px 12px;min-width:210px;box-shadow:var(--shadow);font-weight:700;font-size:14px}
+#board h3{margin:0 0 4px;font-size:16px}
+#board ol{margin:0;padding-left:22px}
+#board li.me{color:var(--pink)}
+#emotes{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
+#emotes .btn{font-size:14px;padding:8px 12px}
+#modal{position:fixed;inset:0;background:rgba(15,10,40,.62);display:grid;place-items:center;z-index:30;padding:14px}
+#mbox{background:var(--paper);border-radius:22px;width:min(1060px,100%);max-height:94vh;overflow:auto;box-shadow:0 12px 0 rgba(0,0,0,.3);padding:22px 26px;position:relative}
+#mbox h2{margin:0 0 6px;font-size:28px;line-height:1.1}
+.speaker{display:flex;gap:14px;align-items:flex-start}
+.avatar{flex:0 0 64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:34px;color:#fff;font-family:'Baloo 2';font-weight:800;box-shadow:var(--shadow)}
+.bubble{background:#fff;border-radius:16px;padding:14px 16px;font-size:19px;line-height:1.45;flex:1;border:2px solid #e2d9f5}
+.reading{display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
+.text{background:#fff;border:2px solid #e2d9f5;border-radius:14px;padding:14px 18px;font-size:17px;line-height:1.62;max-height:68vh;overflow:auto}
+.text p{margin:0 0 12px}
+.tip{background:#fff6d6;border:2px solid #ffd76a;border-radius:12px;padding:10px 14px;margin:6px 0 12px;font-size:16px;line-height:1.5}
+.qcard .tag{display:inline-block;font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;color:#fff;margin-bottom:8px;letter-spacing:.04em;text-transform:uppercase}
+.qcard .q{font-size:20px;font-weight:700;line-height:1.4;margin-bottom:12px}
+.qcard .q .mini{background:#fff;border-left:5px solid var(--teal);padding:8px 12px;border-radius:8px;font-weight:600;font-size:17px;margin:8px 0 0}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:2px solid #ddd2f2;background:#fff;border-radius:12px;padding:11px 14px;font-size:17px;font-family:inherit;font-weight:700;cursor:pointer;color:var(--ink)}
+.opt:hover{border-color:var(--violet)}
+.opt.ok{background:#d9f5df;border-color:var(--ok)}.opt.no{background:#fbdcd9;border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.typed{display:flex;gap:8px}
+.typed input{flex:1;font-size:19px!important;font-weight:700}
+.typed input.ok{background:#d9f5df;border-color:var(--ok)}.typed input.no{background:#fbdcd9;border-color:var(--bad)}
+.why{margin-top:10px;padding:10px 12px;border-radius:10px;font-weight:700;font-size:16px}
+.why.ok{background:#e6f8ea;color:#1d6b33}.why.no{background:#fde7e5;color:#8d2620}
+.progress{display:flex;gap:5px;margin:4px 0 12px}
+.progress i{height:8px;flex:1;border-radius:4px;background:#e5def5}
+.progress i.ok{background:var(--ok)}.progress i.no{background:var(--bad)}.progress i.cur{background:var(--gold)}
+.foot{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap}
+.duel{display:flex;justify-content:space-between;gap:20px;margin-bottom:12px;font-weight:800}
+.hp{height:16px;border-radius:9px;background:#e5def5;overflow:hidden;width:220px;max-width:38vw}
+.hp i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--violet));transition:width .4s}
+.cert{text-align:center}
+.cert table{margin:12px auto;border-collapse:collapse;font-size:16px}
+.cert td{padding:6px 14px;border-bottom:1px solid #e5def5;text-align:left}
+.cert td:last-child{text-align:right;font-weight:800}
+#touch{position:fixed;inset:0;pointer-events:none;z-index:6}
+#stick{position:absolute;left:24px;bottom:24px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.4);pointer-events:auto}
+#stick i{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.75)}
+#tbtns{position:absolute;right:20px;bottom:90px;display:flex;flex-direction:column;gap:12px;pointer-events:auto}
+#tbtns .btn{width:74px;height:74px;border-radius:50%;padding:0;font-size:15px}
+#esltStatus.warn{background:rgba(255,200,0,.22)!important}#esltStatus a{color:inherit;font-weight:800}
+@media (max-width:760px){.reading{grid-template-columns:1fr}.text{max-height:42vh}#menu{background:rgba(20,15,46,.72);justify-content:center}#menu h1{font-size:36px}#obj{font-size:13px;left:10px;top:10px;max-width:calc(100vw - 170px)}#mini{width:150px;height:96px;top:10px;right:10px}#stats{top:116px;right:10px;flex-direction:column;gap:6px}#stats .chip{font-size:14px;padding:5px 9px}#board{top:auto;bottom:90px;min-width:160px;font-size:12px}#mbox{padding:16px}.qcard .q{font-size:18px}.bubble{font-size:16px}#arrowBox{top:96px}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="loading"><div style="text-align:center"><h1 style="font-family:'Baloo 2';margin:0">Trend City</h1><div>Loading the city…</div><div class="bar"><i id="lbar"></i></div></div></div>
+
+<div id="menu" class="hidden">
+ <div class="panel" style="background:transparent;box-shadow:none;padding:0">
+  <h1>Trend City</h1>
+  <div class="sub">The Hype Files · Unit 4: What impact do trends have?</div>
+  <div class="panel">
+   <label>Choose your reporter</label>
+   <div class="chars" id="chars"></div>
+   <label for="pname">Your name</label>
+   <input type="text" id="pname" maxlength="14" placeholder="e.g. Sofía M." autocomplete="off">
+   <div id="esltStatus" class="small" style="margin-top:10px;padding:8px 10px;border-radius:10px;background:rgba(88,204,2,.15)"></div>
+   <div class="modes">
+    <button class="btn" id="bStory">📖 Story Mode</button>
+    <button class="btn pink" id="bOnline">🌐 Online Trend Rush</button>
+   </div>
+   <details style="margin-top:12px"><summary class="small" style="cursor:pointer;font-weight:800">Online options (optional)</summary>
+    <label for="pcode">Class code</label>
+    <input type="text" id="pcode" maxlength="12" placeholder="Leave empty to play with everyone">
+    <div class="small">No room needed: players join automatically (max. 6 per room). A class code only keeps a group together.</div>
+   </details>
+   <div class="row" style="margin-top:12px;justify-content:space-between">
+    <span class="small" id="progressTxt"></span>
+    <span class="row" style="gap:6px"><button class="btn alt" style="font-size:13px;padding:6px 10px" id="bCred">Credits</button><button class="btn alt" style="font-size:13px;padding:6px 10px" id="bReset">Reset story</button></span>
+   </div>
+  </div>
+ </div>
+</div>
+
+<div id="hud" class="hidden">
+ <div id="obj"><b id="objT">Objective</b><span id="objD"></span></div>
+ <canvas id="mini" width="520" height="332" title="Map (M)"></canvas>
+ <div id="stats"><div class="chip" id="cTruth">📁 0/5</div><div class="chip" id="cEv">🔎 0</div><div class="chip" id="cSide">🤝 0/12</div></div>
+ <div id="arrowBox"><svg id="arrow" viewBox="0 0 40 40"><path d="M20 3 L35 34 L20 26 L5 34 Z" fill="#ffc23d" stroke="#1b1a3a" stroke-width="3" stroke-linejoin="round"/></svg><span id="dist"></span></div>
+ <div id="prompt" class="hidden"></div>
+ <div id="toast"></div>
+ <div id="board" class="hidden"></div>
+ <div id="emotes" class="hidden"><button class="btn alt" data-e="emote-yes">🎉 Cheer (1)</button><button class="btn alt" data-e="interact-right">👋 Wave (2)</button></div>
+ <div id="help">WASD / arrows: move · Shift: run · Space: jump · Drag mouse: camera · E: talk · M: map</div>
+ <button class="btn alt" id="menuBtn" style="font-size:14px;padding:8px 12px">☰ Menu</button>
+</div>
+
+<div id="touch" class="hidden"><div id="stick"><i></i></div><div id="tbtns"><button class="btn" id="tJump">Jump</button><button class="btn teal" id="tAct">Talk</button></div></div>
+
+<div id="modal" class="hidden"><div id="mbox"></div></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
