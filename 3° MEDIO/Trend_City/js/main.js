@@ -128,11 +128,23 @@ function bindCard(it, activity, onDone, okText = '✔ Correct!', noText = '✘ N
   if (it.t) {
     const inp = $('tAns'), btn = $('tChk');
     setTimeout(() => inp.focus(), 60);
+    // 3 tries with hints; the answer is only shown after the last one
+    let tries = 0; const wrong = [];
     const check = () => {
       const v = inp.value; if (!norm(v)) { inp.focus(); return; }
+      const base = (String(it.q).match(/\(([A-Z'-]+)\)\s*$/) || [])[1];
+      if (base && norm(v) === base.toLowerCase()) { $('why').innerHTML = `<div class="why no">Change the word ${esc(base)}: add a prefix or suffix.</div>`; inp.select(); return; }
+      tries++;
       const ok = it.a.some(a => norm(a) === norm(v));
+      if (!ok && tries < 3) {
+        wrong.push(v); const ans = it.a[0], half = Math.ceil(ans.length / 2);
+        $('why').innerHTML = `<div class="why no">✘ Not yet. ${tries === 1
+          ? `Hint: it starts with <b>${esc(ans[0])}</b> and has <b>${ans.length}</b> letters. 2 tries left.`
+          : `Hint: <b>${esc(ans.slice(0, half))}${'_'.repeat(ans.length - half)}</b>. Last try.`}</div>`;
+        sfx('bad'); inp.select(); return;
+      }
       inp.disabled = true; btn.disabled = true; inp.classList.add(ok ? 'ok' : 'no');
-      finish(ok, v);
+      finish(ok, [...wrong, v].join(' → '));
     };
     btn.onclick = check; inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') check(); });
   } else {

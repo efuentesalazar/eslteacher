@@ -1552,26 +1552,47 @@ function showToast(){
   toastQ.shift();
   if (toastQ.length) setTimeout(showToast, 2800);
 }
+// Lectura lenta: varias voces (sobre todo las "online") casi no cambian con rate,
+// así que además se lee por trozos de 2–3 palabras, con una pausa entre cada uno.
+function slowParts(t){
+  const parts = [];
+  t.replace(/([,;:.?!])\s+/g, "$1\n").split("\n").forEach(seg => {
+    const w = seg.split(/\s+/).filter(Boolean);
+    for (let i = 0; i < w.length; i += 3) parts.push(w.slice(i, i + 3).join(" "));
+  });
+  return parts.length ? parts : [t];
+}
+function speakSlow(t){ speak(slowParts(t), .7); }
 function speak(t, rate = .9){
   if (!("speechSynthesis" in window)){ toast("Este navegador no puede leer en voz alta."); return; }
   if (listening && rec){ try { rec.abort(); } catch(e){} }
-  const u = new SpeechSynthesisUtterance(t); u.lang = "en-US"; u.rate = rate; u.volume = 1;
-  const v = pickVoice(); if (v){ u.voice = v; u.lang = v.lang; }
-  let started = false; u.onstart = () => { started = true; };
+  const parts = Array.isArray(t) ? t : [t];
+  const v = pickVoice();
+  let started = false;
+  const mk = (txt, voice) => {
+    const x = new SpeechSynthesisUtterance(txt); x.lang = "en-US"; x.rate = rate; x.volume = 1;
+    if (voice){ x.voice = voice; x.lang = voice.lang; }
+    return x;
+  };
+  const utts = parts.map(p => mk(p, v));
+  const u = utts[0];
+  u.onstart = () => { started = true; };
   // Las voces "online" necesitan internet: si fallan, se repite con una voz del dispositivo
   u.onerror = e => {
     if (started || !v || v.localService || e.error === "interrupted" || e.error === "canceled") return;
     const lv = pickVoice(true); if (!lv) return;
-    const u2 = new SpeechSynthesisUtterance(t); u2.voice = lv; u2.lang = lv.lang; u2.rate = rate; speechSynthesis.speak(u2);
+    speechSynthesis.cancel();
+    parts.forEach(p => speechSynthesis.speak(mk(p, lv)));
   };
+  const sayAll = () => utts.forEach(x => speechSynthesis.speak(x));
   // En iPhone, cancel() justo antes de speak() puede tragarse la voz nueva:
   // solo se cancela si algo está sonando, y se espera un momento antes de hablar.
   if (speechSynthesis.speaking || speechSynthesis.pending){
     speechSynthesis.cancel();
-    setTimeout(() => speechSynthesis.speak(u), 150);
+    setTimeout(sayAll, 150);
   } else {
     speechSynthesis.resume();
-    speechSynthesis.speak(u);                 // directo dentro del toque (Safari lo exige)
+    sayAll();                                 // directo dentro del toque (Safari lo exige)
   }
   if (isIOS){
     if (!store.get("ttsTip", false)){ store.set("ttsTip", true); toast("🔊 ¿No se escucha? Desactiva el modo silencio del iPhone (interruptor lateral) y sube el volumen."); }
@@ -1815,7 +1836,7 @@ $("modes").querySelectorAll(".chip").forEach(c => c.addEventListener("click", ()
 $("own-set").addEventListener("click", () => { const v = $("own-in").value.trim(); if (v) setTarget(v, "Tu frase · Your sentence"); });
 $("own-in").addEventListener("keydown", e => { if (e.key === "Enter") $("own-set").click(); });
 $("t-listen").addEventListener("click", () => speak(target.text, .9));
-$("t-slow").addEventListener("click", () => speak(target.text, .6));
+$("t-slow").addEventListener("click", () => speakSlow(target.text));
 
 /* Selector de voz: la recomendada (más natural) queda primera y elegida por defecto */
 function renderVoices(){
@@ -2304,13 +2325,27 @@ const Z = {
   wf(it){
     $("zn-body").innerHTML = `<p class="zn-q">${esc(it.s).replace("___", '<span class="gapb">___</span>')} <span class="zn-base">${esc(it.base)}</span></p>
       <input class="zn-input" id="zw-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Escribe la palabra transformada…">`;
+    // 3 intentos: tras cada error se da una pista; la respuesta solo aparece al final
+    let tries = 0;
     const check = () => {
-      const v = $("zw-in").value.trim().toLowerCase();
+      const inp = $("zw-in"), v = inp.value.trim().toLowerCase();
       if (!v){ $("zn-msg").textContent = "Escribe una palabra."; return; }
+      if (v === it.base.toLowerCase()){ $("zn-msg").textContent = "Tienes que transformar la palabra (agrega un prefijo o sufijo)."; shake(inp); return; }
+      if (!/^[a-z'-]+$/.test(v)){ $("zn-msg").textContent = "Escribe solo una palabra, sin números ni espacios."; shake(inp); return; }
+      tries++;
       const ok = it.a.includes(v);
-      $("zw-in").classList.add(ok ? "ok" : "bad"); $("zw-in").disabled = true;
+      if (!ok && tries < 3){
+        const ans = it.a[0];
+        $("zn-msg").innerHTML = tries === 1
+          ? `✘ Todavía no. Pista: empieza con <b>${esc(ans[0])}</b> y tiene <b>${ans.length}</b> letras. Te quedan 2 intentos.`
+          : `✘ Otra pista: <b>${esc(ans.slice(0, Math.ceil(ans.length / 2)))}${"_".repeat(ans.length - Math.ceil(ans.length / 2))}</b>. Último intento.`;
+        sfx("wrong"); shake(inp); inp.select();
+        return;
+      }
+      $("zn-msg").textContent = "";
+      inp.classList.add(ok ? "ok" : "bad"); inp.disabled = true;
       $("zn-body").querySelector(".gapb").textContent = it.a[0];
-      zDone(ok ? 1 : 0, 1, `${ok ? "" : `Respuesta: <b>${esc(it.a[0])}</b>. `}${esc(it.why)}`);
+      zDone(ok ? 1 : 0, 1, `${ok ? (tries > 1 ? `¡Bien! (en el intento ${tries}) ` : "") : `Respuesta: <b>${esc(it.a[0])}</b>. `}${esc(it.why)}`);
     };
     $("zw-in").addEventListener("keydown", e => { if (e.key === "Enter" && !$("zw-in").disabled) check(); });
     zCheckBtn("Check", check);
@@ -2323,12 +2358,22 @@ const Z = {
       <div class="row"><button class="btn talk" type="button" id="zd-play">🔊 Listen</button><button class="btn ghost" type="button" id="zd-slow">🐢 Slow</button></div>
       <input class="zn-input" id="zd-in" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="Escribe lo que escuchas…">`;
     $("zd-play").addEventListener("click", () => speak(s, .9));
-    $("zd-slow").addEventListener("click", () => speak(s, .6));
+    $("zd-slow").addEventListener("click", () => speakSlow(s));
+    // 2 intentos: en el primero solo se marcan las palabras correctas; la oración completa aparece al final
+    let tries = 0;
     const check = () => {
       const v = $("zd-in").value.trim();
       if (!v){ $("zn-msg").textContent = "Escribe la oración que escuchaste."; return; }
+      tries++;
       const res = align(words(s), words(v));
       const good = res.filter(r => r.status === "ok").length, ok = good === res.length && words(v).length === res.length;
+      if (!ok && tries < 2){
+        const partial = res.map(r => r.status === "ok" ? `<span class="w-ok">${esc(r.word)}</span>` : `<span class="w-miss">${"_".repeat(Math.max(3, r.word.length))}</span>`).join(" ");
+        $("zn-msg").innerHTML = `✘ Llevas ${good} de ${res.length} palabras. Escucha otra vez y corrige (último intento):<div class="zn-dict">${partial}</div>`;
+        sfx("wrong"); shake($("zd-in")); $("zd-in").focus();
+        return;
+      }
+      $("zn-msg").textContent = "";
       $("zd-in").classList.add(ok ? "ok" : "bad"); $("zd-in").disabled = true;
       const shown = res.map(r => `<span class="${r.status === "ok" ? "w-ok" : r.status === "unclear" ? "w-bad" : "w-miss"}">${esc(r.word)}</span>`).join(" ");
       zDone(ok ? 1 : 0, 1, `${ok ? "¡Perfecto! " : `Acertaste ${good} de ${res.length} palabras. `}<div class="zn-dict">${shown}</div>`);
