@@ -3,7 +3,15 @@
 Esta carpeta es una copia de tu repositorio de GitHub (efuentesalazar/eslteacher).
 
 ## Qué hay
-- `index.html`: la página de inicio con los 6 mundos, tus cursos y juegos, Word of the day, Quick challenge y la práctica de pronunciación "Speak & shine".
+- `index.html`: la página de inicio con los 6 mundos, tus cursos y juegos, Word of the day, Quick challenge y la práctica de pronunciación "Speak & shine". Solo tiene el HTML; el diseño está en `assets/css/portada.css` y el código en `assets/js/portada/` (se cargan en este orden):
+  - `datos.js`: `COURSES` (cursos y juegos) y `TWISTERS` (trabalenguas). **Aquí agregas juegos nuevos.**
+  - `juego.js`: sonidos, confeti, XP, palabras difíciles y medallas.
+  - `mundos.js`: escenas, navegación por mundos y lista de juegos por curso.
+  - `voz.js`: lectura en voz alta, palabra del día, desafío rápido y práctica de pronunciación.
+  - `diagnostico.js`: diagnóstico de sonidos.
+  - `zone.js`: Challenge Zone (el contenido de los ejercicios sigue en `ejercicios.js`).
+  - `perfil.js`: perfil del alumno, proyector, app instalable, progreso en la nube y compartir.
+  - Si agregas o renombras uno de estos archivos, súmalo también a `SHELL` en `sw.js` y sube su `VERSION`.
 - `assets/mundos/`: las 6 imágenes de fondo (isles, ice, dunes, neon, aurora, forest). Para cambiar un fondo, reemplaza la imagen manteniendo el mismo nombre.
 
 La práctica de pronunciación es gratis: usa el reconocimiento de voz del navegador y calcula el puntaje y los consejos en el mismo computador del alumno. No usa ninguna API de pago.
@@ -15,7 +23,7 @@ La práctica de pronunciación es gratis: usa el reconocimiento de voz del naveg
 - Quick challenge pregunta sobre las palabras de los últimos 30 días (o las 365, si el alumno lo elige), y la palabra de hoy aparece al inicio y cada 4 preguntas.
 
 ## Editar contenido
-En `index.html`, busca `DATOS`: ahí están `COURSES` (cursos y juegos) y `TWISTERS` (trabalenguas).
+En `assets/js/portada/datos.js` están `COURSES` (cursos y juegos) y `TWISTERS` (trabalenguas).
 
 ## Novedades (29-10-2026)
 - **Letra**: Fredoka (títulos) y Lexend (texto, muy legible). JetBrains Mono solo para números.
@@ -44,7 +52,7 @@ En `index.html`, busca `DATOS`: ahí están `COURSES` (cursos y juegos) y `TWIST
 - **Voz natural** (02-11-2026): la página elige la voz más natural del navegador (Edge: "Aria/Jenny Online (Natural)", Chrome: "Google US English", iPhone: voces "Enhanced"). En "Speak & shine" hay un selector "🗣 Voice" para cambiarla.
 - **Retroalimentación técnica de pronunciación**: compara lo que había que decir con lo que entendió el reconocedor y detecta el sonido que falló (th, v/b, s inicial, h, y/j, sh, ch, z, r/l, w, ng, consonante final, -s, -ed, i corta/larga, æ, ʌ, palabras cortas). Muestra símbolo fonético, cómo poner boca y lengua, un par mínimo para escuchar y un trabalenguas del sonido. Los sonidos con más errores aparecen en el perfil del alumno y en el panel ("Sonidos a mejorar").
 - **Challenge Zone** (02-11-2026): sección nueva con 7 tipos de ejercicio (Sentence scramble, Language in use, Vocabulary in context, Find the mistake, Word formation, Dictation, Mini reading) en 3 niveles según el currículum: A1 (5°–6°), A2 (7°–8°), B1 (1°–3° Medio). El nivel se elige solo según el curso del alumno, y puede cambiarse. Cada ronda da XP, estrellas y puede dar 2 medallas nuevas. El panel muestra el logro por habilidad (Gramática, Vocabulario, Audición, Lectura).
-- Fondo de la Challenge Zone: imagen de laser tag de bloques creada con Canva (`assets/mundos/zone.webp` y `assets/mundos/m/zone.webp`), con disparos láser, chispas y letreros de neón animados encima (`ZONE_SHOTS` y `ZONE_NEON` en index.html).
+- Fondo de la Challenge Zone: imagen de laser tag de bloques creada con Canva (`assets/mundos/zone.webp` y `assets/mundos/m/zone.webp`), con disparos láser, chispas y letreros de neón animados encima (`ZONE_SHOTS` y `ZONE_NEON` en `assets/js/portada/`).
 - Los ejercicios están en `ejercicios.js` (105 por nivel). Al inicio del archivo se explica cómo agregar más: se copia una línea y se cambia el contenido.
 - Si llega un alumno nuevo o cambia la nómina: pídele a Claude que vuelva a importar `NÓMINAS DE CURSOS.xlsx` (las claves existentes no cambian).
 
