@@ -37,7 +37,7 @@ export async function makeChar(model, opt = {}) {
   shadowize(root);
   root.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.frustumCulled = false; } });
   if (opt.tint) root.traverse(m => { if (m.isMesh) m.material.color.lerp(new THREE.Color(opt.tint), opt.tintK ?? 0.6); });
-  const bones = {}; root.traverse(o => { if (o.isBone) bones[o.name] = o; });
+  const bones = {}; root.traverse(o => { if (o.isBone || /^handslot\.[lr]$|^head$/.test(o.name)) { if (!bones[o.name] || o.isBone) bones[o.name] = o; } });
   let rig = null; root.traverse(o => { if (!rig && o.name.startsWith('Rig_')) rig = o; });
   const c = { root, model, bones, rig: rig || root, equipMeshes: {}, held: {}, hidden: new Set(), cur: null, lockUntil: 0 };
   if (opt.strip) for (const p of EXTRA) { const n = findPart(root, partName(model, p)); if (n) n.visible = false; }
@@ -86,6 +86,8 @@ function raceExtras(c, race) {
 }
 
 // ---------- equipment ----------
+/** The hand bone where weapons go (three.js removes the dot from "handslot.r"). */
+export function handSlot(c, side) { return c.bones['handslot.' + side] || c.bones['handslot' + side]; }
 async function partsFrom(model) { const g = await load(`assets/chars/${model}.glb`); return g ? g.scene : null; }
 
 /** Copy skinned meshes of another character onto this one (same rig). */
@@ -136,14 +138,14 @@ export async function applyEquip(c, eq) {
   for (const k in c.held) { const h = c.held[k]; if (h && h.o.parent) h.o.parent.remove(h.o); }
   c.equipMeshes = built; c.held = {};
   setOwnVisible(c, BODY, !built.body.length);
-  for (const slot in held) { const h = held[slot], bone = c.bones[h.hand === 'l' ? 'handslot.l' : 'handslot.r']; if (bone) { bone.add(h.o); c.held[slot] = h; } }
+  for (const slot in held) { const h = held[slot], bone = handSlot(c, h.hand === 'l' ? 'l' : 'r'); if (bone) { bone.add(h.o); c.held[slot] = h; } }
 }
 
 /** Give an NPC or enemy weapons directly (file names in assets/items). */
 export async function holdItems(c, right, left) {
-  for (const [file, bone] of [[right, 'handslot.r'], [left, 'handslot.l']]) {
-    if (!file || !c.bones[bone]) continue;
-    const s = await heldModel(file); if (!s) continue; const o = s.clone(true); shadowize(o); c.bones[bone].add(o);
+  for (const [file, side] of [[right, 'r'], [left, 'l']]) {
+    const slot = handSlot(c, side); if (!file || !slot) continue;
+    const s = await heldModel(file); if (!s) continue; const o = s.clone(true); shadowize(o); slot.add(o);
   }
 }
 

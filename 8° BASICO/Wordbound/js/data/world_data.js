@@ -168,3 +168,15 @@ export const SIGNS = [
   { x: -6, z: 140, lines: ['Redrock Camp ↓', '↘ Oasis', '↙ Old Ruins'] },
   { x: -140, z: -8, lines: ['← Bonewick', 'Graveyard: south of the town'] }
 ];
+
+// Portals: walk close to one to activate it. Then you can travel between active portals.
+export const PORTALS = [
+  { id: 'p_bright', name: 'Brightwater', realm: 0, x: -10, z: -8, color: '#ffd23a', lvl: '1–3' },
+  { id: 'p_leaf', name: 'Leafhollow', realm: 1, x: -7, z: -162, color: '#5fe07a', lvl: '3–6' },
+  { id: 'p_wolf', name: 'Wolf Lake', realm: 1, x: 34, z: -186, color: '#5fe07a', lvl: '5–7' },
+  { id: 'p_iron', name: 'Ironhearth', realm: 2, x: 178, z: 6, color: '#ff9a3a', lvl: '5–8' },
+  { id: 'p_mine', name: 'Deep Mine', realm: 2, x: 190, z: -32, color: '#ff9a3a', lvl: '6–9' },
+  { id: 'p_red', name: 'Redrock Camp', realm: 3, x: -10, z: 167, color: '#ffe14a', lvl: '7–10' },
+  { id: 'p_bone', name: 'Bonewick', realm: 4, x: -175, z: 4, color: '#b07cff', lvl: '9–12' },
+  { id: 'p_tower', name: 'Silent Tower', realm: 4, x: -210, z: 16, color: '#b07cff', lvl: '12+' }
+];

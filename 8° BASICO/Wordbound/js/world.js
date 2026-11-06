@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { scene, colliders, camBlockers, animated, WORLD_R, REALMS, realmWeights, roads, roadPath, flatArea, distToRoads, H, prop, scatter, rnd, M, shadowize, label, load } from './core.js';
-import { PLACES, SIGNS, NPCS } from './data/world_data.js';
+import { PLACES, SIGNS, NPCS, PORTALS } from './data/world_data.js';
 import { ACTS } from './data/quests.js';
 
 const blocked = [];   // {x,z,r}: no random trees here
 const block = (x, z, r) => blocked.push({ x, z, r });
-export const world = { lanterns: [], crown: null, signs: [], lakes: [] };
+export const world = { lanterns: [], crown: null, signs: [], lakes: [], portals: [] };
 
 function isFree(x, z, pad = 0) {
   const d = Math.hypot(x, z);
@@ -188,6 +188,43 @@ function lanternPost(x, z) {
   return L;
 }
 
+
+/** Magic portal: stone ring with a swirling centre. Returns {def, x, z, set(active)} */
+function spiralTexture() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256; const c = cv.getContext('2d');
+  const g = c.createRadialGradient(128, 128, 10, 128, 128, 128); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.5, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = g; c.fillRect(0, 0, 256, 256);
+  c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 6;
+  for (let arm = 0; arm < 4; arm++) { c.beginPath(); for (let t = 0; t < 1; t += 0.01) { const a = arm * Math.PI / 2 + t * 7, r = t * 120; c.lineTo(128 + Math.cos(a) * r, 128 + Math.sin(a) * r); } c.stroke(); }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+let spiralTex = null;
+function portal(def) {
+  const { x, z, color } = def, y = H(x, z), g = new THREE.Group(); g.position.set(x, y, z);
+  const stone = M('#8f8a9a'), dark = M('#5a5568');
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.9, 0.4, 10), dark); base.position.y = 0.2; g.add(base);
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.2, 0.7), stone); p.position.set(s * 2, 2.3, 0); g.add(p); const cap = new THREE.Mesh(new THREE.OctahedronGeometry(0.42), M(color, { emissive: color, emissiveIntensity: 0.9 })); cap.position.set(s * 2, 4.75, 0); g.add(cap); }
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.22, 8, 28), stone); ring.position.y = 2.6; g.add(ring);
+  spiralTex ||= spiralTexture();
+  const swirlMat = new THREE.MeshBasicMaterial({ map: spiralTex, color, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false });
+  const swirl = new THREE.Mesh(new THREE.CircleGeometry(1.6, 32), swirlMat); swirl.position.y = 2.6; g.add(swirl);
+  const light = new THREE.PointLight(color, 0, 12); light.position.y = 2.6; g.add(light);
+  const n = 30, pos = new Float32Array(n * 3), seedA = []; for (let i = 0; i < n; i++) seedA.push([rnd() * 6.28, rnd()]);
+  const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(pg, new THREE.PointsMaterial({ color, size: 0.18, transparent: true, opacity: 0.9, depthWrite: false })); g.add(pts);
+  g.rotation.y = Math.atan2(REALMS[def.realm].town.x - x, REALMS[def.realm].town.z - z);
+  shadowize(base); shadowize(ring); scene.add(g);
+  colliders.push({ x: x + Math.cos(g.rotation.y) * 2, z: z - Math.sin(g.rotation.y) * 2, r: 0.5 }, { x: x - Math.cos(g.rotation.y) * 2, z: z + Math.sin(g.rotation.y) * 2, r: 0.5 });
+  const P = { def, x, z, on: false, rot: g.rotation.y, set(on) { P.on = on; swirlMat.color.set(on ? color : '#777788'); swirlMat.opacity = on ? 0.85 : 0.35; light.intensity = on ? 10 : 0; pts.visible = on; } };
+  animated.push(t => {
+    swirl.rotation.z = -t * (P.on ? 2.2 : 0.4);
+    if (!P.on) return;
+    for (let i = 0; i < n; i++) { const [a, o] = seedA[i], k = (t * 0.5 + o) % 1, r = 1.7 * (1 - k); pos[i * 3] = Math.cos(a + t) * r; pos[i * 3 + 1] = 2.6 + Math.sin(a + t) * r; pos[i * 3 + 2] = (k - 0.5) * 0.4; }
+    pg.attributes.position.needsUpdate = true;
+  });
+  block(x, z, 5); world.portals.push(P); return P;
+}
+
 // ---------- realms ----------
 async function greenvale() {
   linguaStone();
@@ -367,5 +404,6 @@ export async function buildWorld() {
   buildGround(); drawRoads();
   await greenvale(); await whisperwood(); await stonehold(); await sunscar(); await mistmoor();
   for (const s of SIGNS) signpost(s.x, s.z, s.lines);
+  for (const p of PORTALS) portal(p);
   await nature();
 }

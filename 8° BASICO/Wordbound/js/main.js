@@ -3,7 +3,7 @@ import { scene, colliders, camBlockers, animated, WORLD_R, REALMS, realmWeights,
 import { buildWorld, world, noticeBoard } from './world.js';
 import { makeChar, applyEquip, holdItems, makeSlime, makeAnimal, RACES } from './chars.js';
 import { ITEMS, SLOTS, TYPE_NAME } from './data/items.js';
-import { PLACES, NPCS, MONSTERS, ZONES, PICKS } from './data/world_data.js';
+import { PLACES, NPCS, MONSTERS, ZONES, PICKS, PORTALS } from './data/world_data.js';
 import { QUESTS, DOCS, ACTS, SKILLS, SKILLS_ES } from './data/quests.js';
 import { GLOSS } from './data/gloss.js';
 import { logAnswer, student } from './track.js';
@@ -26,7 +26,7 @@ const SHOPS = {
 
 // ======================= SAVE =======================
 const SAVE_KEY = 'wordbound_v1';
-function fresh() { return { name: '', race: 'human', look: 'Knight', lvl: 1, xp: 0, gold: 20, hp: 95, inv: [], eq: { head: null, body: null, cape: null, weapon: null, off: null }, q: {}, track: null, flags: {}, read: {}, reveal: {}, phr: [], stats: {}, pos: null, town: 0, visited: [0], lit: [], done: false, voice: true, rate: 0.92, music: 0.3 }; }
+function fresh() { return { name: '', race: 'human', look: 'Knight', lvl: 1, xp: 0, gold: 20, hp: 95, inv: [], eq: { head: null, body: null, cape: null, weapon: null, off: null }, q: {}, track: null, flags: {}, read: {}, reveal: {}, phr: [], stats: {}, pos: null, town: 0, visited: [0], lit: [], portals: ['p_bright'], done: false, voice: true, rate: 0.92, music: 0.3 }; }
 let S = fresh();
 try { const raw = localStorage.getItem(SAVE_KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
 function save() { try { S.pos = [+player.pos.x.toFixed(1), +player.pos.z.toFixed(1)]; localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } }
@@ -593,6 +593,7 @@ function refreshMarks() {
   for (const [id, N] of Object.entries(npcs)) { const w = want[id]; N.marks.mMain.visible = w === 'main'; N.marks.mSide.visible = w === 'side'; N.marks.mQ.visible = w === 'qm'; N.marks.mQs.visible = w === 'qs'; N.want = w; }
   refreshPicks();
   world.lanterns.forEach((l, i) => l.set(S.lit.includes(i)));
+  world.portals.forEach(P => { const on = S.portals.includes(P.def.id); if (P.on !== on) P.set(on); });
   if (world.crown) { world.crown.visible = !!S.done; world.crown.userData.light.intensity = S.done ? 25 : 0; }
 }
 
@@ -618,7 +619,9 @@ async function createMonster(zi) {
 function placeMonster(m) {
   const z = ZONES[m.zi]; const a = Math.random() * 6.28, r = Math.random() * z.r;
   m.pos.set(z.x + Math.cos(a) * r, 0, z.z + Math.sin(a) * r); m.pos.y = H(m.pos.x, m.pos.z);
-  m.hp = m.d.hp; m.dead = false; m.state = 'idle'; m.c.root.visible = true; m.c.root.position.copy(m.pos);
+  m.hp = m.d.hp; m.dead = false; m.deadT = 0; m.state = 'idle'; m.cd = 0; m.windup = undefined; m.c.root.visible = true; m.c.root.position.copy(m.pos);
+  if (m.d.kind === 'slime') m.c.root.scale.setScalar(m.scale * 1.3); else if (m.d.kind === 'animal') m.c.root.rotation.z = 0;
+  if (m.c.mixer) { m.c.mixer.stopAllAction(); m.c.cur = null; m.c.lockUntil = 0; }
   if (m.c.play) m.c.play('Idle_A', 0);
   if (m.lab) { m.lab.visible = true; monLabel(m); }
 }
@@ -807,6 +810,11 @@ function findNear() {
   for (const s of world.signs) consider(Math.hypot(s.x - pp.x, s.z - pp.z), 2.6, { t: 'sign', s, label: 'Read the sign' });
   for (const k of picks) if (k.mesh.visible) consider(Math.hypot(k.pos.x - pp.x, k.pos.z - pp.z), 2, { t: 'pick', k, label: `Pick up: ${iname(k.item)}` });
   for (const g of groundItems) consider(Math.hypot(g.pos.x - pp.x, g.pos.z - pp.z), 2, { t: 'ground', g, label: `Pick up: ${iname(g.id)}${g.n > 1 ? ` ×${g.n}` : ''}` });
+  for (const P of world.portals) {
+    const d = Math.hypot(P.x - pp.x, P.z - pp.z);
+    if (d < 6 && !S.portals.includes(P.def.id)) { S.portals.push(P.def.id); P.set(true); sfx('star'); banner('Portal activated!', `${P.def.name} — now you can travel here with any portal 🌀`); gainXP(20); save(); }
+    consider(d, 4.3, { t: 'portal', P, label: `Use the portal 🌀 (${P.def.name})` });
+  }
   if (isActive('s_lanterns')) world.lanterns.forEach((l, i) => { if (!S.lit.includes(i)) consider(Math.hypot(l.x - pp.x, l.z - pp.z), 2.6, { t: 'lantern', i, label: 'Light the lantern 🕯️' }); });
   showPrompt();
 }
@@ -824,6 +832,7 @@ async function interact() {
     takePick(n.k);
   }
   else if (n.t === 'ground') pickGround(n.g);
+  else if (n.t === 'portal') openPortals(n.P);
   else if (n.t === 'lantern') {
     S.lit.push(n.i); world.lanterns[n.i].set(true); sfx('star'); player.c.play('Interact', 0.1, true);
     const q = QBY.s_lanterns, s = stepOf(q); if (s && s.act) { S.q.s_lanterns.cnt++; logLine(`🕯️ ${S.q.s_lanterns.cnt}/${s.n}`); if (S.q.s_lanterns.cnt >= s.n) advance(q); }
@@ -863,6 +872,32 @@ function updateArrow() {
   if (beacon) { beacon.visible = d > 6; beacon.position.set(o.p.x, H(o.p.x, o.p.z) + 25, o.p.z); }
 }
 
+
+// ======================= PORTALS =======================
+function openPortals(here) {
+  sfx('open');
+  const waiting = r => Object.values(npcs).filter(N => N.want && realmAt(N.pos.x, N.pos.z) === r).length;
+  const rows = PORTALS.map(p => {
+    const on = S.portals.includes(p.id), me = here && here.def.id === p.id, R = REALMS[p.realm], w = waiting(p.realm);
+    return `<div class="srow" style="${on ? '' : 'opacity:.5'}"><div class="ic" style="color:${p.color}">🌀</div><div class="nm">${esc(p.name)}<small>${esc(R.name)} · land of ${esc(R.people)} · level ${p.lvl}${on && w ? ` · <b style="color:#a86a00">${w} ${w > 1 ? 'people need' : 'person needs'} help</b>` : ''}</small></div>${me ? '<span class="small"><b>You are here</b></span>' : on ? `<button class="btn blue" data-go="${p.id}">Go ➜</button>` : '<span class="small">Not discovered yet</span>'}</div>`;
+  }).join('');
+  openModal(`<button class="btn alt x" id="xx">✕</button><h2>🌀 Magic Portal</h2><div class="doc" style="font-family:Nunito;font-size:17px;margin-bottom:10px">${glossify('Where do you want to go? You can travel to any portal you have discovered. To discover a new portal, walk to it the first time.')}</div>${rows}`);
+  $('xx').onclick = closeModal;
+  $('mbox').querySelectorAll('[data-go]').forEach(b => b.onclick = () => travel(world.portals.find(P => P.def.id === b.dataset.go)));
+}
+function travel(P) {
+  closeModal(); sfx('levelup', 0.5);
+  const fl = document.createElement('div'); fl.style.cssText = `position:fixed;inset:0;z-index:40;pointer-events:none;background:radial-gradient(circle,#fff,${P.def.color});opacity:0;transition:opacity .35s`;
+  document.body.appendChild(fl); requestAnimationFrame(() => fl.style.opacity = 1);
+  setTimeout(() => {
+    player.pos.set(P.x + Math.sin(P.rot) * 4, 0, P.z + Math.cos(P.rot) * 4); player.pos.y = H(player.pos.x, player.pos.z);
+    player.ry = P.rot; cam.yaw = P.rot + Math.PI; camera.position.set(player.pos.x - Math.sin(P.rot) * 6, player.pos.y + 4, player.pos.z - Math.cos(P.rot) * 6);
+    for (const m of monsters) if (m.state === 'chase') m.state = 'return';
+    S.town = P.def.realm; save(); hudDirty = true;
+    fl.style.opacity = 0; setTimeout(() => fl.remove(), 500);
+  }, 380);
+}
+
 // ======================= MAP =======================
 const mini = $('mini'), mctx = mini.getContext('2d'), MR = WORLD_R + 14;
 let mapBg = null;
@@ -889,6 +924,7 @@ function drawMapTo(ctx, S2, big, t) {
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (const p of Object.values(PLACES)) { const [a, b] = mapXY(p.x, p.z, S2); if (p.town !== undefined) { ctx.fillStyle = '#fff8e0'; ctx.strokeStyle = '#6b3a10'; ctx.lineWidth = 2 * K; ctx.beginPath(); ctx.arc(a, b, 6 * K, 0, 7); ctx.fill(); ctx.stroke(); } if (big) { ctx.font = `${p.town !== undefined ? 900 : 700} ${(p.town !== undefined ? 15 : 11) * K / 1.6}px Nunito`; ctx.fillStyle = '#2a1d12'; ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 3; ctx.strokeText(p.name, a, b + 14 * K / 1.4); ctx.fillText(p.name, a, b + 14 * K / 1.4); } }
   if (big) REALMS.forEach((r, i) => { if (!i) return; const [a, b] = mapXY(r.town.x * 0.62, r.town.z * 0.62, S2); ctx.font = `900 ${20 * K / 1.6}px Cinzel`; ctx.fillStyle = 'rgba(42,29,18,.55)'; ctx.fillText(r.name.toUpperCase(), a, b); });
+  for (const P of world.portals) { const [a, b] = mapXY(P.x, P.z, S2); ctx.fillStyle = P.on ? P.def.color : '#888'; ctx.strokeStyle = '#2a1d12'; ctx.lineWidth = 1.5 * K; ctx.beginPath(); ctx.arc(a, b, 5 * K, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#2a1d12'; ctx.font = `900 ${8 * K}px Nunito`; ctx.fillText('🌀', a, b + 0.5); }
   for (const [id, N] of Object.entries(npcs)) { if (!N.want) continue; const [a, b] = mapXY(N.pos.x, N.pos.z, S2); ctx.fillStyle = N.want === 'main' || N.want === 'qm' ? '#ffc23d' : '#45b8ff'; ctx.beginPath(); ctx.arc(a, b, 5.5 * K, 0, 7); ctx.fill(); ctx.strokeStyle = '#2a1d12'; ctx.lineWidth = 1.5 * K; ctx.stroke(); ctx.fillStyle = '#2a1d12'; ctx.font = `900 ${9 * K}px Nunito`; ctx.fillText(N.want[0] === 'q' ? '?' : '!', a, b + 0.5); }
   if (lastObj && lastObj.p) { const [a, b] = mapXY(lastObj.p.x, lastObj.p.z, S2), r = (8 + Math.sin(t * 5) * 2) * K; ctx.beginPath(); for (let k = 0; k < 10; k++) { const an = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.45 : r; ctx.lineTo(a + Math.cos(an) * rr, b + Math.sin(an) * rr); } ctx.closePath(); ctx.fillStyle = '#ffc23d'; ctx.strokeStyle = '#2a1d12'; ctx.lineWidth = 2; ctx.fill(); ctx.stroke(); }
   const [px, pz] = mapXY(player.pos.x, player.pos.z, S2);
@@ -903,7 +939,7 @@ function drawMini(t) {
 }
 function openMap() {
   if (mode !== 'play' || dlgOpen) return;
-  openModal(`<button class="btn alt x" id="xx">✕</button><h2>🗺️ The Five Realms</h2><canvas id="bigmap" width="900" height="900"></canvas><div class="small" style="text-align:center;margin-top:6px">⭐ = your objective · <b style="color:#c08000">!</b> main mission · <b style="color:#1a7ac0">!</b> side mission · ? = someone is waiting for you</div>`, true);
+  openModal(`<button class="btn alt x" id="xx">✕</button><h2>🗺️ The Five Realms</h2><canvas id="bigmap" width="900" height="900"></canvas><div class="small" style="text-align:center;margin-top:6px">⭐ = your objective · 🌀 portal · <b style="color:#c08000">!</b> main mission · <b style="color:#1a7ac0">!</b> side mission · ? = someone is waiting for you</div>`, true);
   $('xx').onclick = closeModal;
   const draw = () => { if (!modalOpen || !$('bigmap')) return; drawMapTo($('bigmap').getContext('2d'), 900, true, performance.now() / 1000); requestAnimationFrame(draw); }; draw();
 }
