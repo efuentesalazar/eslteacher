@@ -24,7 +24,7 @@ export function connect(me) {
       NET.ok = true; syncPeers(ch.presenceState()); emit('status', 'online'); resolve(true);
     };
     ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(); if (!decided && st[NET.id]) setTimeout(decide, 600); if (NET.ok && NET.ch === ch) syncPeers(st); });
-    for (const ev of ['st', 'say', 'boss', 'duel']) ch.on('broadcast', { event: ev }, m => { if (NET.ok && NET.ch === ch) emit(ev, m.payload); });
+    for (const ev of ['st', 'say', 'boss', 'duel', 'grp']) ch.on('broadcast', { event: ev }, m => { if (NET.ok && NET.ch === ch) emit(ev, m.payload); });
     ch.subscribe(async s => {
       if (s === 'SUBSCRIBED') { NET.joinT = Date.now(); await ch.track({ ...me, t: NET.joinT }); }
       else if ((s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') && !decided) { decided = true; disconnect(); emit('status', 'offline'); resolve(false); }

@@ -8,6 +8,7 @@ import { QUESTS, DOCS, ACTS, SKILLS, SKILLS_ES } from './data/quests.js';
 import { GLOSS } from './data/gloss.js';
 import { logAnswer, student } from './track.js';
 import * as net from './net.js';
+import { CLASSES } from './data/classes.js';
 const GAME = 'wordbound'; // id del juego en el Panel del profe
 
 const $ = id => document.getElementById(id);
@@ -83,9 +84,9 @@ let beacon;
 // ======================= STATS / INVENTORY =======================
 const gear = k => Object.values(S.eq).reduce((s, e) => s + (e ? itemStat(e, k) : 0), 0);
 const wid = slot => S.eq[slot] && S.eq[slot].id;
-const maxHP = () => 80 + S.lvl * 15 + gear('hp');
-const atk = () => Math.round(3 + S.lvl * 1.5 + gear('atk'));
-const def = () => gear('def');
+const maxHP = () => Math.round((80 + S.lvl * 15 + gear('hp')) * (1 + ((CLASSES[S.look] || CLASSES.Knight).passive.hp || 0)));
+const atk = () => { const P = (CLASSES[S.look] || CLASSES.Knight).passive, k = S.eq.weapon && ITEMS[S.eq.weapon.id] ? ITEMS[S.eq.weapon.id].kind : ''; let m = 1; if (P.bow && (k === 'bow' || k === 'xbow')) m += P.bow; if (P.magic && k === 'magic') m += P.magic; if (BUFF.cry > performance.now()) m += 0.3; return Math.round((3 + S.lvl * 1.5 + gear('atk')) * m); };
+const def = () => Math.round(gear('def') * (1 + ((CLASSES[S.look] || CLASSES.Knight).passive.def || 0)));
 const xpNext = () => 60 + S.lvl * S.lvl * 25;
 const stackable = id => ['use', 'misc', 'quest'].includes(ITEMS[id].t);
 const count = id => S.inv.filter(s => s.id === id).reduce((a, s) => a + s.n, 0);
@@ -150,7 +151,7 @@ function logLine(t) { const el = document.createElement('div'); el.innerHTML = t
 let hudDirty = true;
 function drawHUD() {
   hudDirty = false;
-  $('cName').textContent = `${RACE_ICON[S.race]} ${S.name || 'Hero'}`; $('cLv').textContent = `Lv ${S.lvl}`;
+  $('cName').textContent = `${RACE_ICON[S.race]} ${S.name || 'Hero'} · ${myClass().name}`; $('cLv').textContent = `Lv ${S.lvl}`;
   const mh = maxHP(); $('hpb').firstChild.style.width = `${Math.max(0, S.hp) / mh * 100}%`; $('hpb').lastChild.textContent = `${Math.ceil(Math.max(0, S.hp))} / ${mh} HP`;
   $('xpb').firstChild.style.width = `${S.xp / xpNext() * 100}%`; $('xpb').lastChild.textContent = `${S.xp} / ${xpNext()} XP`;
   $('cGold').textContent = `🪙 ${S.gold}`; $('cStats').textContent = `⚔️ ${atk()} · 🛡️ ${def()}`;
@@ -797,7 +798,7 @@ function updateMonsters(dt, t) {
     const frozen = busy() || player.dead;
     const reach = (RANGE[m.d.kind] || 2) * Math.max(1, m.scale * 0.8);
     const aggro = m.d.boss ? 18 : m.d.elite ? 14 : 11;
-    if (m.state === 'idle' && dist < aggro && !frozen) { m.state = 'chase'; if (c.play && m.d.kind === 'char' && /Skeleton/.test(m.d.model)) c.play('Skeletons_Taunt', 0.2, true); }
+    if (m.state === 'idle' && dist < aggro && !frozen && !buffOn('invis')) { m.state = 'chase'; if (c.play && m.d.kind === 'char' && /Skeleton/.test(m.d.model)) c.play('Skeletons_Taunt', 0.2, true); }
     if (m.state === 'chase' && (Math.hypot(m.pos.x - m.home.x, m.pos.z - m.home.z) > ZONES[m.zi].r + 30 || player.dead)) m.state = 'return';
     let moving = false, speed = m.d.kind === 'slime' ? 3 : m.d.kind === 'animal' ? 5.5 : m.d.boss ? 3.6 : 4;
     const now = performance.now();
@@ -878,7 +879,7 @@ function killMonster(m, noLoot) {
     toast(`👑 ${esc(m.d.name)} defeated!<br><span style="font-size:.6em">Look at the treasure on the ground!</span>`, 2600);
   }
   drops.forEach(([id, n], i) => { const a = i * 2.1, extra = isGear(id) ? { q: rollQuality(m.d.elite || m.d.boss), up: (m.d.elite || m.d.boss) && Math.random() < 0.4 ? 1 + Math.floor(Math.random() * 3) : 0 } : null; spawnGround(id, n, m.pos.clone().add(new THREE.Vector3(Math.cos(a) * (0.9 + i * 0.15), 0, Math.sin(a) * (0.9 + i * 0.15))), extra); });
-  if (!m.summoned) onKill(m.type);
+  if (!m.summoned) { onKill(m.type); if (GROUP.id && m.d.kind !== 'dummy') net.send('grp', { t: 'kill', g: GROUP.id, m: m.type, x: Math.round(m.pos.x), z: Math.round(m.pos.z) }); }
   if (m.d.boss || m.d.elite) { if (m.d.boss) S.flags['boss_' + m.type] = true; sfx('win'); }
   if (m.summoned) setTimeout(() => { scene.remove(m.c.root); monsters.splice(monsters.indexOf(m), 1); }, 3000);
   save(); hudDirty = true;
@@ -900,7 +901,7 @@ function attack() {
   const target = nearestMonster(ranged ? 24 : 5, ranged);
   if (target) player.ry = Math.atan2(target.pos.x - player.pos.x, target.pos.z - player.pos.z);
   const pw = takePower();
-  const roll = () => { const crit = pw || Math.random() < 0.1; return [Math.max(1, Math.round(atk() * (0.85 + Math.random() * 0.3) * (crit ? 1.8 : 1) * (pw ? 2.5 : 1))), crit]; };
+  const roll = () => { const crit = pw || Math.random() < 0.1 + (myClass().passive.crit || 0); return [Math.max(1, Math.round(atk() * (0.85 + Math.random() * 0.3) * (crit ? 1.8 : 1) * (pw ? 2.5 : 1))), crit]; };
   const opp = DUEL.on ? oppPeer() : null;
   if (opp && opp.c) player.ry = Math.atan2(opp.pos.x - player.pos.x, opp.pos.z - player.pos.z);
   if (ranged) {
@@ -946,6 +947,7 @@ function updateProjectiles(dt) {
   }
 }
 function hurtPlayer(raw) {
+  if (buffOn('shield')) raw *= 0.4;
   if (player.dead || busy()) return;
   const dmg = Math.max(1, Math.round(raw * 20 / (20 + def()) * (0.85 + Math.random() * 0.3)));
   S.hp -= dmg; hudDirty = true; player.hurtT = 0.35;
@@ -976,6 +978,7 @@ function findNear() {
   for (const [id, N] of Object.entries(npcs)) { const n = N.def, max = n.kind === 'tree' ? 5 : n.kind === 'animal' ? 2.4 : 3.2; const d = Math.hypot(N.pos.x - pp.x, N.pos.z - pp.z); consider(d, max, { t: 'npc', id, label: n.kind === 'animal' ? `Look at the ${n.file}` : n.kind === 'board' ? 'Read the notice board' : `Talk to ${n.name}` }); }
   for (const s of world.signs) consider(Math.hypot(s.x - pp.x, s.z - pp.z), 2.6, { t: 'sign', s, label: 'Read the sign' });
   for (const k of picks) if (k.mesh.visible) consider(Math.hypot(k.pos.x - pp.x, k.pos.z - pp.z), 2, { t: 'pick', k, label: `Pick up: ${iname(k.item)}` });
+  for (const e of ONL.peers.values()) if (e.c && e.c.root.visible) consider(Math.hypot(e.pos.x - pp.x, e.pos.z - pp.z), 3, { t: 'peer', e, label: `Meet ${e.data.name || 'Hero'} 👥` });
   for (const g of groundItems) consider(Math.hypot(g.pos.x - pp.x, g.pos.z - pp.z), 2, { t: 'ground', g, label: `Pick up: ${fullName({ id: g.id, ...(g.extra || {}) })}${g.n > 1 ? ` ×${g.n}` : ''}` });
   for (const P of world.portals) {
     const d = Math.hypot(P.x - pp.x, P.z - pp.z);
@@ -1000,6 +1003,7 @@ async function interact() {
   }
   else if (n.t === 'ground') pickGround(n.g);
   else if (n.t === 'portal') openPortals(n.P);
+  else if (n.t === 'peer') peerMenu(n.e);
   else if (n.t === 'lantern') {
     S.lit.push(n.i); world.lanterns[n.i].set(true); sfx('star'); player.c.play('Interact', 0.1, true);
     const q = QBY.s_lanterns, s = stepOf(q); if (s && s.act) { S.q.s_lanterns.cnt++; logLine(`🕯️ ${S.q.s_lanterns.cnt}/${s.n}`); if (S.q.s_lanterns.cnt >= s.n) advance(q); }
@@ -1093,6 +1097,7 @@ function drawMapTo(ctx, S2, big, t) {
   if (big) REALMS.forEach((r, i) => { if (!i) return; const [a, b] = mapXY(r.town.x * 0.62, r.town.z * 0.62, S2); ctx.font = `900 ${20 * K / 1.6}px Cinzel`; ctx.fillStyle = 'rgba(42,29,18,.55)'; ctx.fillText(r.name.toUpperCase(), a, b); });
   for (const P of world.portals) { const [a, b] = mapXY(P.x, P.z, S2); ctx.fillStyle = P.on ? P.def.color : '#888'; ctx.strokeStyle = '#2a1d12'; ctx.lineWidth = 1.5 * K; ctx.beginPath(); ctx.arc(a, b, 5 * K, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#2a1d12'; ctx.font = `900 ${8 * K}px Nunito`; ctx.fillText('🌀', a, b + 0.5); }
   for (const [id, N] of Object.entries(npcs)) { if (!N.want) continue; const [a, b] = mapXY(N.pos.x, N.pos.z, S2); ctx.fillStyle = N.want === 'main' || N.want === 'qm' ? '#ffc23d' : '#45b8ff'; ctx.beginPath(); ctx.arc(a, b, 5.5 * K, 0, 7); ctx.fill(); ctx.strokeStyle = '#2a1d12'; ctx.lineWidth = 1.5 * K; ctx.stroke(); ctx.fillStyle = '#2a1d12'; ctx.font = `900 ${9 * K}px Nunito`; ctx.fillText(N.want[0] === 'q' ? '?' : '!', a, b + 0.5); }
+  for (const e of groupMates()) { const [a, b] = mapXY(e.pos.x, e.pos.z, S2); ctx.fillStyle = '#3fdc6a'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 * K; ctx.beginPath(); ctx.arc(a, b, 6 * K, 0, 7); ctx.fill(); ctx.stroke(); }
   if (lastObj && lastObj.p) { const [a, b] = mapXY(lastObj.p.x, lastObj.p.z, S2), r = (8 + Math.sin(t * 5) * 2) * K; ctx.beginPath(); for (let k = 0; k < 10; k++) { const an = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.45 : r; ctx.lineTo(a + Math.cos(an) * rr, b + Math.sin(an) * rr); } ctx.closePath(); ctx.fillStyle = '#ffc23d'; ctx.strokeStyle = '#2a1d12'; ctx.lineWidth = 2; ctx.fill(); ctx.stroke(); }
   const [px, pz] = mapXY(player.pos.x, player.pos.z, S2);
   ctx.save(); ctx.translate(px, pz); ctx.rotate(Math.PI - player.ry); ctx.scale(K * 1.2, K * 1.2); ctx.fillStyle = '#ff2e63'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(7, 8); ctx.lineTo(0, 4); ctx.lineTo(-7, 8); ctx.closePath(); ctx.stroke(); ctx.fill(); ctx.restore();
@@ -1116,7 +1121,7 @@ mini.addEventListener('click', () => openMap());
 let jTab = 'q', jSel = null;
 function openJournal() {
   if (mode !== 'play' || dlgOpen) return;
-  const tabs = `<div class="tabs"><button data-t="q" class="${jTab === 'q' ? 'on' : ''}">📜 Missions</button><button data-t="p" class="${jTab === 'p' ? 'on' : ''}">📗 Phrasebook (${S.phr.length})</button><button data-t="s" class="${jTab === 's' ? 'on' : ''}">📊 My English</button><button data-t="h" class="${jTab === 'h' ? 'on' : ''}">❓ Help</button></div>`;
+  const tabs = `<div class="tabs"><button data-t="q" class="${jTab === 'q' ? 'on' : ''}">📜 Missions</button><button data-t="p" class="${jTab === 'p' ? 'on' : ''}">📗 Phrasebook (${S.phr.length})</button><button data-t="s" class="${jTab === 's' ? 'on' : ''}">📊 My English</button><button data-t="c" class="${jTab === 'c' ? 'on' : ''}">⚔️ My class</button><button data-t="h" class="${jTab === 'h' ? 'on' : ''}">❓ Help</button></div>`;
   let body = '';
   if (jTab === 'q') {
     const act = activeQuests(), done = QUESTS.filter(q => isDone(q.id));
@@ -1137,6 +1142,9 @@ function openJournal() {
   } else if (jTab === 's') {
     const rows = Object.keys(SKILLS).map(k => { const [c, t] = S.stats[k] || [0, 0], p = t ? Math.round(c / t * 100) : 0; return `<div class="phr">${esc(SKILLS[k])} <small>${esc(SKILLS_ES[k])}</small><div class="bar2" style="height:14px"><i style="width:${p}%;background:linear-gradient(90deg,#7ee08a,#2ea64f)"></i><b>${p}% (${c}/${t})</b></div></div>`; }).join('');
     body = `${rows}<div class="small">Missions: ${QUESTS.filter(q => isDone(q.id)).length}/${QUESTS.length} · Level ${S.lvl} · Documents read: ${Object.keys(S.read).length}</div>${S.done ? '<div class="foot"><button class="btn" id="cert">🏆 Certificate</button></div>' : ''}`;
+  } else if (jTab === 'c') {
+    const C = myClass();
+    body = `<h3 style="margin:0">${C.icon} ${esc(C.name)}</h3><div class="phr">⭐ ${glossify(C.ptxt)}<small>Passive bonus: always on</small></div>${C.skills.map((k, i) => `<div class="phr"><kbd>${i + 1}</kbd> ${k.icon} <b>${esc(k.name)}</b> <span class="small">(every ${k.cd} seconds)</span><br>${glossify(k.desc)}</div>`).join('')}<div class="small">To change your class, choose another style in the main menu. Tom the Blacksmith gives you the right weapons.<br>👥 Groups: walk to another player and press E to invite them (max 4). You share hunting missions and half of the experience.</div>`;
   } else body = `<div class="doc">${DOCS.how_to_play.text.split('\n').filter(Boolean).map(p => `<p>${glossify(p)}</p>`).join('')}</div>`;
   openModal(`<button class="btn alt x" id="xx">✕</button><h2>📜 Journal</h2>${tabs}${body}`, true);
   $('xx').onclick = closeModal;
@@ -1166,6 +1174,7 @@ addEventListener('keydown', e => {
   if (mode !== 'play') return;
   if (e.code === 'KeyT') togglePhrases();
   if (e.code === 'KeyR') powerStrike();
+  if ((e.code === 'Digit1' || e.code === 'Digit2') && $('phr').classList.contains('hidden')) useSkill(+e.code.slice(5) - 1);
   if (/^Digit\d$/.test(e.code) && !$('phr').classList.contains('hidden')) { sayPhrase((+e.code.slice(5) + 9) % 10); return; }
   if (e.code === 'KeyE') interact();
   if (e.code === 'KeyF') attack();
@@ -1220,7 +1229,7 @@ function updatePlayer(dt) {
   const len = Math.min(1, Math.hypot(f, s));
   const run = (keys.ShiftLeft || keys.ShiftRight || Math.hypot(stick.x, stick.y) > 0.85) ? 1 : 0;
   const attacking = performance.now() < c.lockUntil && /Attack|Shoot|Release/.test(c.curName || '');
-  const speed = len * (run ? 10 : 5.4) * (attacking ? 0.35 : 1);
+  const speed = len * (run ? 10 : 5.4) * (attacking ? 0.35 : 1) * (buffOn('speed') ? 1.5 : 1);
   ONL.moving = speed > 0.3 || !player.ground;
   if (len > 0.05 || attacking) { ONL.idleT = 0; if (ONL.status === 'away') goOnline(); } else ONL.idleT += dt;
   if (len > 0.05) {
@@ -1284,7 +1293,7 @@ function updateAtmosphere(dt) {
 const PHRASES = ['Hello! 👋', "Let's go!", 'Follow me!', 'Help me, please!', 'Thank you!', 'Good job!', 'Sorry!', 'Wait for me!', 'Where are you?', 'See you later!'];
 const PH_ANIM = { 0: 'Waving', 5: 'Cheering', 9: 'Waving' };
 const ONL = { peers: new Map(), lastSend: 0, lastPos: null, moving: false, idleT: 0, status: 'off', hiddenT: null };
-function myInfo() { return { name: S.name || 'Hero', race: S.race, look: S.look, lvl: S.lvl, w: ARENA.wins, d: DUEL.on ? 1 : 0, x: Math.round(player.pos.x), z: Math.round(player.pos.z), eq: Object.fromEntries(Object.entries(S.eq).map(([k, e]) => [k, e ? [e.id, e.q, e.up] : null])) }; }
+function myInfo() { return { name: S.name || 'Hero', race: S.race, look: S.look, lvl: S.lvl, g: GROUP.id, w: ARENA.wins, d: DUEL.on ? 1 : 0, x: Math.round(player.pos.x), z: Math.round(player.pos.z), eq: Object.fromEntries(Object.entries(S.eq).map(([k, e]) => [k, e ? [e.id, e.q, e.up] : null])) }; }
 function eqFrom(p) { const eq = {}; for (const k in p.eq || {}) { const v = p.eq[k]; eq[k] = v && ITEMS[v[0]] ? { id: v[0], q: v[1], up: Math.min(MAX_UP, +v[2] || 0) } : null; } return eq; }
 async function buildPeer(e) {
   const p = e.data, token = (e.token || 0) + 1; e.token = token;
@@ -1294,8 +1303,8 @@ async function buildPeer(e) {
   const wasVisible = e.c ? e.c.root.visible : false;
   if (e.c) scene.remove(e.c.root);
   e.c = c; c.root.position.copy(e.pos); c.root.rotation.y = e.ry;
-  const lb = label(`${String(p.name || 'Hero').slice(0, 14)} · Lv ${p.lvl || 1}`, '#9fe8ff', 26, 3); lb.position.y = 3.1; c.root.add(lb);
-  c.root.visible = wasVisible || e.seen; scene.add(c.root);
+  e.lab = null;
+  c.root.visible = wasVisible || e.seen; scene.add(c.root); peerLabel(e);
 }
 function addPeer(p) {
   if (ONL.peers.has(p.id)) return;
@@ -1312,7 +1321,7 @@ function bubble(c, text) {
 }
 net.on('join', p => { addPeer(p); logLine(`🌐 ${esc(p.name || 'Someone')} joined the world`); onlineHUD(); });
 net.on('leave', removePeer);
-net.on('update', (p, changed) => { const e = ONL.peers.get(p.id); if (!e) return; e.data = p; if (changed || e.lvl !== p.lvl) { e.lvl = p.lvl; buildPeer(e); } });
+net.on('update', (p, changed) => { const e = ONL.peers.get(p.id); if (!e) return; e.data = p; if (changed || e.lvl !== p.lvl) { e.lvl = p.lvl; buildPeer(e); } else if (e.gid !== p.g) peerLabel(e); e.gid = p.g; groupHUD(); });
 net.on('st', m => {
   const e = ONL.peers.get(m.id); if (!e || !isFinite(m.x) || !isFinite(m.z)) return;
   e.target.set(m.x, 0, m.z); e.v = { x: m.vx || 0, z: m.vz || 0 }; e.ry = m.ry || 0; e.last = performance.now();
@@ -1338,7 +1347,7 @@ net.on('status', s => {
 });
 const NET_count = () => net.NET.peers.size;
 function goOnline() { if (!S.online || mode !== 'play' || net.NET.ch) return; ONL.status = 'connecting'; onlineHUD(); net.connect(myInfo()).then(() => { ONL.lastSend = 0; sendState(true); }); }
-function goOffline(why) { net.disconnect(); for (const e of ONL.peers.values()) if (e.c) scene.remove(e.c.root); ONL.peers.clear(); ONL.status = why || 'off'; onlineHUD(); }
+function goOffline(why) { GROUP.id = null; if ($('grp')) $('grp').classList.add('hidden'); net.disconnect(); for (const e of ONL.peers.values()) if (e.c) scene.remove(e.c.root); ONL.peers.clear(); ONL.status = why || 'off'; onlineHUD(); }
 function onlineHUD() {
   const el = $('onl'); if (!el) return;
   const on = net.NET.ok;
@@ -1467,7 +1476,7 @@ net.on('duel', async m => {
   else if (m.t === 'no' && DUEL.pending === m.id) { DUEL.pending = null; toast(m.why === 'busy' ? `${esc(name)} is busy right now. Try later!` : `${esc(name)} said: "No, thank you."`, 2600); }
   else if (!DUEL.on || m.id !== DUEL.opp) return;
   else if (m.t === 'hit' && DUEL.phase === 'fight') {
-    const taken = Math.max(1, Math.round(m.dmg * 30 / (30 + def() * 0.5)));
+    const taken = Math.max(1, Math.round(m.dmg * 30 / (30 + def() * 0.5) * (buffOn('shield') ? 0.4 : 1)));
     DUEL.hp = Math.max(0, DUEL.hp - taken); sfx('hit', 0.5); player.hurtT = 0.3;
     floatText(`-${taken}${m.pw ? ' 💥' : ''}`, player.pos.clone().add(new THREE.Vector3(0, 2.4, 0)), '#ff6b5a');
     if (performance.now() > player.c.lockUntil) player.c.play('Hit_A', 0.1, true);
@@ -1554,14 +1563,189 @@ function powerStrike() {
 }
 let dlgPowerPick = null;
 
+
+// ======================= CLASSES: skills =======================
+const BUFF = { shield: 0, cry: 0, invis: 0, speed: 0 };
+const SKCD = [0, 0];                       // time (ms) when each skill is ready again
+let DASH = null;                           // {dir, t, speed, hits:Set, mult}
+const fx = [], fireballs = [];
+const myClass = () => CLASSES[S.look] || CLASSES.Knight;
+const buffOn = k => BUFF[k] > performance.now();
+function fxRing(x, z, color, r = 3, dur = 0.6, y) {
+  const m = new THREE.Mesh(new THREE.TorusGeometry(1, 0.12, 6, 32), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false }));
+  m.rotation.x = Math.PI / 2; m.position.set(x, (y ?? H(x, z)) + 0.2, z); scene.add(m);
+  fx.push({ m, t: 0, dur, r, kind: 'ring' });
+}
+function fxPuff(x, z, color = '#888', n = 10) {
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.5, 7, 5), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthWrite: false }));
+    const a = Math.random() * 6.28; m.position.set(x + Math.cos(a) * 0.5, H(x, z) + 0.5 + Math.random(), z + Math.sin(a) * 0.5); scene.add(m);
+    fx.push({ m, t: 0, dur: 1 + Math.random() * 0.5, v: new THREE.Vector3(Math.cos(a) * 1.5, 1 + Math.random(), Math.sin(a) * 1.5), kind: 'puff' });
+  }
+}
+function fxArrows(x, z, r) {
+  for (let i = 0; i < 9; i++) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 4), M('#8a5a2b'));
+    const a = Math.random() * 6.28, d = Math.random() * r; m.position.set(x + Math.cos(a) * d, H(x, z) + 12 + Math.random() * 4, z + Math.sin(a) * d); scene.add(m);
+    fx.push({ m, t: 0, dur: 0.55, v: new THREE.Vector3(0, -28, 0), kind: 'arrow' });
+  }
+}
+function updateFx(dt) {
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const f = fx[i]; f.t += dt; const k = f.t / f.dur;
+    if (f.kind === 'ring') { f.m.scale.setScalar(0.3 + k * f.r); f.m.material.opacity = 0.9 * (1 - k); }
+    else if (f.v) { f.m.position.addScaledVector(f.v, dt); if (f.kind === 'puff') { f.m.scale.setScalar(1 + k * 2); f.m.material.opacity = 0.7 * (1 - k); } }
+    if (k >= 1) { scene.remove(f.m); fx.splice(i, 1); }
+  }
+  for (let i = fireballs.length - 1; i >= 0; i--) {
+    const b = fireballs[i]; b.life -= dt; b.m.position.addScaledVector(b.v, dt); b.m.rotation.y += dt * 6;
+    const p = b.m.position; let boom = b.life <= 0 || p.y < H(p.x, p.z) + 0.3;
+    for (const m of monsters) { if (boom) break; if (m.active && !m.dead && m.d.kind !== 'dummy' || (m.active && m.d.kind === 'dummy')) { if (m.pos.clone().add(new THREE.Vector3(0, 1, 0)).distanceTo(p) < 1.4 + 0.4 * m.scale) boom = true; } }
+    const e = DUEL.on && oppPeer(); if (!boom && e && e.pos.clone().add(new THREE.Vector3(0, 1.2, 0)).distanceTo(p) < 1.5) boom = true;
+    if (boom) { scene.remove(b.m); fireballs.splice(i, 1); fxRing(p.x, p.z, '#ff7a1a', 4, 0.5); fxPuff(p.x, p.z, '#ff9a3a', 8); sfx('punch', 0.6); hitArea(p.x, p.z, 3.4, 2.2); }
+  }
+  // the shield bubble
+  if (player.c) { if (!player.c.bubbleShield) { const s = new THREE.Mesh(new THREE.SphereGeometry(1.7, 18, 12), new THREE.MeshBasicMaterial({ color: '#7cd0ff', transparent: true, opacity: 0.22, depthWrite: false })); s.position.y = 1.3; player.c.root.add(s); player.c.bubbleShield = s; } player.c.bubbleShield.visible = buffOn('shield'); }
+}
+/** Damage everything (monsters, and the duel opponent) inside a circle. */
+function hitArea(x, z, r, mult) {
+  for (const m of monsters) {
+    if (!m.active || m.dead) continue;
+    if (Math.hypot(m.pos.x - x, m.pos.z - z) > r + 0.4 * m.scale) continue;
+    const crit = Math.random() < 0.1 + (myClass().passive.crit || 0);
+    damageMonster(m, Math.max(1, Math.round(atk() * mult * (0.85 + Math.random() * 0.3) * (crit ? 1.8 : 1))), crit);
+  }
+  const e = DUEL.on && oppPeer(); if (e && Math.hypot(e.pos.x - x, e.pos.z - z) < r) pvpHit(atk() * mult, false);
+}
+function shout(name, color) {
+  const s = label(name.toUpperCase() + '!', color, 34, 4); s.position.copy(player.pos).add(new THREE.Vector3(0, 3.6, 0)); scene.add(s); floaters.push({ s, life: 1.4 });
+  speak(name, 'me', true);
+}
+function nearestTarget(maxD) {
+  const e = DUEL.on && oppPeer(); if (e && e.pos.distanceTo(player.pos) < maxD) return { pos: e.pos, pvp: true, scale: 1 };
+  let best = null, bd = maxD;
+  for (const m of monsters) { if (!m.active || m.dead || !m.c.root.visible) continue; const d = m.pos.distanceTo(player.pos); if (d < bd) { bd = d; best = m; } }
+  return best;
+}
+function useSkill(i) {
+  if (mode !== 'play' || busy() || player.dead) return;
+  const C = myClass(), sk = C.skills[i]; if (!sk) return;
+  const now = performance.now();
+  if (now < SKCD[i]) { toast(`${sk.name}: wait ${Math.ceil((SKCD[i] - now) / 1000)} s`, 1200); return; }
+  if (sk.id === 'heal' && DUEL.on) { toast('No healing in a duel!'); return; }
+  SKCD[i] = now + sk.cd * 1000;
+  const fwd = new THREE.Vector3(Math.sin(player.ry), 0, Math.cos(player.ry)), c = player.c, p = player.pos;
+  const col = { shield: '#7cd0ff', charge: '#ffd23a', rain: '#a0e080', step: '#ffffff', shadow: '#b070ff', smoke: '#aaaaaa', fireball: '#ff7a1a', heal: '#7dff8a', whirl: '#ff5a3a', cry: '#ff3a3a' }[sk.id];
+  shout(sk.name, col); sfx('swing', 0.5);
+  switch (sk.id) {
+    case 'shield': BUFF.shield = now + 6000; c.play('Melee_Block', 0.1, true); fxRing(p.x, p.z, col, 2.5); break;
+    case 'charge': { const t = nearestTarget(10); if (t) player.ry = Math.atan2(t.pos.x - p.x, t.pos.z - p.z); DASH = { dir: new THREE.Vector3(Math.sin(player.ry), 0, Math.cos(player.ry)), t: 0.35, speed: 24, hits: new Set(), mult: 1.4 }; c.play('Running_A', 0.05, true, 1.6); break; }
+    case 'rain': { const t = nearestTarget(16); const tx = t ? t.pos.x : p.x + fwd.x * 7, tz = t ? t.pos.z : p.z + fwd.z * 7; c.play('Ranged_Bow_Release_Up', 0.1, true); fxRing(tx, tz, col, 4.5, 1.2); for (let k = 0; k < 3; k++) setTimeout(() => { fxArrows(tx, tz, 4); setTimeout(() => hitArea(tx, tz, 4.5, 0.8), 450); }, k * 450); break; }
+    case 'step': DASH = { dir: fwd.clone().multiplyScalar(-1), t: 0.25, speed: 22, hits: null }; BUFF.speed = now + 4000; c.play('Jump_Start', 0.05, true); fxPuff(p.x, p.z, '#ffffff', 5); break;
+    case 'shadow': {
+      const t = nearestTarget(12); if (!t) { toast('No enemy near you!'); SKCD[i] = now + 1000; return; }
+      const d = t.pos.clone().sub(p).setY(0).normalize(); fxPuff(p.x, p.z, '#5a3a8a', 6);
+      p.set(t.pos.x + d.x * 1.4, 0, t.pos.z + d.z * 1.4); player.ry = Math.atan2(-d.x, -d.z); fxPuff(p.x, p.z, '#5a3a8a', 6);
+      c.play('Melee_Dualwield_Attack_Stab', 0.05, true, 1.3);
+      setTimeout(() => { if (t.pvp) pvpHit(atk() * 2.2, false); else damageMonster(t, Math.round(atk() * 2.2 * (0.9 + Math.random() * 0.2)), true); }, 200);
+      break;
+    }
+    case 'smoke': BUFF.invis = now + 5000; fxPuff(p.x, p.z, '#888', 14); for (const m of monsters) if (m.state === 'chase') m.state = 'return'; break;
+    case 'fireball': {
+      const t = nearestTarget(22); const from = p.clone().add(new THREE.Vector3(fwd.x * 0.8, 1.6, fwd.z * 0.8));
+      const to = t ? t.pos.clone().add(new THREE.Vector3(0, 1, 0)) : from.clone().add(fwd.clone().multiplyScalar(20));
+      if (t) player.ry = Math.atan2(t.pos.x - p.x, t.pos.z - p.z);
+      const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), new THREE.MeshBasicMaterial({ color: '#ff7a1a' })); m.add(new THREE.PointLight('#ff7a1a', 10, 10));
+      m.position.copy(from); scene.add(m); fireballs.push({ m, v: to.sub(from).normalize().multiplyScalar(20), life: 1.6 });
+      c.play('Ranged_Magic_Shoot', 0.05, true); break;
+    }
+    case 'heal': { const h = Math.round(maxHP() * 0.35); S.hp = Math.min(maxHP(), S.hp + h); floatText(`+${h}`, p.clone().add(new THREE.Vector3(0, 2.4, 0)), '#5fe07a'); fxRing(p.x, p.z, col, 5); c.play('Ranged_Magic_Raise', 0.1, true); sfx('ok'); groupBuff('heal'); hudDirty = true; break; }
+    case 'whirl': c.play('Melee_2H_Attack_Spinning', 0.05, true, 1.2); fxRing(p.x, p.z, col, 4); setTimeout(() => hitArea(player.pos.x, player.pos.z, 3.8, 1.5), 150); setTimeout(() => hitArea(player.pos.x, player.pos.z, 3.8, 0.8), 500); break;
+    case 'cry': BUFF.cry = now + 8000; c.play('Cheering', 0.1, true); fxRing(p.x, p.z, col, 6, 0.8); groupBuff('cry'); hudDirty = true; break;
+  }
+  skillHUD();
+}
+function updateDash(dt) {
+  if (!DASH) return;
+  DASH.t -= dt; player.pos.addScaledVector(DASH.dir, DASH.speed * dt);
+  if (DASH.hits) {
+    for (const m of monsters) { if (!m.active || m.dead || DASH.hits.has(m)) continue; if (m.pos.distanceTo(player.pos) < 2 + 0.4 * m.scale) { DASH.hits.add(m); damageMonster(m, Math.round(atk() * DASH.mult), false); } }
+    const e = DUEL.on && oppPeer(); if (e && !DASH.hits.has('opp') && e.pos.distanceTo(player.pos) < 2.2) { DASH.hits.add('opp'); pvpHit(atk() * DASH.mult, false); }
+  }
+  if (DASH.t <= 0) DASH = null;
+}
+function skillHUD() {
+  const C = myClass(), now = performance.now();
+  C.skills.forEach((sk, i) => {
+    const b = $('sk' + i); if (!b) return;
+    const left = Math.ceil((SKCD[i] - now) / 1000);
+    b.innerHTML = `<kbd>${i + 1}</kbd> ${sk.icon} ${esc(sk.name)}${left > 0 ? ` <span class="cd">${left}</span>` : ''}`;
+    b.classList.toggle('wait', left > 0); b.title = sk.desc;
+  });
+}
+
+// ======================= GROUPS (session only, online) =======================
+const GROUP = { id: null };
+const MAX_GROUP = 4;
+function groupMates() { if (!GROUP.id) return []; return [...ONL.peers.values()].filter(e => e.data.g === GROUP.id); }
+function setGroup(id) { GROUP.id = id; GROUP.since = performance.now(); net.updateMe(myInfo()); for (const e of ONL.peers.values()) peerLabel(e); groupHUD(); }
+function peerLabel(e) {
+  if (!e.c) return; const p = e.data, mate = GROUP.id && p.g === GROUP.id;
+  if (e.lab) e.c.root.remove(e.lab);
+  const lb = label(`${mate ? '★ ' : ''}${String(p.name || 'Hero').slice(0, 14)} · Lv ${p.lvl || 1}`, mate ? '#7dff8a' : '#9fe8ff', 26, 3); lb.position.y = 3.1; e.c.root.add(lb); e.lab = lb;
+}
+function groupHUD() {
+  const el = $('grp'); if (!el) return;
+  const mates = groupMates();
+  if (GROUP.id && !mates.length && performance.now() - (GROUP.since || 0) > 10000) { GROUP.id = null; net.updateMe(myInfo()); }
+  if (!GROUP.id) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML = `<b>👥 Your group</b><div>★ ${esc(S.name || 'You')} · ${myClass().icon} Lv ${S.lvl}</div>${mates.map(e => `<div>★ ${esc(e.data.name || 'Hero')} · ${(CLASSES[e.data.look] || CLASSES.Knight).icon} Lv ${e.data.lvl || 1}${e.pos.distanceTo(player.pos) > 70 ? ' <span class="small">(far)</span>' : ''}</div>`).join('')}<button class="btn alt" id="grpLeave">Leave group</button>`;
+  $('grpLeave').onclick = () => { setGroup(null); toast('You left the group.'); };
+}
+function invite(e) {
+  if (groupMates().length + 1 >= MAX_GROUP) { toast('Your group is full (4 players).'); return; }
+  if (e.data.g && e.data.g === GROUP.id) { toast(`${esc(e.data.name)} is already in your group.`); return; }
+  net.send('grp', { t: 'inv', to: e.id, g: GROUP.id || net.NET.id, n: S.name || 'Hero' });
+  toast(`👥 Invitation sent to ${esc(e.data.name)}.`, 2200); sfx('click');
+}
+function groupBuff(k) { if (GROUP.id) net.send('grp', { t: 'buff', g: GROUP.id, k, x: Math.round(player.pos.x), z: Math.round(player.pos.z), n: S.name }); }
+net.on('grp', async m => {
+  if (m.t === 'inv' && m.to === net.NET.id) {
+    if (busy() || DUEL.on || (GROUP.id && groupMates().length)) { net.send('grp', { t: 'no', to: m.id }); return; }
+    sfx('open'); dlgCtx = { tag: '👥 Group' };
+    const r = await choice('narrator', `${m.n} invites you to join their group. In a group, you share hunting missions and some experience. Do you want to join?`, ["Yes, I'd love to!", 'No, thanks.']);
+    if (r === 0 && net.NET.peers.has(m.id)) { setGroup(m.g); net.send('grp', { t: 'yes', to: m.id, g: m.g }); toast(`👥 You joined ${esc(m.n)}'s group!`, 2400); sfx('win', 0.4); }
+    else net.send('grp', { t: 'no', to: m.id });
+  } else if (m.t === 'yes' && m.to === net.NET.id) { if (!GROUP.id) setGroup(m.g); const p = net.NET.peers.get(m.id); toast(`👥 ${esc(p ? p.name : 'Someone')} joined your group!`, 2400); sfx('win', 0.4); groupHUD(); }
+  else if (m.t === 'no' && m.to === net.NET.id) { const p = net.NET.peers.get(m.id); toast(`${esc(p ? p.name : 'They')} said: "No, thanks."`, 2200); }
+  else if (m.t === 'kill' && GROUP.id && m.g === GROUP.id && MONSTERS[m.m] && Math.hypot(m.x - player.pos.x, m.z - player.pos.z) < 70) {
+    onKill(m.m); gainXP(Math.max(1, Math.round(MONSTERS[m.m].xp * 0.5)));
+  } else if (m.t === 'buff' && GROUP.id && m.g === GROUP.id && Math.hypot(m.x - player.pos.x, m.z - player.pos.z) < 16) {
+    if (m.k === 'heal' && !DUEL.on) { const h = Math.round(maxHP() * 0.35); S.hp = Math.min(maxHP(), S.hp + h); floatText(`+${h}`, player.pos.clone().add(new THREE.Vector3(0, 2.4, 0)), '#5fe07a'); fxRing(player.pos.x, player.pos.z, '#7dff8a', 3); logLine(`✨ ${esc(m.n)} healed you`); }
+    if (m.k === 'cry') { BUFF.cry = performance.now() + 8000; fxRing(player.pos.x, player.pos.z, '#ff3a3a', 3); logLine(`📣 ${esc(m.n)}'s War Cry: +30% attack!`); }
+    hudDirty = true;
+  }
+});
+function peerMenu(e) {
+  const p = e.data, C = CLASSES[p.look] || CLASSES.Knight, mate = GROUP.id && p.g === GROUP.id;
+  openModal(`<button class="btn alt x" id="xx">✕</button><h2>${C.icon} ${esc(p.name || 'Hero')}</h2><div class="small" style="margin-bottom:10px">${esc((RACES[p.race] || RACES.human).name)} ${esc(C.name)} · Level ${p.lvl || 1} · ${p.w || 0} arena win${p.w === 1 ? '' : 's'} today</div>
+  <div class="foot" style="justify-content:flex-start">${mate ? '<button class="btn alt" id="pmLeave">Leave group</button>' : '<button class="btn green" id="pmInv">👥 Invite to my group</button>'}<button class="btn red" id="pmDuel" ${p.d || DUEL.on || DUEL.pending ? 'disabled' : ''}>⚔️ Challenge to a duel</button><button class="btn blue" id="pmWave">👋 Say hello</button></div>`);
+  $('xx').onclick = closeModal;
+  if ($('pmInv')) $('pmInv').onclick = () => { closeModal(); invite(e); };
+  if ($('pmLeave')) $('pmLeave').onclick = () => { closeModal(); setGroup(null); };
+  $('pmDuel').onclick = () => challenge(e.id);
+  $('pmWave').onclick = () => { closeModal(); sayPhrase(0); };
+}
+
 // ======================= LOOP =======================
-const clock = new THREE.Clock(); let frame = 0, slowT = 0;
+const clock = new THREE.Clock(); let frame = 0, slowT = 0, skT = 0;
 function loop() { requestAnimationFrame(loop); step(); }
 function step() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   updatePlayer(dt); if (player.c) player.c.mixer.update(dt);
   for (const N of Object.values(npcs)) { if (!N.c.mixer) continue; const d = Math.hypot(N.pos.x - player.pos.x, N.pos.z - player.pos.z); N.c.root.visible = d < 150; N.holder.visible = d < 60; if (d > 55) continue; N.c.mixer.update(dt); if (performance.now() > N.c.lockUntil) N.c.play('Idle_A', 0.3); }
-  if (mode === 'play') { updateMonsters(dt, t); updateProjectiles(dt); updatePeers(dt); sendState(false); updateDuel(dt); if (ONL.idleT > 300 && net.NET.ch) { goOffline('away'); toast('You were away, so you left the online world.<br><span style="font-size:.6em">Move to come back!</span>', 3500); } }
+  if (mode === 'play') { updateMonsters(dt, t); updateProjectiles(dt); updatePeers(dt); sendState(false); updateDuel(dt); updateDash(dt); updateFx(dt); if ((skT += dt) > 0.25) { skT = 0; skillHUD(); groupHUD(); } if (ONL.idleT > 300 && net.NET.ch) { goOffline('away'); toast('You were away, so you left the online world.<br><span style="font-size:.6em">Move to come back!</span>', 3500); } }
   for (const f of animated) f(t, dt);
   for (const k of picks) if (k.mesh.visible) { k.mesh.rotation.y = t * 1.2; }
   for (const g of groundItems) { g.mesh.userData.sp.position.y = 1.15 + Math.sin(t * 3 + g.pos.x) * 0.12; }
@@ -1657,5 +1841,5 @@ setProgress(p => { $('lbar').style.width = `${Math.round(p * 100)}%`; });
   refreshMarks(); buildMenu(); $('menu').classList.remove('hidden');
   playMusic('m_menu');
   loop();
-  if (location.search.includes('debug')) window.WB = { net, ONL, sayPhrase, get st() { return { mode, dlgOpen, modalOpen, near: near && near.label, slowT } }, player, cam, get S() { return S; }, set S(v) { S = v; }, QBY, talkTo, addItem, monsters, npcs, startQuest, advance, complete, refreshMarks, step, save, interact, attack, ITEMS };
+  if (location.search.includes('debug')) window.WB = { net, ONL, sayPhrase, SKCD, BUFF, GROUP, useSkill, get st() { return { mode, dlgOpen, modalOpen, near: near && near.label, slowT } }, player, cam, get S() { return S; }, set S(v) { S = v; }, QBY, talkTo, addItem, monsters, npcs, startQuest, advance, complete, refreshMarks, step, save, interact, attack, ITEMS };
 })();
