@@ -147,6 +147,54 @@ input[type=text]{width:100%;padding:9px 12px;border-radius:10px;border:2px solid
  #help{display:none}#prompt{bottom:12px;font-size:14px}#btns{bottom:auto;top:150px;right:8px;flex-direction:column}#potBtn{bottom:auto;top:8px}
  #banner h2{font-size:32px}#toast{font-size:20px}#onl{top:136px;width:110px;right:8px;font-size:10px}#chatBtn{left:auto;right:8px;bottom:auto;top:330px}#skills{left:auto;right:8px;bottom:auto;top:430px}#grp{top:150px;left:8px;font-size:11px}#powBtn{left:auto;right:8px;bottom:auto;top:380px}#duel{width:92vw;top:4px}#phr{grid-template-columns:1fr 1fr;bottom:8px}
 }
+
+/* ---------- phones and tablets ---------- */
+#tbtns{position:absolute;inset:0;pointer-events:none;display:block!important}
+.tb{position:absolute;width:var(--s);height:var(--s);border-radius:50%;border:3px solid rgba(255,255,255,.85);pointer-events:auto;font-size:calc(var(--s)*.38);line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(#ffd468,#f0a920);box-shadow:0 4px 0 rgba(30,18,8,.45);color:#2a1d12;font-family:Nunito,sans-serif;font-weight:900;padding:0;touch-action:none;margin-right:env(safe-area-inset-right);margin-bottom:env(safe-area-inset-bottom)}
+.tb:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(30,18,8,.45)}
+.tb small{font-size:10px;font-weight:900;margin-top:1px}
+.tb.blue{background:linear-gradient(#7cd0ff,#2f8fe0);color:#fff}.tb.red{background:linear-gradient(#ff8a7a,#d9433b);color:#fff}.tb.alt{background:linear-gradient(#fff8ea,#eadcbf)}.tb.gold{background:linear-gradient(#fff2a0,#ffb020)}
+.tb.sk{background:linear-gradient(#e9dcff,#9a7ae0);color:#fff}.tb.wait{filter:grayscale(.8);opacity:.75}.tb .cdn{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;color:#fff;text-shadow:0 2px 3px #000;background:rgba(0,0,0,.35);border-radius:50%}
+.tb.ready{box-shadow:0 0 16px #ffd23a,0 4px 0 rgba(30,18,8,.45)}
+body.touch #help,body.touch #potBtn,body.touch #powBtn,body.touch #chatBtn,body.touch #skills,body.touch #btns .tx{display:none!important}
+body.touch #card{left:8px;top:8px;width:172px;padding:5px 8px;border-width:2px}
+body.touch #card .top{font-size:12px}body.touch .bar2{height:10px}body.touch .bar2 b{font-size:8px;line-height:10px}
+body.touch #track{left:8px;top:84px;width:calc(100vw - 132px);max-width:330px;padding:5px 8px;border-width:2px}
+body.touch #track .qt{font-size:11px}body.touch #track .od{font-size:12px}body.touch #track .btn{font-size:11px;padding:4px 8px}
+body.touch #mini{width:96px;height:96px;right:8px;top:8px;border-width:3px}
+body.touch #realmName{top:106px;width:96px;right:8px;font-size:10px}
+body.touch #onl{top:122px;width:96px;right:8px;font-size:10px;padding:3px 4px}
+body.touch #btns{top:150px;right:8px;bottom:auto;flex-direction:column;gap:7px}
+body.touch #btns .btn{width:46px;height:46px;border-radius:50%;padding:0;font-size:20px;display:flex;align-items:center;justify-content:center}
+body.touch #arrow{top:200px;bottom:auto;width:38px;height:38px;margin-left:-19px}
+body.touch #prompt{bottom:auto;top:46%;font-size:15px;padding:8px 14px;max-width:78vw;overflow:hidden;text-overflow:ellipsis}
+body.touch #log{left:10px;bottom:178px;font-size:12px;max-width:52vw}
+body.touch #toast{font-size:20px;top:28%}
+body.touch #banner h2{font-size:30px}body.touch #banner div{font-size:14px}body.touch #banner{top:22%}
+body.touch #bossbar{top:auto;bottom:300px;width:62vw}
+body.touch #duel{top:auto;bottom:300px;width:94vw;padding:5px 8px;font-size:12px}
+body.touch #grp{top:auto;bottom:290px;left:8px;font-size:11px;padding:4px 8px}
+body.touch #phr{bottom:auto;top:30%;grid-template-columns:1fr 1fr;width:92vw}
+body.touch #stick{left:18px;bottom:28px;width:132px;height:132px;margin-bottom:env(safe-area-inset-bottom)}
+body.touch #stick i{left:38px;top:38px;width:50px;height:50px}
+body.touch #dlg{bottom:6px;padding:8px 10px;gap:8px}
+body.touch #dlg .face{flex-basis:42px;height:42px;font-size:20px}body.touch #dlg .txt{font-size:15px}body.touch #dlg .opt{font-size:14px;padding:7px 10px}
+/* phone held sideways: less height, so smaller buttons and the menu buttons in a row */
+@media (orientation:landscape){
+ body.touch #tbtns{transform:scale(.8);transform-origin:100% 100%}
+ body.touch #track{width:min(42vw,330px)}
+ body.touch #btns{top:8px;right:112px;flex-direction:row}
+ body.touch #realmName{display:none}
+ body.touch #onl{top:108px}
+ body.touch #arrow{bottom:auto;top:62px;left:50%}
+ body.touch #log{bottom:150px}
+ body.touch #stick{width:116px;height:116px;bottom:16px}body.touch #stick i{left:30px;top:30px}
+ body.touch #bossbar,body.touch #duel{bottom:auto;top:62px;width:46vw}
+ body.touch #grp{bottom:auto;top:60px;left:auto;right:112px}
+ body.touch #prompt{top:auto;bottom:14px;max-width:36vw;font-size:13px}
+ body.touch #phr{top:16%}
+ body.touch #dlg .txt{font-size:14px}
+}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
@@ -202,11 +250,11 @@ input[type=text]{width:100%;padding:9px 12px;border-radius:10px;border:2px solid
  <div id="banner"><h2></h2><div></div></div>
  <div id="log"></div>
  <button class="btn red" id="potBtn">🧪 <span id="potN">0</span> (Q)</button>
- <div id="btns"><button class="btn alt" id="bBag">🎒 Bag (I)</button><button class="btn alt" id="bJour">📜 Journal (J)</button><button class="btn alt" id="bMap">🗺️ Map (M)</button><button class="btn alt" id="bMenu">☰</button></div>
+ <div id="btns"><button class="btn alt" id="bBag">🎒<span class="tx"> Bag (I)</span></button><button class="btn alt" id="bJour">📜<span class="tx"> Journal (J)</span></button><button class="btn alt" id="bMap">🗺️<span class="tx"> Map (M)</span></button><button class="btn blue hidden" id="bSay">💬</button><button class="btn alt" id="bMenu">☰</button></div>
  <div id="help">WASD: move · Shift: run · Space: jump · Click / F: attack · E: talk / pick up · Q: potion · Drag: camera</div>
 </div>
 
-<div id="touch" class="hidden"><div id="stick"><i></i></div><div id="tbtns"><button class="btn alt" id="tJump">Jump</button><button class="btn blue" id="tAct">Talk</button><button class="btn" id="tAtk">⚔️</button><button class="btn red" id="tPot">🧪</button></div></div>
+<div id="touch" class="hidden"><div id="stick"><i></i></div><div id="tbtns"><button class="tb" id="tAtk" style="--s:86px;right:16px;bottom:38px">⚔️</button><button class="tb blue" id="tAct" style="--s:60px;right:120px;bottom:24px">💬<small>Talk</small></button><button class="tb alt" id="tJump" style="--s:50px;right:172px;bottom:104px">⤴️<small>Jump</small></button><button class="tb sk" id="tSk0" style="--s:56px;right:108px;bottom:120px"></button><button class="tb sk" id="tSk1" style="--s:56px;right:36px;bottom:154px"></button><button class="tb gold" id="tPow" style="--s:48px;right:112px;bottom:196px">💥</button><button class="tb red" id="tPot" style="--s:48px;right:40px;bottom:228px">🧪<small id="tPotN">0</small></button></div></div>
 
 <div id="dlg" class="hidden"></div>
 <div id="modal" class="hidden"><div id="mbox"></div></div>

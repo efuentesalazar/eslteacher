@@ -155,7 +155,7 @@ function drawHUD() {
   const mh = maxHP(); $('hpb').firstChild.style.width = `${Math.max(0, S.hp) / mh * 100}%`; $('hpb').lastChild.textContent = `${Math.ceil(Math.max(0, S.hp))} / ${mh} HP`;
   $('xpb').firstChild.style.width = `${S.xp / xpNext() * 100}%`; $('xpb').lastChild.textContent = `${S.xp} / ${xpNext()} XP`;
   $('cGold').textContent = `🪙 ${S.gold}`; $('cStats').textContent = `⚔️ ${atk()} · 🛡️ ${def()}`;
-  $('potN').textContent = ['potion_s', 'potion_m'].reduce((a, id) => a + count(id), 0);
+  $('potN').textContent = $('tPotN').textContent = ['potion_s', 'potion_m'].reduce((a, id) => a + count(id), 0);
   drawTracker();
 }
 
@@ -988,7 +988,8 @@ function findNear() {
   if (isActive('s_lanterns')) world.lanterns.forEach((l, i) => { if (!S.lit.includes(i)) consider(Math.hypot(l.x - pp.x, l.z - pp.z), 2.6, { t: 'lantern', i, label: 'Light the lantern 🕯️' }); });
   showPrompt();
 }
-const isTouch = matchMedia('(pointer: coarse)').matches;
+const isTouch = matchMedia('(pointer: coarse)').matches || location.search.includes('touch');
+if (isTouch) document.body.classList.add('touch');
 function showPrompt() { const el = $('prompt'); if (near && !busy()) { el.innerHTML = `<kbd>${isTouch ? 'Tap' : 'E'}</kbd>${esc(near.label)}`; el.classList.remove('hidden'); } else el.classList.add('hidden'); }
 async function interact() {
   if (dlgOpen) { if (dlgNext) dlgNext(); return; }
@@ -1201,6 +1202,10 @@ if (isTouch) {
   $('tAct').addEventListener('pointerdown', () => interact());
   $('tAtk').addEventListener('pointerdown', () => attack());
   $('tPot').addEventListener('pointerdown', () => quickPotion());
+  $('tSk0').addEventListener('pointerdown', () => useSkill(0));
+  $('tSk1').addEventListener('pointerdown', () => useSkill(1));
+  $('tPow').addEventListener('pointerdown', () => powerStrike());
+  $('bSay').onclick = togglePhrases;
 }
 $('prompt').addEventListener('click', () => interact());
 $('potBtn').onclick = quickPotion; $('powBtn').onclick = powerStrike; $('chatBtn').onclick = togglePhrases; $('onl').onclick = () => { if (!S.online) { S.online = true; save(); goOnline(); } else if (!net.NET.ok) goOnline(); }; $('bBag').onclick = openBag; $('bJour').onclick = openJournal; $('bMap').onclick = openMap;
@@ -1351,9 +1356,10 @@ function goOffline(why) { GROUP.id = null; if ($('grp')) $('grp').classList.add(
 function onlineHUD() {
   const el = $('onl'); if (!el) return;
   const on = net.NET.ok;
-  el.innerHTML = !S.online ? '🌐 Offline' : on ? `🌐 Online · ${NET_count() + 1} player${NET_count() ? 's' : ''}` : ONL.status === 'connecting' ? '🌐 Connecting…' : ONL.status === 'full' ? '🌐 World full' : ONL.status === 'away' ? '🌐 Away (move to return)' : '🌐 Offline';
+  el.innerHTML = !S.online ? '🌐 Offline' : on ? (isTouch ? `🌐 ${NET_count() + 1} online` : `🌐 Online · ${NET_count() + 1} player${NET_count() ? 's' : ''}`) : ONL.status === 'connecting' ? '🌐 Connecting…' : ONL.status === 'full' ? '🌐 World full' : ONL.status === 'away' ? '🌐 Away (move to return)' : '🌐 Offline';
   el.classList.toggle('on', on);
   $('chatBtn').classList.toggle('hidden', !on || mode !== 'play');
+  $('bSay').classList.toggle('hidden', !on || mode !== 'play' || !isTouch);
   if (!on) $('phr').classList.add('hidden');
 }
 function sendState(force) {
@@ -1676,6 +1682,8 @@ function updateDash(dt) {
 }
 function skillHUD() {
   const C = myClass(), now = performance.now();
+  C.skills.forEach((sk, i) => { const b = $('tSk' + i); if (!b) return; const left = Math.ceil((SKCD[i] - now) / 1000); b.innerHTML = `${sk.icon}<small>${esc(sk.name.split(' ')[0])}</small>${left > 0 ? `<span class="cdn">${left}</span>` : ''}`; b.classList.toggle('wait', left > 0); });
+  if ($('tPow')) { $('tPow').classList.toggle('ready', POWER.ready); $('tPow').classList.toggle('wait', POWER.cd > 0 && !POWER.ready); }
   C.skills.forEach((sk, i) => {
     const b = $('sk' + i); if (!b) return;
     const left = Math.ceil((SKCD[i] - now) / 1000);
@@ -1755,6 +1763,7 @@ function step() {
   if (slowT > 0.3 && mode === 'play') { slowT = 0; updateZones(); checkSteps(); findNear(); refreshMarks(); if (frame % 10 === 0) save(); }
   updateCamera(dt);
   if (hudDirty && mode === 'play') drawHUD();
+  if (isTouch) { const hide = busy() ? 'hidden' : '', tc = $('touch'); if (tc.style.visibility !== hide) tc.style.visibility = hide; }
   if (mode === 'play') { updateArrow(); if (frame & 1) drawMini(t); }
   pulseGlow(player.c, t); if (bagOpen && preview.c) pulseGlow(preview.c, t);
   renderPreview(dt);
