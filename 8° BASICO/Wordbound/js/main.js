@@ -7,6 +7,7 @@ import { PLACES, NPCS, MONSTERS, ZONES, PICKS, PORTALS } from './data/world_data
 import { QUESTS, DOCS, ACTS, SKILLS, SKILLS_ES } from './data/quests.js';
 import { GLOSS } from './data/gloss.js';
 import { logAnswer, student } from './track.js';
+import * as net from './net.js';
 const GAME = 'wordbound'; // id del juego en el Panel del profe
 
 const $ = id => document.getElementById(id);
@@ -26,7 +27,7 @@ const SHOPS = {
 
 // ======================= SAVE =======================
 const SAVE_KEY = 'wordbound_v1';
-function fresh() { return { name: '', race: 'human', look: 'Knight', lvl: 1, xp: 0, gold: 20, hp: 95, inv: [], eq: { head: null, body: null, cape: null, weapon: null, off: null }, q: {}, track: null, flags: {}, read: {}, reveal: {}, phr: [], stats: {}, pos: null, town: 0, visited: [0], lit: [], portals: ['p_bright'], done: false, voice: true, rate: 0.92, music: 0.3 }; }
+function fresh() { return { name: '', race: 'human', look: 'Knight', lvl: 1, xp: 0, gold: 20, hp: 95, inv: [], eq: { head: null, body: null, cape: null, weapon: null, off: null }, q: {}, track: null, flags: {}, read: {}, reveal: {}, phr: [], stats: {}, pos: null, town: 0, visited: [0], lit: [], portals: ['p_bright'], done: false, online: true, voice: true, rate: 0.92, music: 0.3 }; }
 let S = fresh();
 try { const raw = localStorage.getItem(SAVE_KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
 // old saves kept equipment as plain ids: give them quality and level
@@ -104,6 +105,7 @@ async function refreshEquip() {
   if (!player.c) return;
   await applyEquip(player.c, S.eq);
   if (preview.c) applyEquip(preview.c, S.eq);
+  net.updateMe(myInfo());
   S.hp = Math.min(S.hp, maxHP()); hudDirty = true;
 }
 function equipFromInv(idx) {
@@ -288,7 +290,7 @@ function openDoc(id) {
 // ======================= XP / LEVEL =======================
 function gainXP(n) {
   S.xp += n; logLine(`✨ +${n} XP`);
-  while (S.xp >= xpNext()) { S.xp -= xpNext(); S.lvl++; S.hp = maxHP(); sfx('levelup', 0.7); banner(`Level ${S.lvl}!`, 'You feel stronger. ⚔️ +1.5 attack · ❤️ +15 HP'); if (player.c) player.c.play('Cheering', 0.2, true); }
+  while (S.xp >= xpNext()) { S.xp -= xpNext(); S.lvl++; S.hp = maxHP(); sfx('levelup', 0.7); net.updateMe(myInfo()); banner(`Level ${S.lvl}!`, 'You feel stronger. ⚔️ +1.5 attack · ❤️ +15 HP'); if (player.c) player.c.play('Cheering', 0.2, true); }
   hudDirty = true; save();
 }
 
@@ -752,7 +754,7 @@ async function createMonster(zi, elite) {
 function placeMonster(m) {
   const z = ZONES[m.zi]; const a = Math.random() * 6.28, r = Math.random() * z.r;
   m.pos.set(z.x + Math.cos(a) * r, 0, z.z + Math.sin(a) * r); m.pos.y = H(m.pos.x, m.pos.z);
-  m.hp = m.d.hp; m.dead = false; m.deadT = 0; m.state = 'idle'; m.cd = 0; m.windup = undefined; m.c.root.visible = true; m.c.root.position.copy(m.pos);
+  m.hp = m.d.hp; m.hitByMe = false; m.dead = false; m.deadT = 0; m.state = 'idle'; m.cd = 0; m.windup = undefined; m.c.root.visible = true; m.c.root.position.copy(m.pos);
   if (m.d.kind === 'slime') m.c.root.scale.setScalar(m.scale * 1.3); else if (m.d.kind === 'animal') m.c.root.rotation.z = 0;
   if (m.c.mixer) { m.c.mixer.stopAllAction(); m.c.cur = null; m.c.lockUntil = 0; }
   if (m.c.play) m.c.play('Idle_A', 0);
@@ -840,12 +842,14 @@ function damageMonster(m, dmg, crit) {
   floatText(`${crit ? '💥' : ''}${dmg}`, m.pos.clone().add(new THREE.Vector3(0, 2 * m.scale, 0)), crit ? '#ffd23a' : '#ffffff');
   sfx(m.d.kind === 'slime' ? 'squish' : m.d.kind === 'char' ? 'clang' : 'punch', 0.5);
   if (m.c.play && m.hp > 0 && Math.random() < 0.5) m.c.play('Hit_A', 0.1, true);
+  if (m.d.elite) { m.hitByMe = true; const now = performance.now(); if (m.hp <= 0) net.send('boss', { z: m.zi, dead: 1 }); else if (now - (m.syncT || 0) > 1500) { m.syncT = now; net.send('boss', { z: m.zi, hp: Math.round(m.hp) }); } }
   if (m.hp <= 0) killMonster(m);
 }
-function killMonster(m) {
+function killMonster(m, noLoot) {
   m.dead = true; m.deadT = 0; m.state = 'dead'; if (m.lab) m.lab.visible = false;
   if (m.c.play) m.c.play(m.d.kind === 'char' && /Skeleton/.test(m.d.model) ? 'Skeletons_Death' : 'Death_A', 0.1, true);
   if (m.d.kind === 'animal') m.c.root.rotation.z = Math.PI / 2;
+  if (noLoot) return;   // another player beat this boss and you did not help
   const [g0, g1] = m.d.gold; const gold = g0 + Math.floor(Math.random() * (g1 - g0 + 1)); S.gold += gold; logLine(`🪙 +${gold}`); sfx('gold', 0.4);
   gainXP(m.d.xp);
   const drops = m.d.loot.filter(([id, p]) => Math.random() < p).map(([id]) => [id, 1]);
@@ -1141,6 +1145,8 @@ addEventListener('keydown', e => {
   }
   if (modalOpen) { if (e.code === 'Escape' && !$('modal').dataset.lock) closeModal(); else if ((e.code === 'KeyI' || e.code === 'Tab') && bagOpen) closeModal(); else if (e.code === 'KeyJ' && $('mbox').querySelector('.tabs')) closeModal(); else if (e.code === 'KeyM' && $('bigmap')) closeModal(); return; }
   if (mode !== 'play') return;
+  if (e.code === 'KeyT') togglePhrases();
+  if (/^Digit\d$/.test(e.code) && !$('phr').classList.contains('hidden')) { sayPhrase((+e.code.slice(5) + 9) % 10); return; }
   if (e.code === 'KeyE') interact();
   if (e.code === 'KeyF') attack();
   if (e.code === 'KeyQ') quickPotion();
@@ -1168,11 +1174,11 @@ if (isTouch) {
   $('tPot').addEventListener('pointerdown', () => quickPotion());
 }
 $('prompt').addEventListener('click', () => interact());
-$('potBtn').onclick = quickPotion; $('bBag').onclick = openBag; $('bJour').onclick = openJournal; $('bMap').onclick = openMap;
+$('potBtn').onclick = quickPotion; $('chatBtn').onclick = togglePhrases; $('onl').onclick = () => { if (!S.online) { S.online = true; save(); goOnline(); } else if (!net.NET.ok) goOnline(); }; $('bBag').onclick = openBag; $('bJour').onclick = openJournal; $('bMap').onclick = openMap;
 $('bMenu').onclick = () => {
   if (busy()) return;
   openModal(`<h2>☰ Menu</h2><div class="foot" style="justify-content:flex-start">
-   <button class="btn" id="m1">▶ Continue</button><button class="btn alt" id="m2">🔊 Voice: ${S.voice ? 'ON' : 'OFF'}</button><button class="btn alt" id="m3">🐢 Voice speed: ${S.rate < 0.8 ? 'slow' : 'normal'}</button><button class="btn alt" id="m4">🎵 Music: ${S.music > 0 ? 'ON' : 'OFF'}</button>
+   <button class="btn" id="m1">▶ Continue</button><button class="btn alt" id="m2">🔊 Voice: ${S.voice ? 'ON' : 'OFF'}</button><button class="btn alt" id="m3">🐢 Voice speed: ${S.rate < 0.8 ? 'slow' : 'normal'}</button><button class="btn alt" id="m4">🎵 Music: ${S.music > 0 ? 'ON' : 'OFF'}</button><button class="btn alt" id="m7">🌐 Online: ${S.online ? 'ON' : 'OFF'}</button>
    ${S.done ? '<button class="btn blue" id="m6">🏆 Certificate</button>' : ''}<button class="btn red" id="m5">🏠 Save and exit</button></div>
    <div class="small" style="margin-top:10px">The game saves automatically on this device.</div>`);
   $('m1').onclick = closeModal;
@@ -1180,6 +1186,7 @@ $('bMenu').onclick = () => {
   $('m3').onclick = () => { S.rate = S.rate < 0.8 ? 0.92 : 0.72; save(); closeModal(); $('bMenu').onclick(); };
   $('m4').onclick = () => { S.music = S.music > 0 ? 0 : 0.3; music.volume = S.music; save(); closeModal(); $('bMenu').onclick(); };
   $('m5').onclick = () => { save(); closeModal(); toMenu(); };
+  $('m7').onclick = () => { S.online = !S.online; save(); if (S.online) goOnline(); else goOffline(); closeModal(); $('bMenu').onclick(); };
   if ($('m6')) $('m6').onclick = certificate;
 };
 
@@ -1194,6 +1201,8 @@ function updatePlayer(dt) {
   const run = (keys.ShiftLeft || keys.ShiftRight || Math.hypot(stick.x, stick.y) > 0.85) ? 1 : 0;
   const attacking = performance.now() < c.lockUntil && /Attack|Shoot|Release/.test(c.curName || '');
   const speed = len * (run ? 10 : 5.4) * (attacking ? 0.35 : 1);
+  ONL.moving = speed > 0.3 || !player.ground;
+  if (len > 0.05 || attacking) { ONL.idleT = 0; if (ONL.status === 'away') goOnline(); } else ONL.idleT += dt;
   if (len > 0.05) {
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
     const mx = (fx * f + rx * s) / Math.hypot(f, s), mz = (fz * f + rz * s) / Math.hypot(f, s);
@@ -1250,6 +1259,124 @@ function updateAtmosphere(dt) {
   const T = REALMS[r].town; if (Math.hypot(T.x - player.pos.x, T.z - player.pos.z) < 30 && S.town !== r) { S.town = r; save(); }
 }
 
+
+// ======================= ONLINE (one open world) =======================
+const PHRASES = ['Hello! 👋', "Let's go!", 'Follow me!', 'Help me, please!', 'Thank you!', 'Good job!', 'Sorry!', 'Wait for me!', 'Where are you?', 'See you later!'];
+const PH_ANIM = { 0: 'Waving', 5: 'Cheering', 9: 'Waving' };
+const ONL = { peers: new Map(), lastSend: 0, lastPos: null, moving: false, idleT: 0, status: 'off', hiddenT: null };
+function myInfo() { return { name: S.name || 'Hero', race: S.race, look: S.look, lvl: S.lvl, x: Math.round(player.pos.x), z: Math.round(player.pos.z), eq: Object.fromEntries(Object.entries(S.eq).map(([k, e]) => [k, e ? [e.id, e.q, e.up] : null])) }; }
+function eqFrom(p) { const eq = {}; for (const k in p.eq || {}) { const v = p.eq[k]; eq[k] = v && ITEMS[v[0]] ? { id: v[0], q: v[1], up: Math.min(MAX_UP, +v[2] || 0) } : null; } return eq; }
+async function buildPeer(e) {
+  const p = e.data, token = (e.token || 0) + 1; e.token = token;
+  const c = await makeChar(LOOKS.some(l => l[0] === p.look) ? p.look : 'Knight', { race: RACES[p.race] ? p.race : 'human', strip: true });
+  await applyEquip(c, eqFrom(p));
+  if (!ONL.peers.has(e.id) || e.token !== token) return;
+  const wasVisible = e.c ? e.c.root.visible : false;
+  if (e.c) scene.remove(e.c.root);
+  e.c = c; c.root.position.copy(e.pos); c.root.rotation.y = e.ry;
+  const lb = label(`${String(p.name || 'Hero').slice(0, 14)} · Lv ${p.lvl || 1}`, '#9fe8ff', 26, 3); lb.position.y = 3.1; c.root.add(lb);
+  c.root.visible = wasVisible || e.seen; scene.add(c.root);
+}
+function addPeer(p) {
+  if (ONL.peers.has(p.id)) return;
+  const pos = new THREE.Vector3(p.x || 0, 0, p.z || 0);
+  const e = { id: p.id, c: null, data: p, pos, target: pos.clone(), v: { x: 0, z: 0 }, ry: 0, last: performance.now(), seen: p.x !== undefined };
+  ONL.peers.set(p.id, e); buildPeer(e);
+}
+function removePeer(p) { const e = ONL.peers.get(p.id); if (e) { if (e.c) scene.remove(e.c.root); ONL.peers.delete(p.id); } onlineHUD(); }
+function bubble(c, text) {
+  if (!c) return;
+  const s = label(text, '#ffffff', 30, 3.4); s.position.y = 3.8; c.root.add(s);
+  if (c.bubble) c.root.remove(c.bubble); c.bubble = s;
+  setTimeout(() => { if (c.bubble === s) { c.root.remove(s); c.bubble = null; } }, 4500);
+}
+net.on('join', p => { addPeer(p); logLine(`🌐 ${esc(p.name || 'Someone')} joined the world`); onlineHUD(); });
+net.on('leave', removePeer);
+net.on('update', (p, changed) => { const e = ONL.peers.get(p.id); if (!e) return; e.data = p; if (changed || e.lvl !== p.lvl) { e.lvl = p.lvl; buildPeer(e); } });
+net.on('st', m => {
+  const e = ONL.peers.get(m.id); if (!e || !isFinite(m.x) || !isFinite(m.z)) return;
+  e.target.set(m.x, 0, m.z); e.v = { x: m.vx || 0, z: m.vz || 0 }; e.ry = m.ry || 0; e.last = performance.now();
+  if (!e.seen || e.pos.distanceTo(e.target) > 25) e.pos.copy(e.target);
+  e.seen = true; if (e.c) e.c.root.visible = true;
+});
+net.on('say', m => {
+  const e = ONL.peers.get(m.id), t = PHRASES[m.p]; if (!e || !t) return;
+  bubble(e.c, t); logLine(`💬 ${esc(e.data.name || 'Someone')}: ${esc(t)}`);
+  if (e.c && PH_ANIM[m.p]) e.c.play(PH_ANIM[m.p], 0.2, true);
+});
+net.on('boss', m => {
+  const zs = zoneState[m.z]; if (!zs) return;
+  const b = zs.mons.find(x => x.d.elite); if (!b || b.dead) return;
+  if (m.dead) killMonster(b, !b.hitByMe);
+  else if (m.hp < b.hp) { b.hp = Math.max(1, m.hp); monLabel(b); }
+});
+net.on('status', s => {
+  ONL.status = s;
+  if (s === 'full') toast('The online world is full (20 players).<br><span style="font-size:.6em">You are playing alone for now. Try again later!</span>', 3500);
+  if (s === 'online') { logLine(`🌐 You are online with ${NET_count()} other player(s)`); }
+  onlineHUD();
+});
+const NET_count = () => net.NET.peers.size;
+function goOnline() { if (!S.online || mode !== 'play' || net.NET.ch) return; ONL.status = 'connecting'; onlineHUD(); net.connect(myInfo()).then(() => { ONL.lastSend = 0; sendState(true); }); }
+function goOffline(why) { net.disconnect(); for (const e of ONL.peers.values()) if (e.c) scene.remove(e.c.root); ONL.peers.clear(); ONL.status = why || 'off'; onlineHUD(); }
+function onlineHUD() {
+  const el = $('onl'); if (!el) return;
+  const on = net.NET.ok;
+  el.innerHTML = !S.online ? '🌐 Offline' : on ? `🌐 Online · ${NET_count() + 1} player${NET_count() ? 's' : ''}` : ONL.status === 'connecting' ? '🌐 Connecting…' : ONL.status === 'full' ? '🌐 World full' : ONL.status === 'away' ? '🌐 Away (move to return)' : '🌐 Offline';
+  el.classList.toggle('on', on);
+  $('chatBtn').classList.toggle('hidden', !on || mode !== 'play');
+  if (!on) $('phr').classList.add('hidden');
+}
+function sendState(force) {
+  if (!net.NET.ok) return;
+  const now = performance.now(), p = player.pos, moving = ONL.moving;
+  const a = player.c?.curName || 'Idle_A';
+  if (moving && (force || now - ONL.lastSend > 1500)) {
+    const dt = Math.max(0.3, (now - ONL.lastSend) / 1000), lp = ONL.lastPos || p;
+    const vx = ONL.lastPos ? (p.x - lp.x) / dt : 0, vz = ONL.lastPos ? (p.z - lp.z) / dt : 0;
+    net.send('st', { x: +p.x.toFixed(1), z: +p.z.toFixed(1), ry: +player.ry.toFixed(2), vx: +vx.toFixed(1), vz: +vz.toFixed(1), a });
+    ONL.lastSend = now; ONL.lastPos = p.clone(); ONL.sentStop = false;
+  } else if (!moving && !ONL.sentStop && now - ONL.lastSend > 300) {
+    net.send('st', { x: +p.x.toFixed(1), z: +p.z.toFixed(1), ry: +player.ry.toFixed(2), vx: 0, vz: 0, a: 'Idle_A' });
+    ONL.lastSend = now; ONL.lastPos = p.clone(); ONL.sentStop = true;
+  }
+}
+function updatePeers(dt) {
+  const now = performance.now();
+  for (const e of ONL.peers.values()) {
+    if (!e.c) continue;
+    const k = Math.min(2, (now - e.last) / 1000);
+    const px = e.target.x + e.v.x * k, pz = e.target.z + e.v.z * k;
+    e.pos.x += (px - e.pos.x) * Math.min(1, dt * 4); e.pos.z += (pz - e.pos.z) * Math.min(1, dt * 4);
+    e.pos.y = H(e.pos.x, e.pos.z);
+    const d = e.pos.distanceTo(player.pos), c = e.c;
+    c.root.visible = e.seen && d < 140;
+    if (!c.root.visible) continue;
+    c.root.position.copy(e.pos);
+    let dr = e.ry - c.root.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); c.root.rotation.y += dr * Math.min(1, dt * 6);
+    const sp = Math.hypot(e.v.x, e.v.z) * (k < 1.9 ? 1 : 0);
+    if (performance.now() > c.lockUntil) c.play(sp > 6 ? 'Running_A' : sp > 0.5 ? 'Walking_A' : 'Idle_A', 0.25);
+    if (d < 70) { c.mixer.update(dt); pulseGlow(c, clock.elapsedTime); }
+  }
+}
+function sayPhrase(i) {
+  if (!net.NET.ok) return;
+  net.send('say', { p: i }); bubble(player.c, PHRASES[i]); speak(PHRASES[i].replace(/[^\w' !?,.]/g, ''), 'me', true);
+  if (PH_ANIM[i]) player.c.play(PH_ANIM[i], 0.2, true);
+  $('phr').classList.add('hidden'); sfx('click', 0.3);
+}
+function togglePhrases() {
+  if (!net.NET.ok || busy()) return;
+  const el = $('phr');
+  el.innerHTML = PHRASES.map((t, i) => `<button class="btn alt" data-p="${i}"><kbd>${(i + 1) % 10}</kbd> ${esc(t)}</button>`).join('');
+  el.querySelectorAll('[data-p]').forEach(b => b.onclick = () => sayPhrase(+b.dataset.p));
+  el.classList.toggle('hidden');
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { ONL.hiddenT = setTimeout(() => { if (net.NET.ch) goOffline('away'); }, 60000); }
+  else { clearTimeout(ONL.hiddenT); if (ONL.status === 'away') goOnline(); }
+});
+
 // ======================= LOOP =======================
 const clock = new THREE.Clock(); let frame = 0, slowT = 0;
 function loop() { requestAnimationFrame(loop); step(); }
@@ -1257,7 +1384,7 @@ function step() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   updatePlayer(dt); if (player.c) player.c.mixer.update(dt);
   for (const N of Object.values(npcs)) { if (!N.c.mixer) continue; const d = Math.hypot(N.pos.x - player.pos.x, N.pos.z - player.pos.z); N.c.root.visible = d < 150; N.holder.visible = d < 60; if (d > 55) continue; N.c.mixer.update(dt); if (performance.now() > N.c.lockUntil) N.c.play('Idle_A', 0.3); }
-  if (mode === 'play') { updateMonsters(dt, t); updateProjectiles(dt); }
+  if (mode === 'play') { updateMonsters(dt, t); updateProjectiles(dt); updatePeers(dt); sendState(false); if (ONL.idleT > 300 && net.NET.ch) { goOffline('away'); toast('You were away, so you left the online world.<br><span style="font-size:.6em">Move to come back!</span>', 3500); } }
   for (const f of animated) f(t, dt);
   for (const k of picks) if (k.mesh.visible) { k.mesh.rotation.y = t * 1.2; }
   for (const g of groundItems) { g.mesh.userData.sp.position.y = 1.15 + Math.sin(t * 3 + g.pos.x) * 0.12; }
@@ -1311,7 +1438,7 @@ $('bCred').onclick = () => {
 };
 $('bPlay').onclick = () => start();
 function toMenu() {
-  mode = 'menu'; endDialog(); $('menu').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
+  mode = 'menu'; endDialog(); goOffline(); $('menu').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
   buildMenu(); playMusic('m_menu');
 }
 async function start() {
@@ -1321,6 +1448,7 @@ async function start() {
   if (S.pos) player.pos.set(S.pos[0], 0, S.pos[1]); else player.pos.set(3, 0, 10);
   cam.yaw = player.ry + Math.PI; curRealm = -1; S.hp = Math.max(1, Math.min(S.hp, maxHP()));
   hudDirty = true; refreshMarks();
+  goOnline(); onlineHUD();
   if (!S.flags.intro) {
     S.flags.intro = true; save();
     focus = new THREE.Vector3(0, H(0, 0), 0);
@@ -1349,5 +1477,5 @@ setProgress(p => { $('lbar').style.width = `${Math.round(p * 100)}%`; });
   refreshMarks(); buildMenu(); $('menu').classList.remove('hidden');
   playMusic('m_menu');
   loop();
-  if (location.search.includes('debug')) window.WB = { get st() { return { mode, dlgOpen, modalOpen, near: near && near.label, slowT } }, player, cam, get S() { return S; }, set S(v) { S = v; }, QBY, talkTo, addItem, monsters, npcs, startQuest, advance, complete, refreshMarks, step, save, interact, attack, ITEMS };
+  if (location.search.includes('debug')) window.WB = { net, ONL, sayPhrase, get st() { return { mode, dlgOpen, modalOpen, near: near && near.label, slowT } }, player, cam, get S() { return S; }, set S(v) { S = v; }, QBY, talkTo, addItem, monsters, npcs, startQuest, advance, complete, refreshMarks, step, save, interact, attack, ITEMS };
 })();
