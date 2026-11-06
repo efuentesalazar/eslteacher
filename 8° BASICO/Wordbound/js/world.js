@@ -236,6 +236,7 @@ async function greenvale() {
   for (const [k, x, z, h, r] of B) prop(k, x, z, h, { r, ry: Math.atan2(-x, -z) });
   for (const [x, z] of [[-18, 10], [-20, 13], [-24, 12]]) prop(['hx/crate_A_big', 'hx/barrel', 'hx/sack'][Math.floor(rnd() * 3)], x, z, 0.9, { r: 0.6 });
   prop('hx/weaponrack', 20, -10, 1.6, { r: 0.6, ry: -Math.PI / 2 }); anvil(14, -13);
+  crystal(-18, -15, 2.6, '#ffd23a'); anvil(-13, -16);
   for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2 + 0.2; prop('dg/torch_lit', Math.cos(a) * 14, Math.sin(a) * 14, 2.2, { r: 0.25 }); }
   // farm
   const F = PLACES.farm;
@@ -280,6 +281,7 @@ async function stonehold() {
   block(T.x + 4, T.z, 30); prop('dg/barrel_large', 156, 22, 1.4, { r: 0.7 }); prop('dg/crates_stacked', 155, 24, 1.6, { r: 0.9 });
   prop('hx/building_stage_A', 186, 18, 2, { r: 2.5 }); for (let k = 0; k < 3; k++) prop('hx/crate_A_small', 184 + k, 26, 0.6);
   // mine
+  crystal(181, -17, 2.4, '#a070ff'); anvil(175, -16);
   prop('hx/building_mine_yellow', 206, -44, 7, { r: 4, ry: Math.PI }); cart(198, -52); anvil(200, -40);
   crystal(229, -40, 5); crystal(232, -34, 2.5, '#7af0ff'); crystal(188, -64, 2, '#4ad0ff');
   waterfall(212, -84);

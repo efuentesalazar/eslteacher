@@ -74,6 +74,9 @@ export const ITEMS = {
   sand_glass:  { n: 'Desert Glass', t: 'misc', price: 8, icon: '🔶', d: 'Orange glass made by the hot sun.' },
   ghost_dust:  { n: 'Ghost Dust', t: 'misc', price: 9, icon: '✨', d: 'Silver dust. It glows in the dark.' },
   wood:        { n: 'Wood', t: 'misc', price: 2, icon: '🪵', d: 'Some pieces of wood.' },
+  sparkstone:  { n: 'Sparkstone', t: 'misc', price: 30, icon: '🔹', d: 'A small blue stone full of magic. The Enchanter uses it to improve weapons and armour from +1 to +6.' },
+  moonstone:   { n: 'Moonstone', t: 'misc', price: 150, icon: '🌙', d: 'A silver stone that shines at night. It improves weapons and armour from +7 to +9.' },
+  starstone:   { n: 'Starstone', t: 'misc', price: 400, icon: '🌟', d: 'A very rare golden stone. Only big bosses carry it. It improves equipment from +10 to +12.' },
 
   // ---- quest items (you cannot sell them) ----
   egg:         { n: 'Egg', t: 'quest', icon: '🥚', d: 'A brown egg. Be careful!' },
@@ -111,3 +114,45 @@ export const ITEMS = {
 };
 export const SLOTS = [['head', 'Head', '⛑️'], ['cape', 'Cape', '🧣'], ['body', 'Armour', '🦺'], ['weapon', 'Weapon', '🗡️'], ['off', 'Off hand', '🛡️']];
 export const TYPE_NAME = { weapon: 'Weapon', off: 'Shield / book', head: 'Helmet / hat', body: 'Armour', cape: 'Cape', use: 'Food & potions', misc: 'Material', quest: 'Mission item' };
+
+// ---- quality and upgrades ----
+export const QUAL = {
+  c: { name: 'Common', color: '#8a8a8a', mult: 1 },
+  e: { name: 'Excellent', color: '#2f8fe0', mult: 1.35 },
+  d: { name: 'Divine', color: '#e0a000', mult: 1.8 }
+};
+export const MAX_UP = 12;
+export const isGear = id => ITEMS[id] && ['weapon', 'off', 'head', 'body', 'cape'].includes(ITEMS[id].t);
+/** e = {id, q, up} or an item id */
+export const entry = e => (typeof e === 'string' ? { id: e, q: 'c', up: 0 } : { id: e.id, q: e.q || 'c', up: e.up || 0 });
+export function itemStat(e, k) {
+  e = entry(e); const b = ITEMS[e.id] && ITEMS[e.id][k]; if (!b) return 0;
+  return Math.round(b * QUAL[e.q].mult + e.up * Math.max(1, b * 0.12));
+}
+export function fullName(e) { e = entry(e); const it = ITEMS[e.id]; if (!isGear(e.id)) return it.n; return `${e.q !== 'c' ? QUAL[e.q].name + ' ' : ''}${it.n}${e.up ? ' +' + e.up : ''}`; }
+export function itemValue(e) { e = entry(e); const it = ITEMS[e.id]; return Math.round((it.price || 2) * (isGear(e.id) ? QUAL[e.q].mult * (1 + e.up * 0.3) : 1)); }
+/** What the next upgrade needs: stone, how many, gold and the chance (0-1). */
+export function upgradeCost(e) {
+  e = entry(e); const L = e.up + 1; if (L > MAX_UP) return null;
+  const stone = L <= 6 ? 'sparkstone' : L <= 9 ? 'moonstone' : 'starstone';
+  const n = L <= 6 ? 1 + Math.floor((L - 1) / 3) : 1;
+  const gold = Math.round(15 * Math.pow(L, 1.6) * QUAL[e.q].mult);
+  const chance = L <= 3 ? 1 : L <= 6 ? 0.85 : L <= 9 ? 0.65 : 0.4;
+  return { L, stone, n, gold, chance };
+}
+/** Glow colour for an upgrade level. */
+export function glowOf(e) {
+  e = entry(e); const u = e.up;
+  if (!u) return e.q === 'd' ? { color: '#ffd23a', k: 0.12 } : null;
+  const color = u <= 3 ? '#ffffff' : u <= 6 ? '#4ab8ff' : u <= 9 ? '#c070ff' : '#ffc23d';
+  return { color, k: 0.1 + u * 0.045, sparkle: u >= 7 };
+}
+// random equipment found on monsters, by level of the monster
+export const TIERS = [
+  ['iron_sword', 'hunter_dagger', 'wood_shield', 'badge_shield', 'leather_armor', 'traveler_clothes', 'red_cape', 'wizard_hat', 'bear_hat'],
+  ['battle_axe', 'elf_bow', 'magic_wand', 'green_cloak', 'fur_armor', 'mage_robes', 'iron_helmet', 'mage_cape', 'spellbook'],
+  ['dwarf_axe', 'crossbow', 'knight_shield', 'plate_armor', 'bone_blade', 'oak_staff', 'hooded_cloak', 'rogue_mask'],
+  ['orc_cleaver', 'great_sword', 'heavy_xbow', 'orc_shield', 'spike_shield', 'elven_armor', 'dwarf_plate'],
+  ['shadow_staff', 'bone_shield', 'bone_helmet', 'orc_armor', 'bone_cloak', 'shadow_plate', 'golden_helmet']
+];
+export const tierOf = lvl => lvl < 3 ? 0 : lvl < 5 ? 1 : lvl < 7 ? 2 : lvl < 9 ? 3 : 4;

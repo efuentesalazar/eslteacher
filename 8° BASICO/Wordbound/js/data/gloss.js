@@ -39,5 +39,6 @@ export const GLOSS = {
   cave: 'cueva', tiny: 'diminuto', armour: 'armadura', cape: 'capa', bag: 'bolso, mochila', journal: 'diario', mission: 'misión', missions: 'misiones',
   borrow: 'pedir prestado', apologise: 'pedir disculpas', sorry: 'lo siento, perdón', mean: 'querer decir; malo/a', instead: 'en cambio, en vez de',
   behind: 'detrás de', between: 'entre', next: 'al lado; siguiente', opposite: 'enfrente de', straight: 'derecho, recto', left: 'izquierda', right: 'derecha; correcto',
+  enchanter: 'encantador/a (mago de objetos)', upgrade: 'mejora; mejorar', shinier: 'más brillante', shine: 'brillar', shines: 'brilla', runes: 'runas', sparkles: 'destella', polish: 'pulir', luck: 'suerte', lucky: 'afortunado; de la suerte', boss: 'jefe (monstruo jefe)', bosses: 'jefes', divine: 'divino/a', stronger: 'más fuerte', strongest: 'el/la más fuerte', weak: 'débil', heavy: 'pesado/a', light_: 'liviano', failed: 'falló', dull: 'sin filo, apagado',
   north: 'norte', south: 'sur', east: 'este', west: 'oeste', entrance: 'entrada', dead: 'muerto/a', wall: 'muro, pared', marsh: 'pantano'
 };

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { scene, colliders, camBlockers, animated, WORLD_R, REALMS, realmWeights, realmAt, H, setProgress, label, M, load, roads, shadowize, prop } from './core.js';
 import { buildWorld, world, noticeBoard } from './world.js';
-import { makeChar, applyEquip, holdItems, makeSlime, makeAnimal, RACES } from './chars.js';
-import { ITEMS, SLOTS, TYPE_NAME } from './data/items.js';
+import { makeChar, applyEquip, holdItems, makeSlime, makeAnimal, RACES, pulseGlow } from './chars.js';
+import { ITEMS, SLOTS, TYPE_NAME, QUAL, MAX_UP, isGear, entry, itemStat, fullName, itemValue, upgradeCost, TIERS, tierOf } from './data/items.js';
 import { PLACES, NPCS, MONSTERS, ZONES, PICKS, PORTALS } from './data/world_data.js';
 import { QUESTS, DOCS, ACTS, SKILLS, SKILLS_ES } from './data/quests.js';
 import { GLOSS } from './data/gloss.js';
@@ -29,6 +29,9 @@ const SAVE_KEY = 'wordbound_v1';
 function fresh() { return { name: '', race: 'human', look: 'Knight', lvl: 1, xp: 0, gold: 20, hp: 95, inv: [], eq: { head: null, body: null, cape: null, weapon: null, off: null }, q: {}, track: null, flags: {}, read: {}, reveal: {}, phr: [], stats: {}, pos: null, town: 0, visited: [0], lit: [], portals: ['p_bright'], done: false, voice: true, rate: 0.92, music: 0.3 }; }
 let S = fresh();
 try { const raw = localStorage.getItem(SAVE_KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
+// old saves kept equipment as plain ids: give them quality and level
+for (const k in S.eq) if (S.eq[k]) S.eq[k] = entry(S.eq[k]);
+S.inv = S.inv.map(x => isGear(x.id) ? { q: 'c', up: 0, ...x } : x);
 function save() { try { S.pos = [+player.pos.x.toFixed(1), +player.pos.z.toFixed(1)]; localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } }
 
 // ======================= AUDIO + VOICE =======================
@@ -76,7 +79,8 @@ let focus = null;             // dialogue camera focus
 let beacon;
 
 // ======================= STATS / INVENTORY =======================
-const gear = k => Object.values(S.eq).reduce((s, id) => s + ((id && ITEMS[id] && ITEMS[id][k]) || 0), 0);
+const gear = k => Object.values(S.eq).reduce((s, e) => s + (e ? itemStat(e, k) : 0), 0);
+const wid = slot => S.eq[slot] && S.eq[slot].id;
 const maxHP = () => 80 + S.lvl * 15 + gear('hp');
 const atk = () => Math.round(3 + S.lvl * 1.5 + gear('atk'));
 const def = () => gear('def');
@@ -84,11 +88,12 @@ const xpNext = () => 60 + S.lvl * S.lvl * 25;
 const stackable = id => ['use', 'misc', 'quest'].includes(ITEMS[id].t);
 const count = id => S.inv.filter(s => s.id === id).reduce((a, s) => a + s.n, 0);
 const iname = id => ITEMS[id] ? ITEMS[id].n : id;
-function addItem(id, n = 1, quiet) {
+function addItem(id, n = 1, quiet, extra) {
   if (!ITEMS[id]) return;
+  const e = { id, q: (extra && extra.q) || 'c', up: (extra && extra.up) || 0 };
   if (stackable(id)) { const s = S.inv.find(s => s.id === id); if (s) s.n += n; else S.inv.push({ id, n }); }
-  else for (let i = 0; i < n; i++) S.inv.push({ id, n: 1 });
-  if (!quiet) logLine(`+${n > 1 ? n + ' ' : ''}${ITEMS[id].icon} ${ITEMS[id].n}`);
+  else for (let i = 0; i < n; i++) S.inv.push({ ...e, n: 1 });
+  if (!quiet) logLine(`+${n > 1 ? n + ' ' : ''}${ITEMS[id].icon} <span style="color:${isGear(id) && e.q !== 'c' ? QUAL[e.q].color : 'inherit'}">${esc(fullName(e))}</span>`);
   save(); hudDirty = true; checkSteps();
 }
 function removeItem(id, n = 1) {
@@ -105,13 +110,13 @@ function equipFromInv(idx) {
   const s = S.inv[idx]; if (!s) return; const it = ITEMS[s.id];
   const slot = it.t; if (!['head', 'body', 'cape', 'weapon', 'off'].includes(slot)) return;
   S.inv.splice(idx, 1);
-  if (S.eq[slot]) S.inv.push({ id: S.eq[slot], n: 1 });
-  S.eq[slot] = s.id;
-  if (slot === 'weapon' && ['2h', 'bow', 'xbow'].includes(it.kind) && S.eq.off) { S.inv.push({ id: S.eq.off, n: 1 }); S.eq.off = null; toast('Two hands needed: shield removed'); }
-  if (slot === 'off' && S.eq.weapon && ['2h', 'bow', 'xbow'].includes(ITEMS[S.eq.weapon].kind)) { S.inv.push({ id: S.eq.weapon, n: 1 }); S.eq.weapon = null; toast('Your weapon needs two hands: weapon removed'); }
+  if (S.eq[slot]) S.inv.push({ ...S.eq[slot], n: 1 });
+  S.eq[slot] = entry({ id: s.id, q: s.q, up: s.up });
+  if (slot === 'weapon' && ['2h', 'bow', 'xbow'].includes(it.kind) && S.eq.off) { S.inv.push({ ...S.eq.off, n: 1 }); S.eq.off = null; toast('Two hands needed: shield removed'); }
+  if (slot === 'off' && S.eq.weapon && ['2h', 'bow', 'xbow'].includes(ITEMS[wid('weapon')].kind)) { S.inv.push({ ...S.eq.weapon, n: 1 }); S.eq.weapon = null; toast('Your weapon needs two hands: weapon removed'); }
   sfx('equip'); save(); refreshEquip(); checkSteps();
 }
-function unequip(slot) { if (!S.eq[slot]) return; S.inv.push({ id: S.eq[slot], n: 1 }); S.eq[slot] = null; sfx('equip'); save(); refreshEquip(); }
+function unequip(slot) { if (!S.eq[slot]) return; S.inv.push({ ...S.eq[slot], n: 1 }); S.eq[slot] = null; sfx('equip'); save(); refreshEquip(); }
 function useItem(idx) {
   const s = S.inv[idx]; if (!s) return; const it = ITEMS[s.id];
   if (it.t !== 'use') return;
@@ -129,7 +134,7 @@ function dropItem(idx, n) {
   if (NODROP.has(s.id)) { toast('You can\'t drop this. It is very important!'); return false; }
   n = Math.min(n, s.n); removeItem(s.id, n);
   const a = player.ry, p = player.pos.clone().add(new THREE.Vector3(Math.sin(a) * 1.4, 0, Math.cos(a) * 1.4));
-  spawnGround(s.id, n, p); sfx('drop'); player.c.play('PickUp', 0.1, true);
+  spawnGround(s.id, n, p, { q: s.q, up: s.up }); sfx('drop'); player.c.play('PickUp', 0.1, true);
   return true;
 }
 
@@ -311,7 +316,7 @@ async function complete(q) {
   S.q[q.id].st = 'done'; const r = q.reward || {};
   sfx('win'); toast(`✅ Mission complete!<br><span style="font-size:.7em">${esc(q.title)}</span>`, 2800);
   if (r.gold) { S.gold += r.gold; logLine(`🪙 +${r.gold} gold`); }
-  (r.items || []).forEach(([id, n]) => addItem(id, n));
+  (r.items || []).forEach(([id, n]) => addItem(id, n, false, { q: q.id === 'finale' ? 'd' : (q.main || q.giver?.startsWith('board')) ? 'e' : 'c' }));
   if (r.xp) gainXP(r.xp);
   if (S.track === q.id) S.track = null;
   if (q.id === 'finale') { S.done = true; if (world.crown) world.crown.visible = true; setTimeout(certificate, 1500); }
@@ -365,6 +370,7 @@ async function talkTo(id) {
     else { dlgCtx = { tag: `🔷 ${offer.title}` }; const r = await choice(id, n.kind === 'board' ? 'Do you accept this mission?' : 'So... will you help me?', ["Yes, I'll help!", 'Not now, sorry.']); if (r === 0) startQuest(offer); }
     return;
   }
+  if (n.upgrader) return upgradeFlow(id);
   if (n.shop) return shopFlow(id);
   if (n.kind === 'board') { const act = QUESTS.find(q => q.giver === id && isActive(q.id)); await say(id, act ? `You accepted: "${act.title}". Good luck!` : 'There are no new notices here. Come back later!'); return; }
   if (n.kind === 'animal') { await say(id, n.file === 'cat' ? 'Meow! Purrr...' : 'Woof! Woof!'); return; }
@@ -389,14 +395,118 @@ function openShop(id) {
     const sell = S.inv.map((s, i) => ({ ...s, i })).filter(s => ITEMS[s.id].t !== 'quest');
     openModal(`<button class="btn alt x" id="xx">✕</button><h2>🛒 ${esc(n.name)}</h2><div class="small" style="margin-bottom:8px">You have <b>🪙 ${S.gold}</b> gold.</div>
     <div class="shop"><div><h3 style="margin:4px 0">Buy</h3>${list.map(k => { const it = ITEMS[k]; return `<div class="srow"><div class="ic">${icon(k)}</div><div class="nm">${esc(it.n)}<small>${statLine(it)}</small></div><button class="btn" data-b="${k}" ${S.gold < it.price ? 'disabled' : ''}>🪙 ${it.price}</button></div>`; }).join('')}</div>
-    <div><h3 style="margin:4px 0">Sell</h3>${sell.length ? sell.map(s => { const it = ITEMS[s.id], p = Math.max(1, Math.floor((it.price || 2) / 2)); return `<div class="srow"><div class="ic">${icon(s.id)}</div><div class="nm">${esc(it.n)}${s.n > 1 ? ` ×${s.n}` : ''}<small>${TYPE_NAME[it.t]}</small></div><button class="btn alt" data-s="${s.i}">+🪙 ${p}</button></div>`; }).join('') : '<div class="small">Nothing to sell. (Mission items cannot be sold.)</div>'}</div></div>`, true);
+    <div><h3 style="margin:4px 0">Sell</h3>${sell.length ? sell.map(s => { const it = ITEMS[s.id], p = Math.max(1, Math.floor(itemValue(s) / 2)); return `<div class="srow"><div class="ic">${icon(s.id)}</div><div class="nm" style="color:${isGear(s.id) ? QUAL[s.q].color : 'inherit'}">${esc(fullName(s))}${s.n > 1 ? ` ×${s.n}` : ''}<small>${TYPE_NAME[it.t]}</small></div><button class="btn alt" data-s="${s.i}">+🪙 ${p}</button></div>`; }).join('') : '<div class="small">Nothing to sell. (Mission items cannot be sold.)</div>'}</div></div>`, true);
     $('xx').onclick = closeModal;
     $('mbox').querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const it = ITEMS[b.dataset.b]; if (S.gold < it.price) return; S.gold -= it.price; addItem(b.dataset.b, 1); sfx('gold'); render(); });
-    $('mbox').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { const s = S.inv[+b.dataset.s]; const it = ITEMS[s.id]; S.gold += Math.max(1, Math.floor((it.price || 2) / 2)); removeItem(s.id, 1); sfx('gold'); render(); });
+    $('mbox').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { const i = +b.dataset.s, s = S.inv[i]; S.gold += Math.max(1, Math.floor(itemValue(s) / 2)); if (isGear(s.id)) S.inv.splice(i, 1); else removeItem(s.id, 1); save(); sfx('gold'); render(); });
   };
   render();
 }
+function qStyle(e) { e = entry(e); if (!isGear(e.id)) return ''; const c = QUAL[e.q].color; return e.q === 'c' ? '' : `border-color:${c};box-shadow:inset 0 0 12px ${c}55`; }
 function statLine(it) { const a = []; if (it.atk) a.push(`⚔️ +${it.atk}`); if (it.def) a.push(`🛡️ +${it.def}`); if (it.hp) a.push(`❤️ +${it.hp}`); if (it.heal) a.push(`💗 heals ${it.heal}`); return `${TYPE_NAME[it.t]}${a.length ? ' · ' + a.join(' ') : ''}`; }
+
+
+// ======================= UPGRADES (Enchanter) =======================
+const LUCKY = [
+  { q: 'My sword is good, but your sword is ___ than mine.', o: ['better', 'gooder', 'best'] },
+  { q: 'A dragon is ___ than a cat.', o: ['bigger', 'big', 'biggest'] },
+  { q: 'This is the ___ shield in the whole land!', o: ['strongest', 'stronger', 'strong'] },
+  { q: 'Gold is ___ than iron.', o: ['more expensive', 'expensiver', 'most expensive'] },
+  { q: 'When metal is very, very hot, it ___.', o: ['glows', 'sleeps', 'sings'] },
+  { q: 'A ___ is a person who makes things with metal.', o: ['blacksmith', 'baker', 'farmer'] },
+  { q: 'If something is "divine", it is ___.', o: ['very special, like magic from the gods', 'very small', 'broken'] },
+  { q: 'What is the opposite of "strong"?', o: ['weak', 'tall', 'happy'] },
+  { q: 'What is the opposite of "heavy"?', o: ['light', 'dark', 'long'] },
+  { q: 'You wear it on your head to protect it. It is a ___.', o: ['helmet', 'glove', 'boot'] },
+  { q: '"Excellent" means ___.', o: ['very, very good', 'a little bad', 'very old'] },
+  { q: 'I ___ my sword every morning, so it shines.', o: ['polish', 'eat', 'plant'] },
+  { q: "This armour is too ___. I can't run with it!", o: ['heavy', 'light', 'quick'] },
+  { q: "The magic didn't work. It ___.", o: ['failed', 'won', 'grew'] },
+  { q: 'To make something better is to ___ it.', o: ['improve', 'break', 'lose'] },
+  { q: 'The stone shines in the dark. It is very ___.', o: ['bright', 'quiet', 'soft'] },
+  { q: 'Ten plus two is ___.', o: ['twelve', 'twenty', 'eleven'] },
+  { q: 'Which one is the sharpest?', o: ['a knife', 'a ball', 'a pillow'] },
+  { q: 'A shield ___ you from arrows.', o: ['protects', 'teaches', 'cooks'] },
+  { q: 'Before a battle, a good hero ___ a potion in the bag.', o: ['keeps', 'forgets', 'drinks all of'] }
+];
+async function upgradeFlow(id) {
+  if (!S.flags['up_' + id]) {
+    await runScript([
+      id === 'durgan' ? 'Hmph. A visitor with a dull sword. I am Durgan. I put runes on weapons and armour to make them stronger.' : 'Welcome, traveller! I am Elara. I use magic stones to make weapons and armour stronger, and shinier!',
+      'Each time I improve something, it gets +1, up to +12. And it shines more! But be careful: after +3, the magic does not always work.',
+      { ask: 'How do you ask for an upgrade?', k: 'CONV', o: [['Excuse me, could you make my sword stronger, please?', 'Of course! That is what I do best.'], ['Sword. Stronger. Now.', 'Hmm... a little "please" helps the magic, you know.'], ['I want to buy a cake.', 'A cake? I am an enchanter, not a baker!']] }
+    ], id);
+    S.flags['up_' + id] = true; save();
+  }
+  openUpgrade(id);
+}
+let upSel = null, upLucky = 0;
+function upEntry() { if (!upSel) return null; return upSel.slot ? S.eq[upSel.slot] : S.inv[upSel.i]; }
+const glowOfColor = u => u <= 3 ? '#ffffff' : u <= 6 ? '#4ab8ff' : u <= 9 ? '#c070ff' : '#ffc23d';
+function openUpgrade(id, msg) {
+  bagOpen = true;
+  const n = NPCS[id], list = [];
+  for (const [k] of SLOTS) if (S.eq[k]) list.push({ slot: k, e: S.eq[k] });
+  S.inv.forEach((x, i) => { if (isGear(x.id)) list.push({ i, e: x }); });
+  if (upSel && !upEntry()) upSel = null;
+  if (!upSel && list[0]) upSel = list[0].slot ? { slot: list[0].slot } : { i: list[0].i };
+  const E = upEntry(), cost = E && upgradeCost(E);
+  const row = x => { const on = upSel && (x.slot ? upSel.slot === x.slot : upSel.i === x.i); return `<div class="srow" data-sel="${x.slot ? 's:' + x.slot : 'i:' + x.i}" style="cursor:pointer;${qStyle(x.e)};${on ? 'border-color:#e09a1a;background:#fff8e0' : ''}"><div class="ic">${icon(x.e.id)}</div><div class="nm" style="color:${QUAL[entry(x.e).q].color}">${esc(fullName(x.e))}<small>${x.slot ? '✔ equipped' : 'in your bag'}</small></div></div>`; };
+  let panel = '<div class="small">You have no weapons or armour to improve.</div>';
+  if (E) {
+    const it = ITEMS[E.id], nxt = cost ? { ...entry(E), up: E.up + 1 } : null;
+    const st = ['atk', 'def', 'hp'].filter(k => it[k]).map(k => `${{ atk: '⚔️ Attack', def: '🛡️ Defence', hp: '❤️ Health' }[k]}: <b>${itemStat(E, k)}</b>${nxt ? ` ➜ <b style="color:#2ea64f">${itemStat(nxt, k)}</b>` : ''}`).join('<br>');
+    if (!cost) panel = `<h3 style="color:${QUAL[entry(E).q].color}">${esc(fullName(E))}</h3><div class="detail">${st}<br><br>🌟 This item is at the maximum level (+${MAX_UP}). It can't be improved any more!</div>`;
+    else {
+      const have = count(cost.stone), chance = Math.min(1, cost.chance + upLucky);
+      const ok = have >= cost.n && S.gold >= cost.gold;
+      const lq = upLucky ? '<div class="small" style="color:#2ea64f;font-weight:900;align-self:center">🍀 Lucky bonus: +15% for this try!</div>' : cost.chance < 1 ? '<button class="btn blue" id="upQ">🍀 Answer a question for +15% luck</button>' : '';
+      panel = `<h3 style="color:${QUAL[entry(E).q].color}">${esc(fullName(E))} ➜ +${cost.L}</h3>
+      <div class="detail" style="min-height:0">${st}</div>
+      <div class="detail" style="min-height:0">Needs: ${ITEMS[cost.stone].icon} <b>${cost.n} ${esc(ITEMS[cost.stone].n)}</b> <span class="small">(you have ${have})</span> · 🪙 <b>${cost.gold}</b> <span class="small">(you have ${S.gold})</span><br>Chance: <b style="color:${chance >= 0.85 ? '#2ea64f' : chance >= 0.6 ? '#c08000' : '#d9433b'}">${Math.round(chance * 100)}%</b>${cost.chance < 1 ? ' <span class="small">(if it fails, you lose the stone and the gold, but not the item)</span>' : ''}</div>
+      <div id="upQbox"></div>
+      <div class="foot" style="justify-content:flex-start">${lq}<button class="btn green" id="upGo" ${ok ? '' : 'disabled'}>✨ Upgrade!</button></div>`;
+    }
+  }
+  const shopRows = ['sparkstone', 'moonstone'].map(k => `<div class="srow"><div class="ic">${ITEMS[k].icon}</div><div class="nm">${esc(ITEMS[k].n)}<small>you have ${count(k)}</small></div><button class="btn" data-buy="${k}" ${S.gold < ITEMS[k].price ? 'disabled' : ''}>🪙 ${ITEMS[k].price}</button></div>`).join('');
+  openModal(`<button class="btn alt x" id="xx">✕</button><h2>✨ ${esc(n.name)}</h2>${msg ? `<div class="doc" style="font-family:Nunito;font-size:18px;margin-bottom:10px">${msg}</div>` : ''}
+  <div class="inv"><div><div class="doll" id="doll" style="height:340px"><canvas id="pv"></canvas><div id="upFx" style="position:absolute;inset:0;border-radius:14px;pointer-events:none;opacity:0;transition:opacity .5s"></div></div>
+  <div class="stats"><span>⚔️ ${atk()}</span><span>🛡️ ${def()}</span><span>❤️ ${maxHP()}</span><span>🪙 ${S.gold}</span></div>
+  <h3 style="margin:10px 0 4px">Magic stones</h3>${shopRows}<div class="small">🌟 Starstones (+10 to +12) only come from bosses 👑.</div></div>
+  <div><div style="max-height:210px;overflow:auto;margin-bottom:8px">${list.map(row).join('')}</div>${panel}</div></div>`, true);
+  $('xx').onclick = closeModal;
+  ensurePreview($('pv'));
+  $('mbox').querySelectorAll('[data-sel]').forEach(b => b.onclick = () => { const [t, v] = b.dataset.sel.split(':'); upSel = t === 's' ? { slot: v } : { i: +v }; upLucky = 0; sfx('click', 0.3); openUpgrade(id); });
+  $('mbox').querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { const k = b.dataset.buy; if (S.gold < ITEMS[k].price) return; S.gold -= ITEMS[k].price; addItem(k, 1, true); sfx('gold'); openUpgrade(id); });
+  if ($('upQ')) $('upQ').onclick = () => {
+    const L = LUCKY[Math.floor(Math.random() * LUCKY.length)], order = [0, 1, 2].sort(() => Math.random() - 0.5), t0 = performance.now();
+    $('upQ').remove();
+    $('upQbox').innerHTML = `<div class="detail" style="min-height:0"><b>${glossify(L.q)}</b><div style="display:grid;gap:6px;margin-top:6px">${order.map(i => `<button class="btn alt" style="text-align:left" data-a="${i}">${esc(L.o[i])}</button>`).join('')}</div></div>`;
+    speak(L.q.replace('___', 'blank'), 'human');
+    $('upQbox').querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+      const ok = b.dataset.a === '0'; record('VOC', L.q, L.o[+b.dataset.a], L.o[0], ok, 'Enchanter: lucky question', t0);
+      if (ok) { upLucky = 0.15; sfx('ok'); openUpgrade(id, `🍀 Correct! "${esc(L.o[0])}". Your luck is better for this try.`); }
+      else { sfx('bad'); openUpgrade(id, `Not quite. The answer was "<b>${esc(L.o[0])}</b>". No bonus this time.`); }
+    });
+  };
+  if ($('upGo')) $('upGo').onclick = () => {
+    const E2 = upEntry(), c2 = upgradeCost(E2); if (!c2 || count(c2.stone) < c2.n || S.gold < c2.gold) return;
+    $('upGo').disabled = true;
+    removeItem(c2.stone, c2.n); S.gold -= c2.gold;
+    const win = Math.random() < Math.min(1, c2.chance + upLucky); upLucky = 0;
+    const fx = $('upFx');
+    if (win) {
+      E2.up++; sfx('levelup', 0.7);
+      fx.style.background = `radial-gradient(circle, ${glowOfColor(E2.up)}dd, transparent 70%)`; fx.style.opacity = 1;
+      if (upSel.slot) { refreshEquip(); if (player.c) player.c.play('Cheering', 0.2, true); }
+      save(); hudDirty = true;
+      setTimeout(() => openUpgrade(id, `✨ <b>Success!</b> Your ${esc(fullName(E2))} is stronger now. ${E2.up >= 10 ? 'It shines like the sun!' : E2.up >= 7 ? 'Look how it sparkles!' : E2.up >= 4 ? 'It glows blue now!' : 'It is shining!'}${upSel.slot ? '' : ' (Equip it to see it shine on your hero.)'}`), 900);
+    } else {
+      sfx('bad'); fx.style.background = 'radial-gradient(circle, #33333399, transparent 70%)'; fx.style.opacity = 1; save(); hudDirty = true;
+      setTimeout(() => openUpgrade(id, `💨 Oh no... the magic failed. Your ${esc(fullName(E2))} is still +${E2.up}. Don't give up, try again!`), 700);
+    }
+  };
+}
 
 // ======================= ICONS (3D thumbnails) =======================
 const THUMB = {};
@@ -415,7 +525,7 @@ async function makeThumbs() {
     cm.position.set(0, 0, sz * 1.9); cm.lookAt(0, 0, 0); r.render(sc, cm);
     THUMB[id] = r.domElement.toDataURL(); sc.remove(piv);
   }
-  r.dispose();
+  r.dispose(); r.forceContextLoss();
 }
 
 // ======================= INVENTORY (with 3D hero) =======================
@@ -428,17 +538,21 @@ async function ensurePreview(canvas) {
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.4, 0.15, 32), M('#c9a46a')); disc.position.y = -0.08; preview.sc.add(disc);
     preview.cam = new THREE.PerspectiveCamera(32, 1, 0.1, 50);
   }
-  if (preview.r) preview.r.dispose();
-  preview.r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); preview.r.setPixelRatio(Math.min(devicePixelRatio, 2));
-  preview.r.toneMapping = THREE.ACESFilmicToneMapping;
+  // one renderer for the whole game: its canvas moves into each window (browsers allow only a few 3D canvases)
+  if (!preview.r) {
+    preview.r = new THREE.WebGLRenderer({ antialias: true, alpha: true }); preview.r.setPixelRatio(Math.min(devicePixelRatio, 2));
+    preview.r.toneMapping = THREE.ACESFilmicToneMapping;
+    const cv = preview.r.domElement; cv.style.width = '100%'; cv.style.height = '100%'; cv.style.borderRadius = '14px'; cv.style.cursor = 'grab';
+    let drag = null;
+    cv.onpointerdown = e => { drag = e.clientX; cv.setPointerCapture(e.pointerId); };
+    cv.onpointermove = e => { if (drag !== null) { preview.yaw += (e.clientX - drag) * 0.012; drag = e.clientX; } };
+    cv.onpointerup = () => drag = null;
+  }
+  if (canvas !== preview.r.domElement) { canvas.replaceWith(preview.r.domElement); canvas = preview.r.domElement; }
   const key = S.look + S.race;
   if (preview.key !== key) { if (preview.c) preview.sc.remove(preview.c.root); preview.c = await makeChar(S.look, { race: S.race, strip: true }); preview.sc.add(preview.c.root); preview.key = key; }
   await applyEquip(preview.c, S.eq);
-  const w = canvas.clientWidth, h = canvas.clientHeight; preview.r.setSize(w, h, false); preview.cam.aspect = w / h; preview.cam.updateProjectionMatrix();
-  let drag = null;
-  canvas.onpointerdown = e => { drag = e.clientX; canvas.setPointerCapture(e.pointerId); };
-  canvas.onpointermove = e => { if (drag !== null) { preview.yaw += (e.clientX - drag) * 0.012; drag = e.clientX; } };
-  canvas.onpointerup = () => drag = null;
+  const w = canvas.clientWidth || 300, h = canvas.clientHeight || 400; preview.r.setSize(w, h, false); preview.cam.aspect = w / h; preview.cam.updateProjectionMatrix();
 }
 function renderPreview(dt) {
   if (!bagOpen || !preview.r || !preview.c) return;
@@ -450,9 +564,9 @@ const SLOT_POS = { head: 'left:8px;top:10px', cape: 'right:8px;top:10px', body: 
 function openBag() {
   if (mode !== 'play' || dlgOpen) return;
   bagOpen = true;
-  const cells = []; for (let i = 0; i < Math.max(30, S.inv.length); i++) { const s = S.inv[i]; cells.push(s ? `<div class="cell ${ITEMS[s.id].t === 'quest' ? 'q' : ''} ${i === bagSel ? 'sel' : ''}" data-i="${i}" draggable="true" title="${esc(ITEMS[s.id].n)}">${icon(s.id)}${s.n > 1 ? `<b>${s.n}</b>` : ''}</div>` : `<div class="cell empty"></div>`); }
+  const cells = []; for (let i = 0; i < Math.max(30, S.inv.length); i++) { const s = S.inv[i]; cells.push(s ? `<div class="cell ${ITEMS[s.id].t === 'quest' ? 'q' : ''} ${i === bagSel ? 'sel' : ''}" data-i="${i}" draggable="true" title="${esc(fullName(s))}" style="${qStyle(s)}">${icon(s.id)}${s.up ? `<i class="up">+${s.up}</i>` : ''}${s.n > 1 ? `<b>${s.n}</b>` : ''}</div>` : `<div class="cell empty"></div>`); }
   openModal(`<button class="btn alt x" id="xx">✕</button><h2>🎒 Your bag</h2>
-  <div class="inv"><div><div class="doll" id="doll"><canvas id="pv"></canvas>${SLOTS.map(([k, n, ic]) => `<div class="slot ${S.eq[k] ? 'full' : ''}" data-slot="${k}" style="${SLOT_POS[k]}">${S.eq[k] ? icon(S.eq[k]) : ic}<small>${n}</small></div>`).join('')}</div>
+  <div class="inv"><div><div class="doll" id="doll"><canvas id="pv"></canvas>${SLOTS.map(([k, n, ic]) => `<div class="slot ${S.eq[k] ? 'full' : ''}" data-slot="${k}" style="${SLOT_POS[k]};${S.eq[k] ? qStyle(S.eq[k]) : ''}">${S.eq[k] ? icon(S.eq[k].id) + (S.eq[k].up ? `<i class="up">+${S.eq[k].up}</i>` : '') : ic}<small>${n}</small></div>`).join('')}</div>
    <div class="stats"><span>❤️ ${Math.ceil(S.hp)}/${maxHP()}</span><span>⚔️ ${atk()}</span><span>🛡️ ${def()}</span><span>🪙 ${S.gold}</span></div><div class="small" style="text-align:center;margin-top:4px">Drag the hero to turn around.</div></div>
    <div><div class="grid" id="grid">${cells.join('')}</div><div id="det" class="detail"></div>
    <div id="dropZone" class="detail" style="min-height:0;text-align:center;font-weight:900;border-style:dashed;color:#8d2620">🗑 Drag an item here to drop it on the ground</div></div></div>`, true);
@@ -472,8 +586,8 @@ function openBag() {
 }
 function showDetail() {
   const el = $('det'); if (!el) return;
-  let id = null, eqd = false;
-  if (bagSlot && S.eq[bagSlot]) { id = S.eq[bagSlot]; eqd = true; } else if (bagSel >= 0 && S.inv[bagSel]) id = S.inv[bagSel].id;
+  let id = null, eqd = false, E = null;
+  if (bagSlot && S.eq[bagSlot]) { E = S.eq[bagSlot]; id = E.id; eqd = true; } else if (bagSel >= 0 && S.inv[bagSel]) { E = S.inv[bagSel]; id = E.id; }
   if (!id) { el.innerHTML = `<div class="small">Click an item to see it. Double-click to equip or use it. Your bag has ${S.inv.length} things.</div>`; return; }
   const it = ITEMS[id], s = S.inv[bagSel];
   const b = [];
@@ -484,7 +598,10 @@ function showDetail() {
     if (it.doc) b.push(`<button class="btn blue" id="dRead">📖 Read</button>`);
     if (!NODROP.has(id)) { b.push(`<button class="btn red" id="dDrop">Drop</button>`); if (s.n > 1) b.push(`<button class="btn red" id="dDropAll">Drop all (${s.n})</button>`); }
   }
-  el.innerHTML = `<h3>${it.icon} ${esc(it.n)}${eqd ? ' <span class="small">(equipped)</span>' : ''}</h3><div class="tags">${statLine(it)}${it.price && it.t !== 'quest' ? ` · worth 🪙 ${it.price}` : ''}</div><div>${glossify(it.d)}</div><div class="foot" style="margin-top:8px">${b.join('')}</div>`;
+  const gearIt = isGear(id), cur = gearIt && !eqd && S.eq[it.t];
+  const cmp = k => { if (!cur) return ''; const d = itemStat(E, k) - itemStat(cur, k); return d ? ` <b style="color:${d > 0 ? '#2ea64f' : '#d9433b'}">(${d > 0 ? '+' : ''}${d})</b>` : ''; };
+  const stats = gearIt ? ['atk', 'def', 'hp'].filter(k => itemStat(E, k) || (cur && itemStat(cur, k))).map(k => `${{ atk: '⚔️', def: '🛡️', hp: '❤️' }[k]} ${itemStat(E, k)}${cmp(k)}`).join(' · ') : '';
+  el.innerHTML = `<h3 style="color:${gearIt ? QUAL[entry(E).q].color : 'inherit'}">${it.icon} ${esc(gearIt ? fullName(E) : it.n)}${eqd ? ' <span class="small">(equipped)</span>' : ''}</h3><div class="tags">${gearIt ? `${TYPE_NAME[it.t]} · ${QUAL[entry(E).q].name} · ${stats}${cur ? ' <span class="small">vs. what you wear</span>' : ''}` : statLine(it)}${it.price && it.t !== 'quest' ? ` · worth 🪙 ${itemValue(E)}` : ''}</div><div>${glossify(it.d)}</div><div class="foot" style="margin-top:8px">${b.join('')}</div>`;
   const on = (k, f) => { if ($(k)) $(k).onclick = f; };
   on('dUn', () => { unequip(bagSlot); bagSlot = null; openBag(); });
   on('dEq', () => { equipFromInv(bagSel); bagSel = -1; openBag(); });
@@ -507,13 +624,14 @@ function lootMesh(id) {
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.04, 6, 20), new THREE.MeshBasicMaterial({ color: '#ffd468' })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.05;
   g.add(sack, tie, sp, ring); g.userData.sp = sp; return g;
 }
-function spawnGround(id, n, p) {
+function spawnGround(id, n, p, extra) {
   const m = lootMesh(id); m.position.set(p.x, H(p.x, p.z), p.z); scene.add(m);
-  groundItems.push({ id, n, mesh: m, pos: m.position, t0: performance.now() });
+  groundItems.push({ id, n, extra, mesh: m, pos: m.position, t0: performance.now() });
+  if (extra && extra.q && extra.q !== 'c') m.children.forEach(o => { if (o.geometry && o.geometry.type === 'TorusGeometry') o.material = new THREE.MeshBasicMaterial({ color: QUAL[extra.q].color }); });
 }
 function pickGround(g) {
   scene.remove(g.mesh); groundItems.splice(groundItems.indexOf(g), 1);
-  addItem(g.id, g.n); sfx('coin'); player.c.play('PickUp', 0.1, true);
+  addItem(g.id, g.n, false, g.extra); sfx('coin'); player.c.play('PickUp', 0.1, true);
 }
 const PICKMODEL = { pumpkin: 'hw/pumpkin_orange', yellow_pumpkin: 'hw/pumpkin_yellow', iron_ore: 'rb/Iron_Nugget_Large', caravan_box: 'dg/box_small_decorated', lost_hammer: null, cheese: null, water_bucket: 'hx/bucket_water' };
 function pickMesh(item) {
@@ -598,21 +716,36 @@ function refreshMarks() {
 }
 
 // ======================= MONSTERS =======================
+// ---------- bosses: every kind of monster has a big, strong boss ----------
+const ELITE_NAMES = { slime: 'King Slime', blue_slime: 'Frost Slime King', wolf: 'Old Greyfang', minion: 'Skeleton Overseer', sand_slime: 'Dune Slime Lord', bandit: 'Bandit Captain', sk_rogue: 'Raider Chief', warrior: 'Bone General', sk_mage: 'Grave Sorcerer' };
+const ELITE_ZONE = {};   // the first zone of each monster kind also has its boss
+ZONES.forEach((z, i) => { if (!z.q && ELITE_NAMES[z.m] && ELITE_ZONE[z.m] === undefined) ELITE_ZONE[z.m] = i; });
+function eliteDef(type) {
+  const b = MONSTERS[type];
+  return { ...b, name: ELITE_NAMES[type], elite: true, hp: b.hp * 5, atk: Math.round(b.atk * 1.6), xp: b.xp * 6, lvl: b.lvl + 2, gold: [b.gold[0] * 6, b.gold[1] * 8],
+    size: b.size ? b.size * 1.7 : undefined, h: b.h ? b.h * 1.6 : undefined, scale: b.kind === 'char' ? (b.scale || 1) * 1.55 : undefined };
+}
+function rollQuality(elite) { const r = Math.random(); return elite ? (r < 0.3 ? 'd' : r < 0.85 ? 'e' : 'c') : (r < 0.03 ? 'd' : r < 0.2 ? 'e' : 'c'); }
 function monLabel(m) {
   const cv = m.lcv || (m.lcv = document.createElement('canvas')); cv.width = 256; cv.height = 64; const c = cv.getContext('2d'); c.clearRect(0, 0, 256, 64);
   c.font = '800 22px Nunito, sans-serif'; c.textAlign = 'center'; c.lineWidth = 5; c.strokeStyle = 'rgba(0,0,0,.7)';
-  const t = `${m.d.name} · Lv ${m.d.lvl}`; c.strokeText(t, 128, 24); c.fillStyle = m.d.boss ? '#e0b0ff' : (m.d.lvl > S.lvl + 2 ? '#ff7a6a' : '#ffffff'); c.fillText(t, 128, 24);
+  const t = `${m.d.elite ? '👑 ' : ''}${m.d.name} · Lv ${m.d.lvl}`; c.strokeText(t, 128, 24); c.fillStyle = m.d.elite ? '#ffd23a' : m.d.boss ? '#e0b0ff' : (m.d.lvl > S.lvl + 2 ? '#ff7a6a' : '#ffffff'); c.fillText(t, 128, 24);
   c.fillStyle = 'rgba(0,0,0,.6)'; c.fillRect(48, 36, 160, 12); c.fillStyle = '#e2453a'; c.fillRect(50, 38, 156 * Math.max(0, m.hp / m.d.hp), 8);
   if (!m.lab) { const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; m.lab = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true })); m.lab.scale.set(2.6, 0.65, 1); m.lab.renderOrder = 9; scene.add(m.lab); }
   else m.lab.material.map.needsUpdate = true;
 }
-async function createMonster(zi) {
-  const z = ZONES[zi], d = MONSTERS[z.m];
+async function createMonster(zi, elite) {
+  const z = ZONES[zi], d = elite ? eliteDef(z.m) : MONSTERS[z.m];
   let c;
   if (d.kind === 'slime') c = makeSlime(d.color, d.size);
   else if (d.kind === 'animal') c = await makeAnimal(d.file, d.h, d.tint);
   else { c = await makeChar(d.model, { tint: d.tint, tintK: 0.5 }); if (d.hold) await holdItems(c, d.hold[0], d.hold[1]); if (d.scale) c.root.scale.setScalar(d.scale); }
   const m = { d, type: z.m, zi, c, home: new THREE.Vector3(z.x, 0, z.z), pos: new THREE.Vector3(), hp: d.hp, state: 'idle', t: 0, cd: 0, wander: null, scale: d.scale || (d.kind === 'slime' ? d.size : d.h ? d.h / 1.3 : 1), dead: false, deadT: 0 };
+  if (elite) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.07, 6, 28), new THREE.MeshBasicMaterial({ color: '#ffd23a', transparent: true, opacity: 0.85 }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = 0.08; c.root.add(ring); m.ring = ring;
+    c.root.traverse(o => { if (o.isMesh && o !== ring && o.material && o.material.emissive) { o.material = o.material.clone(); o.material.emissive = new THREE.Color('#ffb020'); o.material.emissiveIntensity = 0.12; } });
+  }
   placeMonster(m); scene.add(c.root); monLabel(m); monsters.push(m);
   return m;
 }
@@ -630,7 +763,7 @@ function updateZones() {
   ZONES.forEach((z, i) => {
     const zs = zoneState[i], d = Math.hypot(z.x - player.pos.x, z.z - player.pos.z);
     const on = zoneOn(z);
-    if (!zs.spawned && on && d < 85) { zs.spawned = true; for (let k = 0; k < z.n; k++) createMonster(i).then(m => zs.mons.push(m)); }
+    if (!zs.spawned && on && d < 85) { zs.spawned = true; for (let k = 0; k < z.n; k++) createMonster(i).then(m => zs.mons.push(m)); if (ELITE_ZONE[z.m] === i) createMonster(i, true).then(m => zs.mons.push(m)); }
     for (const m of zs.mons) { const vis = on && d < 120 && !(m.dead && m.deadT > 2.5); m.c.root.visible = vis; if (m.lab) m.lab.visible = vis && !m.dead && m.pos.distanceTo(player.pos) < 40; m.active = on && d < 120; }
   });
 }
@@ -643,19 +776,19 @@ function updateMonsters(dt, t) {
     if (m.dead) {
       m.deadT += dt;
       if (m.d.kind === 'slime') { const k = Math.max(0, 1 - m.deadT * 2); c.root.scale.setScalar(m.scale * 1.3 * k + 0.001); }
-      if (!m.d.boss && m.deadT > 45 && dist > 30) placeMonster(m);
+      if (!m.d.boss && m.deadT > (m.d.elite ? 150 : 45) && dist > 30) placeMonster(m);
       if (c.mixer) c.mixer.update(dt);
       continue;
     }
     const frozen = busy() || player.dead;
     const reach = (RANGE[m.d.kind] || 2) * Math.max(1, m.scale * 0.8);
-    const aggro = m.d.boss ? 18 : 11;
+    const aggro = m.d.boss ? 18 : m.d.elite ? 14 : 11;
     if (m.state === 'idle' && dist < aggro && !frozen) { m.state = 'chase'; if (c.play && m.d.kind === 'char' && /Skeleton/.test(m.d.model)) c.play('Skeletons_Taunt', 0.2, true); }
     if (m.state === 'chase' && (Math.hypot(m.pos.x - m.home.x, m.pos.z - m.home.z) > ZONES[m.zi].r + 30 || player.dead)) m.state = 'return';
     let moving = false, speed = m.d.kind === 'slime' ? 3 : m.d.kind === 'animal' ? 5.5 : m.d.boss ? 3.6 : 4;
     const now = performance.now();
     if (m.state === 'chase' && !frozen) {
-      if (m.d.boss) boss = m;
+      if (m.d.boss || m.d.elite) boss = m;
       const face = Math.atan2(dx, dz);
       if (m.d.ranged && dist < 18 && dist > 6) {
         c.root.rotation.y = face; m.cd -= dt;
@@ -690,7 +823,7 @@ function updateMonsters(dt, t) {
     if (m.lab) m.lab.position.set(m.pos.x, m.pos.y + (m.d.kind === 'slime' ? 1.7 * m.scale : m.d.kind === 'animal' ? m.d.h * 1.2 + 0.6 : 3.1 * m.scale), m.pos.z);
   }
   const bb = $('bossbar');
-  if (boss) { bb.classList.remove('hidden'); $('bossName').textContent = boss.d.name; bb.querySelector('i').style.width = `${boss.hp / boss.d.hp * 100}%`; if (music.dataset.n !== 'm_boss') playMusic('m_boss'); }
+  if (boss) { bb.classList.remove('hidden'); $('bossName').textContent = `${boss.d.elite ? '👑 ' : ''}${boss.d.name}`; bb.querySelector('i').style.width = `${boss.hp / boss.d.hp * 100}%`; if (music.dataset.n !== 'm_boss') playMusic('m_boss'); }
   else if (!bb.classList.contains('hidden')) { bb.classList.add('hidden'); playMusic(REALMS[curRealm].music); }
 }
 async function summon(m) {
@@ -715,10 +848,21 @@ function killMonster(m) {
   if (m.d.kind === 'animal') m.c.root.rotation.z = Math.PI / 2;
   const [g0, g1] = m.d.gold; const gold = g0 + Math.floor(Math.random() * (g1 - g0 + 1)); S.gold += gold; logLine(`🪙 +${gold}`); sfx('gold', 0.4);
   gainXP(m.d.xp);
-  const drops = m.d.loot.filter(([id, p]) => Math.random() < p);
-  drops.forEach(([id], i) => { const a = i * 2.1; spawnGround(id, 1, m.pos.clone().add(new THREE.Vector3(Math.cos(a) * 0.9, 0, Math.sin(a) * 0.9))); });
+  const drops = m.d.loot.filter(([id, p]) => Math.random() < p).map(([id]) => [id, 1]);
+  const tier = tierOf(m.d.lvl), pickT = t => TIERS[Math.min(4, t)][Math.floor(Math.random() * TIERS[Math.min(4, t)].length)];
+  if (Math.random() < 0.05) drops.push(['sparkstone', 1]);
+  if (Math.random() < 0.035) drops.push([pickT(tier), 1]);
+  if (m.d.elite || m.d.boss) {
+    drops.push(['sparkstone', 2 + Math.floor(Math.random() * 2)], ['potion_m', 1]);
+    if (tier >= 2 || m.d.boss) drops.push(['moonstone', 1]);
+    if ((tier >= 3 && Math.random() < 0.35) || m.type === 'hush' || m.type === 'keeper') drops.push(['starstone', 1]);
+    drops.push([pickT(tier + (Math.random() < 0.3 ? 1 : 0)), 1]);
+    if (Math.random() < 0.5) drops.push([pickT(tier), 1]);
+    toast(`👑 ${esc(m.d.name)} defeated!<br><span style="font-size:.6em">Look at the treasure on the ground!</span>`, 2600);
+  }
+  drops.forEach(([id, n], i) => { const a = i * 2.1, extra = isGear(id) ? { q: rollQuality(m.d.elite || m.d.boss), up: (m.d.elite || m.d.boss) && Math.random() < 0.4 ? 1 + Math.floor(Math.random() * 3) : 0 } : null; spawnGround(id, n, m.pos.clone().add(new THREE.Vector3(Math.cos(a) * (0.9 + i * 0.15), 0, Math.sin(a) * (0.9 + i * 0.15))), extra); });
   if (!m.summoned) onKill(m.type);
-  if (m.d.boss) { S.flags['boss_' + m.type] = true; sfx('win'); }
+  if (m.d.boss || m.d.elite) { if (m.d.boss) S.flags['boss_' + m.type] = true; sfx('win'); }
   if (m.summoned) setTimeout(() => { scene.remove(m.c.root); monsters.splice(monsters.indexOf(m), 1); }, 3000);
   save(); hudDirty = true;
 }
@@ -733,7 +877,7 @@ function nearestMonster(maxD, front) {
 function attack() {
   if (mode !== 'play' || busy() || player.dead) return;
   const now = performance.now(); if (now < player.atkCd) return;
-  const w = S.eq.weapon && ITEMS[S.eq.weapon], kind = w ? w.kind : 'fist';
+  const w = S.eq.weapon && ITEMS[wid('weapon')], kind = w ? w.kind : 'fist';
   const ranged = ['bow', 'xbow', 'magic'].includes(kind);
   player.atkCd = now + (kind === '2h' ? 950 : ranged ? 750 : kind === 'fist' ? 450 : 560) / (w?.speed || 1);
   const target = nearestMonster(ranged ? 24 : 5, ranged);
@@ -809,7 +953,7 @@ function findNear() {
   for (const [id, N] of Object.entries(npcs)) { const n = N.def, max = n.kind === 'tree' ? 5 : n.kind === 'animal' ? 2.4 : 3.2; const d = Math.hypot(N.pos.x - pp.x, N.pos.z - pp.z); consider(d, max, { t: 'npc', id, label: n.kind === 'animal' ? `Look at the ${n.file}` : n.kind === 'board' ? 'Read the notice board' : `Talk to ${n.name}` }); }
   for (const s of world.signs) consider(Math.hypot(s.x - pp.x, s.z - pp.z), 2.6, { t: 'sign', s, label: 'Read the sign' });
   for (const k of picks) if (k.mesh.visible) consider(Math.hypot(k.pos.x - pp.x, k.pos.z - pp.z), 2, { t: 'pick', k, label: `Pick up: ${iname(k.item)}` });
-  for (const g of groundItems) consider(Math.hypot(g.pos.x - pp.x, g.pos.z - pp.z), 2, { t: 'ground', g, label: `Pick up: ${iname(g.id)}${g.n > 1 ? ` ×${g.n}` : ''}` });
+  for (const g of groundItems) consider(Math.hypot(g.pos.x - pp.x, g.pos.z - pp.z), 2, { t: 'ground', g, label: `Pick up: ${fullName({ id: g.id, ...(g.extra || {}) })}${g.n > 1 ? ` ×${g.n}` : ''}` });
   for (const P of world.portals) {
     const d = Math.hypot(P.x - pp.x, P.z - pp.z);
     if (d < 6 && !S.portals.includes(P.def.id)) { S.portals.push(P.def.id); P.set(true); sfx('star'); banner('Portal activated!', `${P.def.name} — now you can travel here with any portal 🌀`); gainXP(20); save(); }
@@ -1064,7 +1208,7 @@ function updatePlayer(dt) {
   player.pos.y = H(player.pos.x, player.pos.z) + player.jumpY;
   c.root.position.copy(player.pos); c.root.rotation.y = player.ry;
   if (performance.now() > c.lockUntil && !player.dead) {
-    const w = S.eq.weapon && ITEMS[S.eq.weapon];
+    const w = S.eq.weapon && ITEMS[wid('weapon')];
     if (!player.ground) c.play('Jump_Idle', 0.15);
     else if (speed > 6) c.play('Running_A', 0.15);
     else if (speed > 0.3) c.play('Walking_A', 0.15);
@@ -1124,6 +1268,7 @@ function step() {
   updateCamera(dt);
   if (hudDirty && mode === 'play') drawHUD();
   if (mode === 'play') { updateArrow(); if (frame & 1) drawMini(t); }
+  pulseGlow(player.c, t); if (bagOpen && preview.c) pulseGlow(preview.c, t);
   renderPreview(dt);
   frame++;
   renderer.render(scene, camera);

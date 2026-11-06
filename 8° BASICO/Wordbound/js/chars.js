@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { load, shadowize, M } from './core.js';
-import { ITEMS } from './data/items.js';
+import { ITEMS, entry, glowOf } from './data/items.js';
 
 // KayKit characters share one rig (Rig_Medium), so body parts of one character
 // (helmet, armour, cape) can be worn by another one. That is how equipment is shown.
@@ -117,28 +117,62 @@ function setOwnVisible(c, parts, vis) { for (const p of parts) { const n = findP
 const heldCache = {};
 async function heldModel(file) { const g = await load(`assets/items/${file}.gltf`); return g ? g.scene : null; }
 
+/** Make the materials of an object glow (upgraded equipment). Returns the list to animate. */
+function addGlow(c, objs, g) {
+  if (!g) return;
+  for (const root of objs) root.traverse(m => {
+    if (!m.isMesh) return;
+    m.material = m.material.clone(); m.material.emissive = new THREE.Color(g.color);
+    c.glow.push({ mat: m.material, k: g.k });
+  });
+  if (g.sparkle && objs[0]) { const root = objs[0];
+    const n = 14, pos = new Float32Array(n * 3), seeds = []; for (let i = 0; i < n; i++) seeds.push([Math.random() * 6.28, Math.random(), Math.random()]);
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: g.color, size: 0.09, transparent: true, depthWrite: false }));
+    pts.frustumCulled = false; (root.isSkinnedMesh ? c.rig : root).add(pts);
+    c.sparkles.push({ pts, pos, seeds, skinned: root.isSkinnedMesh });
+  }
+}
+/** Called every frame: pulsing glow and sparkles. */
+export function pulseGlow(c, t) {
+  if (!c || !c.glow) return;
+  const p = 0.65 + 0.35 * Math.sin(t * 3.2);
+  for (const g of c.glow) g.mat.emissiveIntensity = g.k * p;
+  for (const s of c.sparkles) {
+    for (let i = 0; i < s.seeds.length; i++) {
+      const [a, o, h] = s.seeds[i], k = (t * 0.6 + o) % 1, r = s.skinned ? 0.9 : 0.35;
+      s.pos[i * 3] = Math.cos(a + t * 1.5) * r; s.pos[i * 3 + 1] = (s.skinned ? 0.5 : 0) + h * (s.skinned ? 2.2 : 1.2) + k * 0.4; s.pos[i * 3 + 2] = Math.sin(a + t * 1.5) * r;
+    }
+    s.pts.geometry.attributes.position.needsUpdate = true; s.pts.material.opacity = 0.9;
+  }
+}
+
 /**
- * Show equipment on a character. eq = {head, body, cape, weapon, off} (item ids or null)
+ * Show equipment on a character. eq = {head, body, cape, weapon, off}: {id, q, up} (or item ids) or null
  */
 export async function applyEquip(c, eq) {
   c.equipToken = (c.equipToken || 0) + 1; const token = c.equipToken;
-  const built = {};
+  const built = {}, E = {};
+  for (const slot of ['head', 'body', 'cape', 'weapon', 'off']) E[slot] = eq[slot] ? entry(eq[slot]) : null;
   for (const slot of ['head', 'body', 'cape']) {
-    const it = eq[slot] && ITEMS[eq[slot]];
+    const it = E[slot] && ITEMS[E[slot].id];
     built[slot] = it && it.wear ? await transplant(c, it.wear.from, it.wear.parts, it.tint, it.tintK) : [];
   }
   const held = {};
   for (const slot of ['weapon', 'off']) {
-    const it = eq[slot] && ITEMS[eq[slot]];
+    const it = E[slot] && ITEMS[E[slot].id];
     if (it && it.model) { const s = await heldModel(it.model); if (s) { const o = s.clone(true); if (it.tint) o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.lerp(new THREE.Color(it.tint), it.tintK ?? 0.5); } }); shadowize(o); held[slot] = { o, hand: it.hand || (slot === 'off' ? 'l' : 'r') }; } }
   }
   if (token !== c.equipToken) { Object.values(built).flat().forEach(m => m.parent && m.parent.remove(m)); return; }
   // remove old
   for (const k in c.equipMeshes) c.equipMeshes[k].forEach(m => m.parent && m.parent.remove(m));
   for (const k in c.held) { const h = c.held[k]; if (h && h.o.parent) h.o.parent.remove(h.o); }
-  c.equipMeshes = built; c.held = {};
+  for (const s of c.sparkles || []) s.pts.parent && s.pts.parent.remove(s.pts);
+  c.equipMeshes = built; c.held = {}; c.glow = []; c.sparkles = [];
   setOwnVisible(c, BODY, !built.body.length);
   for (const slot in held) { const h = held[slot], bone = handSlot(c, h.hand === 'l' ? 'l' : 'r'); if (bone) { bone.add(h.o); c.held[slot] = h; } }
+  for (const slot of ['head', 'body', 'cape']) if (E[slot]) addGlow(c, built[slot], glowOf(E[slot]));
+  for (const slot of ['weapon', 'off']) if (E[slot] && held[slot]) addGlow(c, [held[slot].o], glowOf(E[slot]));
 }
 
 /** Give an NPC or enemy weapons directly (file names in assets/items). */
