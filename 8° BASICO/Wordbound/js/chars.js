@@ -222,3 +222,16 @@ export async function makeAnimal(file, h, tint) {
   c.play('Idle_A', 0);
   return c;
 }
+
+/** Straw training dummy (never dies). */
+export function makeDummy() {
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const wood = M('#7a5230'), straw = M('#e0c060');
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 2.6, 6), wood); post.position.y = 1.3; root.add(post);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.45, 1.2, 8), straw); torso.position.y = 1.7; body.add(torso);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 8, 6), straw); head.position.y = 2.6; body.add(head);
+  const arms = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.18, 0.18), wood); arms.position.y = 2.05; body.add(arms);
+  for (const [r, c] of [[0.38, '#ffffff'], [0.26, '#e2453a'], [0.12, '#ffffff']]) { const t = new THREE.Mesh(new THREE.CircleGeometry(r, 16), M(c)); t.position.set(0, 1.75, 0.47 + (0.38 - r) * 0.05); body.add(t); }
+  shadowize(root);
+  return { root, body, dummy: true, play() {}, mixer: null, lockUntil: 0 };
+}

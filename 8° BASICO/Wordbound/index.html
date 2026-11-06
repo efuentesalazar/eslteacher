@@ -67,6 +67,8 @@ input[type=text]{width:100%;padding:9px 12px;border-radius:10px;border:2px solid
 #onl{position:absolute;right:12px;top:208px;width:170px;text-align:center;background:rgba(42,29,18,.75);color:#ddd;border-radius:10px;padding:4px 6px;font-weight:900;font-size:13px;pointer-events:auto;cursor:pointer}#onl.on{background:rgba(31,143,90,.9);color:#fff}
 #chatBtn{position:absolute;left:calc(50% + 90px);bottom:14px;pointer-events:auto;padding:8px 12px;font-size:14px}
 #phr{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));gap:6px;pointer-events:auto;background:rgba(251,241,220,.95);border:3px solid var(--edge);border-radius:14px;padding:8px}#phr .btn{font-size:14px;padding:7px 10px;text-align:left}#phr kbd{background:var(--paper2);border-radius:5px;padding:0 5px;margin-right:4px;font-family:inherit}
+#duel{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;gap:12px;align-items:center;background:rgba(42,29,18,.85);color:#fff;border-radius:14px;padding:8px 14px;width:min(620px,70vw)}#duel .dside{flex:1}#duel .dside b{font-family:Cinzel}#duel .dmid{font-weight:900;text-align:center;font-size:18px}#duel .bar2{height:16px}
+#powBtn{position:absolute;left:calc(50% - 210px);bottom:14px;pointer-events:auto;padding:8px 12px;font-size:14px;background:linear-gradient(#ffd468,#f0a920)}#powBtn.ready{background:linear-gradient(#fff2a0,#ffb020);box-shadow:0 0 18px #ffd23a,var(--shadow);animation:pw 0.8s infinite alternate}@keyframes pw{to{transform:scale(1.08)}}
 #bossbar{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(460px,50vw);text-align:center;color:#fff;font-family:Cinzel;font-weight:900;text-shadow:0 2px 3px #000}
 #bossbar .bar2{height:16px;border:2px solid #000}#bossbar i{background:linear-gradient(90deg,#b05cff,#6a1fd0)}
 /* dialogue */
@@ -141,7 +143,7 @@ input[type=text]{width:100%;padding:9px 12px;border-radius:10px;border:2px solid
  #dlg{padding:8px 10px;gap:8px;bottom:6px}#dlg .face{flex-basis:44px;height:44px;font-size:22px}#dlg .txt{font-size:15px}#dlg .opt{font-size:14px;padding:6px 9px}#dlg .q{font-size:13px}
  .inv{grid-template-columns:1fr}.doll{height:300px}.qlist,.shop{grid-template-columns:1fr}
  #help{display:none}#prompt{bottom:12px;font-size:14px}#btns{bottom:auto;top:150px;right:8px;flex-direction:column}#potBtn{bottom:auto;top:8px}
- #banner h2{font-size:32px}#toast{font-size:20px}#onl{top:136px;width:110px;right:8px;font-size:10px}#chatBtn{left:auto;right:8px;bottom:auto;top:330px}#phr{grid-template-columns:1fr 1fr;bottom:8px}
+ #banner h2{font-size:32px}#toast{font-size:20px}#onl{top:136px;width:110px;right:8px;font-size:10px}#chatBtn{left:auto;right:8px;bottom:auto;top:330px}#powBtn{left:auto;right:8px;bottom:auto;top:380px}#duel{width:92vw;top:4px}#phr{grid-template-columns:1fr 1fr;bottom:8px}
 }
 </style>
 <script type="importmap">
@@ -186,6 +188,8 @@ input[type=text]{width:100%;padding:9px 12px;border-radius:10px;border:2px solid
  <div id="realmName"></div>
  <div id="onl" title="Online world">🌐 Offline</div>
  <div id="phr" class="hidden"></div>
+ <div id="duel" class="hidden"></div>
+ <button class="btn" id="powBtn" title="Power Strike (R)">💥 Power (R)</button>
  <button class="btn blue hidden" id="chatBtn">💬 Say (T)</button>
  <svg id="arrow" viewBox="0 0 40 40"><path d="M20 3 L35 34 L20 26 L5 34 Z" fill="#ffc23d" stroke="#2a1d12" stroke-width="3" stroke-linejoin="round"/></svg>
  <div id="bossbar" class="hidden"><div id="bossName"></div><div class="bar2"><i></i></div></div>

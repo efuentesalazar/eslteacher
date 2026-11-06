@@ -53,14 +53,14 @@ function buildRoads() {
   const T = REALMS.map(r => r.town);
   for (let i = 1; i < 5; i++) roadPath(T[0].x + Math.sign(T[i].x) * 10, T[0].z + Math.sign(T[i].z) * 10, T[i].x - Math.sign(T[i].x) * 8, T[i].z - Math.sign(T[i].z) * 8, 8, 2);
   const spur = (a, b) => roadPath(PLACES[a].x, PLACES[a].z, PLACES[b].x, PLACES[b].z, 3, 1);
-  spur('brightwater', 'farm'); spur('brightwater', 'mill'); spur('brightwater', 'pond');
+  spur('brightwater', 'farm'); spur('brightwater', 'mill'); spur('brightwater', 'pond'); roadPath(-8, -8, -38, -55, 3, 1);
   spur('leafhollow', 'glade'); spur('leafhollow', 'wolflake'); spur('leafhollow', 'sagetree');
   roadPath(176, -10, 200, -42, 3, 1); spur('ironhearth', 'quarry');
   spur('redrock', 'oasis'); spur('redrock', 'ruins');
   spur('bonewick', 'graveyard'); roadPath(-172, -8, -172, -40, 1, 1); roadPath(-172, -40, -200, -44, 1, 1); spur('bonewick', 'tower');
   // flat ground in towns and special places
   flatArea(0, 0, 34); flatArea(0, -176, 30); flatArea(176, 0, 30); flatArea(0, 176, 30); flatArea(-172, 0, 26);
-  flatArea(46, 36, 16); flatArea(-50, 40, 8); flatArea(-226, 0, 16); flatArea(-206, -44, 12); flatArea(208, -52, 22); flatArea(0, -224, 10);
+  flatArea(-50, -74, 24); flatArea(46, 36, 16); flatArea(-50, 40, 8); flatArea(-226, 0, 16); flatArea(-206, -44, 12); flatArea(208, -52, 22); flatArea(0, -224, 10);
 }
 
 function drawRoads() {
@@ -226,7 +226,45 @@ function portal(def) {
 }
 
 // ---------- realms ----------
+
+/** The Arena (PvP duels): sand floor, stone wall with a gate, banners, torches and benches. */
+function arena() {
+  const A = PLACES.arena, y = H(A.x, A.z), g = new THREE.Group(); g.position.set(A.x, y, A.z); scene.add(g);
+  const gateA = Math.atan2(-A.z, -A.x);                 // the gate looks at Brightwater
+  world.arena = { x: A.x, z: A.z, r: 13, gateA };
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(14.6, 48).rotateX(-Math.PI / 2), M('#e8cf98', { roughness: 1 })); floor.position.y = 0.07; floor.receiveShadow = true; g.add(floor);
+  for (const [r0, r1, c] of [[5.6, 6, '#b08850'], [0, 1.2, '#c0392b'], [13.6, 14.6, '#b08850']]) { const m = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 48).rotateX(-Math.PI / 2), M(c)); m.position.y = 0.09; g.add(m); }
+  for (const [s, c] of [[-1, '#e2453a'], [1, '#2f8fe0']]) { const m = new THREE.Mesh(new THREE.CircleGeometry(1.4, 24).rotateX(-Math.PI / 2), M(c, { emissive: c, emissiveIntensity: 0.25 })); m.position.set(s * 8, 0.1, 0); g.add(m); }
+  // stone wall, with a gap for the gate
+  const stone = M('#a39a8c'), top = M('#8a8174');
+  const segs = 34;
+  for (let i = 0; i < segs; i++) {
+    const a = i / segs * Math.PI * 2, da = Math.atan2(Math.sin(a - gateA), Math.cos(a - gateA));
+    if (Math.abs(da) < 0.22) continue;
+    const x = Math.cos(a) * 15.4, z = Math.sin(a) * 15.4;
+    const w = new THREE.Mesh(new THREE.BoxGeometry(2.95, 1.7, 0.9), stone); w.position.set(x, 0.85, z); w.rotation.y = -a + Math.PI / 2; w.castShadow = true; w.receiveShadow = true; g.add(w);
+    if (i % 2) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 1.1), top); c.position.set(x, 1.95, z); c.rotation.y = -a + Math.PI / 2; g.add(c); }
+    colliders.push({ x: A.x + x, z: A.z + z, r: 1.45 });
+  }
+  // gate pillars with flags, and big pillars around
+  for (const s of [-1, 1]) {
+    const a = gateA + s * 0.27, x = Math.cos(a) * 15.6, z = Math.sin(a) * 15.6;
+    const p = new THREE.Mesh(new THREE.BoxGeometry(1.4, 5, 1.4), stone); p.position.set(x, 2.5, z); p.castShadow = true; g.add(p);
+    const f = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.6, 1.2), M(s < 0 ? '#e2453a' : '#2f8fe0')); f.position.set(x, 4.2, z + 0.01); f.rotation.y = -a; g.add(f);
+    colliders.push({ x: A.x + x, z: A.z + z, r: 1 });
+  }
+  const arch = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 9.5), stone); arch.position.set(Math.cos(gateA) * 15.6, 5.2, Math.sin(gateA) * 15.6); arch.rotation.y = -gateA; arch.castShadow = true; g.add(arch);
+  for (let k = 0; k < 8; k++) {
+    const a = gateA + Math.PI / 8 + k * Math.PI / 4; if (Math.abs(Math.atan2(Math.sin(a - gateA), Math.cos(a - gateA))) < 0.4) continue;
+    prop('dg/torch_lit', A.x + Math.cos(a) * 16.9, A.z + Math.sin(a) * 16.9, 2.6, { r: 0.3 });
+    prop(k % 2 ? 'dg/banner_patternA_red' : 'dg/banner_patternC_blue', A.x + Math.cos(a + 0.2) * 16.9, A.z + Math.sin(a + 0.2) * 16.9, 3.2, { r: 0.3, ry: -a - Math.PI / 2 });
+  }
+  for (let k = 0; k < 10; k++) { const a = gateA + 0.7 + k * 0.5; prop('hw/bench', A.x + Math.cos(a) * 19.5, A.z + Math.sin(a) * 19.5, 0.9, { r: 0.9, ry: -a + Math.PI / 2 }); }
+  shadowize(floor); block(A.x, A.z, 26);
+}
+
 async function greenvale() {
+  arena();
   linguaStone();
   const plaza = new THREE.Mesh(new THREE.CircleGeometry(13, 40).rotateX(-Math.PI / 2), M('#e6cf9e')); plaza.position.y = H(0, 0) + 0.05; plaza.receiveShadow = true; scene.add(plaza);
   block(0, 0, 36);

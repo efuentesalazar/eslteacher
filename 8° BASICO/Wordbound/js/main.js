@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { scene, colliders, camBlockers, animated, WORLD_R, REALMS, realmWeights, realmAt, H, setProgress, label, M, load, roads, shadowize, prop } from './core.js';
 import { buildWorld, world, noticeBoard } from './world.js';
-import { makeChar, applyEquip, holdItems, makeSlime, makeAnimal, RACES, pulseGlow } from './chars.js';
+import { makeChar, applyEquip, holdItems, makeSlime, makeAnimal, RACES, pulseGlow, makeDummy } from './chars.js';
 import { ITEMS, SLOTS, TYPE_NAME, QUAL, MAX_UP, isGear, entry, itemStat, fullName, itemValue, upgradeCost, TIERS, tierOf, KITS, KIT_TXT } from './data/items.js';
 import { PLACES, NPCS, MONSTERS, ZONES, PICKS, PORTALS } from './data/world_data.js';
 import { QUESTS, DOCS, ACTS, SKILLS, SKILLS_ES } from './data/quests.js';
@@ -122,12 +122,14 @@ function equipFromInv(idx) {
 function unequip(slot) { if (!S.eq[slot]) return; S.inv.push({ ...S.eq[slot], n: 1 }); S.eq[slot] = null; sfx('equip'); save(); refreshEquip(); }
 function useItem(idx) {
   const s = S.inv[idx]; if (!s) return; const it = ITEMS[s.id];
+  if (DUEL.on && it.t === 'use') { toast('No potions in a duel!'); return; }
   if (it.t !== 'use') return;
   if (S.hp >= maxHP()) { toast('Your health is already full ❤️'); return; }
   S.hp = Math.min(maxHP(), S.hp + it.heal); removeItem(s.id, 1); sfx('ok'); floatText(`+${it.heal}`, player.pos, '#5fe07a'); hudDirty = true;
 }
 function quickPotion() {
   if (busy() || player.dead) return;
+  if (DUEL.on) { toast('No potions in a duel!'); return; }
   const order = ['potion_m', 'potion_s', 'mushroom_soup', 'cheese', 'bread', 'apple'];
   const id = order.find(id => count(id) > 0); if (!id) { toast('No potions! Buy some in a shop.'); return; }
   useItem(S.inv.findIndex(s => s.id === id));
@@ -379,6 +381,7 @@ async function talkTo(id) {
     await runScript([`Hey, you look different! A real ${{ Knight: 'knight', Ranger: 'archer', Rogue: 'rogue', Mage: 'wizard', Barbarian: 'barbarian' }[S.look] || 'hero'}! You need the right weapons for that.`, { kit: true }, 'Open your bag (I) and equip them. Good luck!'], 'tom');
     return;
   }
+  if (n.arena) return arenaFlow();
   if (n.upgrader) return upgradeFlow(id);
   if (n.shop) return shopFlow(id);
   if (n.kind === 'board') { const act = QUESTS.find(q => q.giver === id && isActive(q.id)); await say(id, act ? `You accepted: "${act.title}". Good luck!` : 'There are no new notices here. Come back later!'); return; }
@@ -746,7 +749,8 @@ function monLabel(m) {
 async function createMonster(zi, elite) {
   const z = ZONES[zi], d = elite ? eliteDef(z.m) : MONSTERS[z.m];
   let c;
-  if (d.kind === 'slime') c = makeSlime(d.color, d.size);
+  if (d.kind === 'dummy') c = makeDummy();
+  else if (d.kind === 'slime') c = makeSlime(d.color, d.size);
   else if (d.kind === 'animal') c = await makeAnimal(d.file, d.h, d.tint);
   else { c = await makeChar(d.model, { tint: d.tint, tintK: 0.5 }); if (d.hold) await holdItems(c, d.hold[0], d.hold[1]); if (d.scale) c.root.scale.setScalar(d.scale); }
   const m = { d, type: z.m, zi, c, home: new THREE.Vector3(z.x, 0, z.z), pos: new THREE.Vector3(), hp: d.hp, state: 'idle', t: 0, cd: 0, wander: null, scale: d.scale || (d.kind === 'slime' ? d.size : d.h ? d.h / 1.3 : 1), dead: false, deadT: 0 };
@@ -781,6 +785,7 @@ function updateMonsters(dt, t) {
   const pp = player.pos; let boss = null;
   for (const m of monsters) {
     if (!m.active) continue;
+    if (m.d.kind === 'dummy') { m.c.body.rotation.z *= 0.88; m.c.root.position.copy(m.pos); if (m.lab) m.lab.position.set(m.pos.x, m.pos.y + 3.4, m.pos.z); continue; }
     const c = m.c, dx = pp.x - m.pos.x, dz = pp.z - m.pos.z, dist = Math.hypot(dx, dz);
     if (m.dead) {
       m.deadT += dt;
@@ -845,6 +850,7 @@ async function summon(m) {
 }
 function damageMonster(m, dmg, crit) {
   if (m.dead) return;
+  if (m.d.kind === 'dummy') { floatText(`${crit ? '💥' : ''}${dmg}`, m.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), crit ? '#ffd23a' : '#ffffff'); m.c.body.rotation.z = (Math.random() < 0.5 ? -1 : 1) * Math.min(0.5, dmg / 60); sfx('punch', 0.5); return; }
   m.hp -= dmg; m.state = 'chase'; monLabel(m);
   floatText(`${crit ? '💥' : ''}${dmg}`, m.pos.clone().add(new THREE.Vector3(0, 2 * m.scale, 0)), crit ? '#ffd23a' : '#ffffff');
   sfx(m.d.kind === 'slime' ? 'squish' : m.d.kind === 'char' ? 'clang' : 'punch', 0.5);
@@ -893,14 +899,17 @@ function attack() {
   player.atkCd = now + (kind === '2h' ? 950 : ranged ? 750 : kind === 'fist' ? 450 : 560) / (w?.speed || 1);
   const target = nearestMonster(ranged ? 24 : 5, ranged);
   if (target) player.ry = Math.atan2(target.pos.x - player.pos.x, target.pos.z - player.pos.z);
-  const roll = () => { const crit = Math.random() < 0.1; return [Math.max(1, Math.round(atk() * (0.85 + Math.random() * 0.3) * (crit ? 1.8 : 1))), crit]; };
+  const pw = takePower();
+  const roll = () => { const crit = pw || Math.random() < 0.1; return [Math.max(1, Math.round(atk() * (0.85 + Math.random() * 0.3) * (crit ? 1.8 : 1) * (pw ? 2.5 : 1))), crit]; };
+  const opp = DUEL.on ? oppPeer() : null;
+  if (opp && opp.c) player.ry = Math.atan2(opp.pos.x - player.pos.x, opp.pos.z - player.pos.z);
   if (ranged) {
     player.c.play(kind === 'bow' ? 'Ranged_Bow_Release' : kind === 'xbow' ? 'Ranged_1H_Shoot' : 'Ranged_Magic_Shoot', 0.08, true, 1.4);
     sfx('swing', 0.4);
     setTimeout(() => {
       const from = player.pos.clone().add(new THREE.Vector3(Math.sin(player.ry) * 0.8, 1.5, Math.cos(player.ry) * 0.8));
-      const to = target ? target.pos.clone().add(new THREE.Vector3(0, 1 * target.scale, 0)) : from.clone().add(new THREE.Vector3(Math.sin(player.ry) * 20, 0, Math.cos(player.ry) * 20));
-      const [dm, cr] = roll(); shoot(from, to, 'player', dm, kind === 'magic' ? '#7fd8ff' : '#ffe08a', kind, cr);
+      const to = opp ? opp.pos.clone().add(new THREE.Vector3(0, 1.2, 0)) : target ? target.pos.clone().add(new THREE.Vector3(0, 1 * target.scale, 0)) : from.clone().add(new THREE.Vector3(Math.sin(player.ry) * 20, 0, Math.cos(player.ry) * 20));
+      const [dm, cr] = roll(); shoot(from, to, 'player', dm, kind === 'magic' ? '#7fd8ff' : '#ffe08a', kind, cr, pw ? atk() : 0, pw);
     }, 180);
   } else {
     const dual = kind === '1h' && S.eq.off && ITEMS[wid('off')].model === 'dagger';
@@ -914,22 +923,24 @@ function attack() {
         const a = Math.atan2(m.pos.x - player.pos.x, m.pos.z - player.pos.z), df = Math.abs(Math.atan2(Math.sin(a - player.ry), Math.cos(a - player.ry)));
         if (df < 1.3 || kind === '2h' && player.combo === 2) { const [dm, cr] = roll(); damageMonster(m, dm, cr); }
       }
+      if (opp) { const d = Math.hypot(opp.pos.x - player.pos.x, opp.pos.z - player.pos.z), a = Math.atan2(opp.pos.x - player.pos.x, opp.pos.z - player.pos.z), df = Math.abs(Math.atan2(Math.sin(a - player.ry), Math.cos(a - player.ry))); if (d < reach + 0.6 && df < 1.4) pvpHit(atk(), pw); }
     }, 230);
   }
 }
-function shoot(from, to, side, dmg, color, kind, crit) {
+function shoot(from, to, side, dmg, color, kind, crit, pvpAtk, pw) {
   const dir = to.clone().sub(from).normalize();
   let mesh;
   if (kind === 'bow' || kind === 'xbow') { mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 4), M('#8a5a2b')); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir); }
   else { mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(side === 'enemy' ? 0.35 : 0.25, 0), new THREE.MeshBasicMaterial({ color })); const l = new THREE.PointLight(color, 4, 6); mesh.add(l); }
   mesh.position.copy(from); scene.add(mesh);
-  projectiles.push({ mesh, vel: dir.multiplyScalar(side === 'enemy' ? 15 : 28), side, dmg, life: 1.6, crit });
+  projectiles.push({ mesh, vel: dir.multiplyScalar(side === 'enemy' ? 15 : 28), side, dmg, life: 1.6, crit, pvp: DUEL.on && side === 'player', pw });
 }
 function updateProjectiles(dt) {
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const p = projectiles[i]; p.life -= dt; p.mesh.position.addScaledVector(p.vel, dt); p.mesh.rotation.x += dt * 8;
     let hit = false;
-    if (p.side === 'player') { for (const m of monsters) { if (!m.active || m.dead) continue; const c = m.pos.clone(); c.y += 1 * m.scale; if (c.distanceTo(p.mesh.position) < 1 + 0.5 * m.scale) { damageMonster(m, p.dmg, p.crit); hit = true; break; } } }
+    if (p.pvp) { const e = oppPeer(); if (e && e.pos.clone().add(new THREE.Vector3(0, 1.2, 0)).distanceTo(p.mesh.position) < 1.3) { pvpHit(atk(), p.pw); hit = true; } }
+    if (!hit && p.side === 'player') { for (const m of monsters) { if (!m.active || m.dead) continue; const c = m.pos.clone(); c.y += 1 * m.scale; if (c.distanceTo(p.mesh.position) < 1 + 0.5 * m.scale) { damageMonster(m, p.dmg, p.crit); hit = true; break; } } }
     else if (!busy()) { const c = player.pos.clone(); c.y += 1.1; if (c.distanceTo(p.mesh.position) < 1.1) { hurtPlayer(p.dmg); hit = true; } }
     if (hit || p.life <= 0 || p.mesh.position.y < H(p.mesh.position.x, p.mesh.position.z)) { scene.remove(p.mesh); projectiles.splice(i, 1); }
   }
@@ -1151,9 +1162,10 @@ addEventListener('keydown', e => {
     if (['Enter', 'Space', 'KeyE'].includes(e.code) && dlgNext) dlgNext();
     return;
   }
-  if (modalOpen) { if (e.code === 'Escape' && !$('modal').dataset.lock) closeModal(); else if ((e.code === 'KeyI' || e.code === 'Tab') && bagOpen) closeModal(); else if (e.code === 'KeyJ' && $('mbox').querySelector('.tabs')) closeModal(); else if (e.code === 'KeyM' && $('bigmap')) closeModal(); return; }
+  if (modalOpen) { if ($('powT') && /^Digit[1-3]$/.test(e.code) && dlgPowerPick) { dlgPowerPick(+e.code.slice(5) - 1); return; } if (e.code === 'Escape' && !$('modal').dataset.lock) closeModal(); else if ((e.code === 'KeyI' || e.code === 'Tab') && bagOpen) closeModal(); else if (e.code === 'KeyJ' && $('mbox').querySelector('.tabs')) closeModal(); else if (e.code === 'KeyM' && $('bigmap')) closeModal(); return; }
   if (mode !== 'play') return;
   if (e.code === 'KeyT') togglePhrases();
+  if (e.code === 'KeyR') powerStrike();
   if (/^Digit\d$/.test(e.code) && !$('phr').classList.contains('hidden')) { sayPhrase((+e.code.slice(5) + 9) % 10); return; }
   if (e.code === 'KeyE') interact();
   if (e.code === 'KeyF') attack();
@@ -1182,7 +1194,7 @@ if (isTouch) {
   $('tPot').addEventListener('pointerdown', () => quickPotion());
 }
 $('prompt').addEventListener('click', () => interact());
-$('potBtn').onclick = quickPotion; $('chatBtn').onclick = togglePhrases; $('onl').onclick = () => { if (!S.online) { S.online = true; save(); goOnline(); } else if (!net.NET.ok) goOnline(); }; $('bBag').onclick = openBag; $('bJour').onclick = openJournal; $('bMap').onclick = openMap;
+$('potBtn').onclick = quickPotion; $('powBtn').onclick = powerStrike; $('chatBtn').onclick = togglePhrases; $('onl').onclick = () => { if (!S.online) { S.online = true; save(); goOnline(); } else if (!net.NET.ok) goOnline(); }; $('bBag').onclick = openBag; $('bJour').onclick = openJournal; $('bMap').onclick = openMap;
 $('bMenu').onclick = () => {
   if (busy()) return;
   openModal(`<h2>☰ Menu</h2><div class="foot" style="justify-content:flex-start">
@@ -1233,7 +1245,7 @@ function updatePlayer(dt) {
   }
   if (player.hurtT > 0) { player.hurtT -= dt; cv.style.filter = `saturate(1.2) brightness(${1 + player.hurtT})`; } else cv.style.filter = '';
   // health comes back slowly when nobody is fighting you
-  if (!player.dead && S.hp < maxHP() && !monsters.some(m => m.state === 'chase' && !m.dead && m.active)) { S.hp = Math.min(maxHP(), S.hp + dt * (2 + S.lvl * 0.4)); if (Math.random() < 0.05) hudDirty = true; }
+  if (!player.dead && !DUEL.on && S.hp < maxHP() && !monsters.some(m => m.state === 'chase' && !m.dead && m.active)) { S.hp = Math.min(maxHP(), S.hp + dt * (2 + S.lvl * 0.4)); if (Math.random() < 0.05) hudDirty = true; }
 }
 function updateCamera(dt) {
   if (mode === 'menu') { cam.yaw += dt * 0.1; }
@@ -1272,7 +1284,7 @@ function updateAtmosphere(dt) {
 const PHRASES = ['Hello! 👋', "Let's go!", 'Follow me!', 'Help me, please!', 'Thank you!', 'Good job!', 'Sorry!', 'Wait for me!', 'Where are you?', 'See you later!'];
 const PH_ANIM = { 0: 'Waving', 5: 'Cheering', 9: 'Waving' };
 const ONL = { peers: new Map(), lastSend: 0, lastPos: null, moving: false, idleT: 0, status: 'off', hiddenT: null };
-function myInfo() { return { name: S.name || 'Hero', race: S.race, look: S.look, lvl: S.lvl, x: Math.round(player.pos.x), z: Math.round(player.pos.z), eq: Object.fromEntries(Object.entries(S.eq).map(([k, e]) => [k, e ? [e.id, e.q, e.up] : null])) }; }
+function myInfo() { return { name: S.name || 'Hero', race: S.race, look: S.look, lvl: S.lvl, w: ARENA.wins, d: DUEL.on ? 1 : 0, x: Math.round(player.pos.x), z: Math.round(player.pos.z), eq: Object.fromEntries(Object.entries(S.eq).map(([k, e]) => [k, e ? [e.id, e.q, e.up] : null])) }; }
 function eqFrom(p) { const eq = {}; for (const k in p.eq || {}) { const v = p.eq[k]; eq[k] = v && ITEMS[v[0]] ? { id: v[0], q: v[1], up: Math.min(MAX_UP, +v[2] || 0) } : null; } return eq; }
 async function buildPeer(e) {
   const p = e.data, token = (e.token || 0) + 1; e.token = token;
@@ -1339,7 +1351,8 @@ function sendState(force) {
   if (!net.NET.ok) return;
   const now = performance.now(), p = player.pos, moving = ONL.moving;
   const a = player.c?.curName || 'Idle_A';
-  if (moving && (force || now - ONL.lastSend > 1500)) {
+  const every = DUEL.on ? 300 : 1500;
+  if ((moving || (DUEL.on && now - ONL.lastSend > 1000)) && (force || now - ONL.lastSend > every)) {
     const dt = Math.max(0.3, (now - ONL.lastSend) / 1000), lp = ONL.lastPos || p;
     const vx = ONL.lastPos ? (p.x - lp.x) / dt : 0, vz = ONL.lastPos ? (p.z - lp.z) / dt : 0;
     net.send('st', { x: +p.x.toFixed(1), z: +p.z.toFixed(1), ry: +player.ry.toFixed(2), vx: +vx.toFixed(1), vz: +vz.toFixed(1), a });
@@ -1385,6 +1398,162 @@ document.addEventListener('visibilitychange', () => {
   else { clearTimeout(ONL.hiddenT); if (ONL.status === 'away') goOnline(); }
 });
 
+
+// ======================= ARENA (PvP duels) =======================
+// Duels are 1 vs 1, only inside the arena, only with players who accept.
+// Each player checks their own hits and tells the other one; nothing is stored.
+const DUEL_HP = 300, DUEL_TIME = 90;
+const DUEL = { on: false, opp: null, oppName: '', hp: DUEL_HP, oppHp: DUEL_HP, t: 0, phase: '', pending: null, side: 0 };
+const ARENA = { wins: 0, losses: 0 };
+let POWER = { ready: false, cd: 0 };
+const POWER_Q = [
+  ...LUCKY,
+  { q: 'Choose the correct sentence.', o: ['She is faster than me.', 'She is more fast than me.', 'She is fastest than me.'] },
+  { q: 'The opposite of "win" is ___.', o: ['lose', 'run', 'fight'] },
+  { q: 'A ___ is a fight between two people.', o: ['duel', 'dinner', 'dream'] },
+  { q: 'You were great! Good ___!', o: ['job', 'jump', 'jam'] },
+  { q: '"Ready, steady, ___!"', o: ['go', 'goes', 'went'] },
+  { q: 'I ___ the duel yesterday. I was the best!', o: ['won', 'win', 'winned'] },
+  { q: 'Be careful! That attack is very ___.', o: ['dangerous', 'delicious', 'boring'] },
+  { q: 'What do you say when you lose a game?', o: ['Well done! Good game.', 'You are terrible.', 'Give me your sword.'] }
+];
+const oppPeer = () => DUEL.opp && ONL.peers.get(DUEL.opp);
+function inArena(p) { const a = world.arena; return a && Math.hypot(p.x - a.x, p.z - a.z) < a.r; }
+
+async function arenaFlow() {
+  if (!net.NET.ok) {
+    await runScript(['Welcome to the Arena! Here, heroes fight one against one, in a fair and friendly duel.', S.online ? 'But you are not connected to the online world right now. Come back when your classmates are playing!' : 'But you are playing offline. Turn online mode ON in the menu (☰) to fight your classmates.', 'You can practise on the training dummies next to the gate. Press R for a Power Strike!'], 'vera');
+    return;
+  }
+  if (!S.flags.arenaIntro) {
+    await runScript([
+      'Welcome to the Arena! I am Captain Vera. Here, heroes fight one against one, in a fair and friendly duel.',
+      'The rules: no potions, and the arena makes the fight fair. Your armour and weapons help, but they are not everything!',
+      'Press R for a POWER STRIKE: answer a quick English question, and your next hit will be very strong.',
+      { ask: 'Captain Vera asks: "What do you say to your opponent after a duel?"', k: 'CONV', o: [['Good game! Well done.', 'Exactly. A true hero is always a good sport.'], ['Ha ha, you are terrible!', 'That is not nice. In my arena, we respect our opponents.'], ['Give me your gold.', 'No, no. Nobody loses gold here!']] }
+    ], 'vera');
+    S.flags.arenaIntro = true; save();
+  }
+  openArenaMenu();
+}
+function openArenaMenu() {
+  const me = { id: 'me', name: S.name || 'You', lvl: S.lvl, w: ARENA.wins, me: true };
+  const list = [...net.NET.peers.values()].map(p => ({ id: p.id, name: p.name || 'Hero', lvl: p.lvl || 1, w: p.w || 0, d: p.d }));
+  const rank = [me, ...list].sort((a, b) => b.w - a.w).slice(0, 8);
+  const rows = list.length ? list.map(p => `<div class="srow"><div class="ic">⚔️</div><div class="nm">${esc(p.name)}<small>Level ${p.lvl} · ${p.w} win${p.w === 1 ? '' : 's'} today${p.d ? ' · <b style="color:#c0392b">in a duel now</b>' : ''}</small></div><button class="btn red" data-ch="${p.id}" ${p.d || DUEL.pending ? 'disabled' : ''}>Challenge!</button></div>`).join('') : '<div class="small">Nobody else is online right now. Practise with the training dummies!</div>';
+  openModal(`<button class="btn alt x" id="xx">✕</button><h2>⚔️ The Arena</h2>
+  <div class="doc" style="font-family:Nunito;font-size:16px;margin-bottom:10px">${glossify('Choose a player and send a challenge. If they say yes, you both go into the arena. The duel lasts 90 seconds. No potions! Press R for a Power Strike.')}</div>
+  <div class="shop"><div><h3 style="margin:4px 0">Players online</h3>${rows}</div>
+  <div><h3 style="margin:4px 0">🏆 Today's champions</h3>${rank.map((p, i) => `<div class="phr" style="${p.me ? 'border-color:#e09a1a' : ''}">${['🥇', '🥈', '🥉'][i] || i + 1 + '.'} ${esc(p.name)} <span style="float:right">${p.w} 🏆</span></div>`).join('')}<div class="small">Your duels today: ${ARENA.wins} won · ${ARENA.losses} lost. The ranking is only for today and is not saved.</div></div></div>`, true);
+  $('xx').onclick = closeModal;
+  $('mbox').querySelectorAll('[data-ch]').forEach(b => b.onclick = () => challenge(b.dataset.ch));
+}
+function challenge(id) {
+  const p = net.NET.peers.get(id); if (!p) return;
+  DUEL.pending = id; net.send('duel', { t: 'req', to: id, n: S.name || 'Hero', l: S.lvl });
+  closeModal(); toast(`⚔️ Challenge sent to ${esc(p.name)}.<br><span style="font-size:.6em">Waiting for an answer…</span>`, 3000); sfx('click');
+  clearTimeout(DUEL.pendT); DUEL.pendT = setTimeout(() => { if (DUEL.pending === id) { DUEL.pending = null; toast(`${esc(p.name)} didn't answer.`); } }, 20000);
+}
+net.on('duel', async m => {
+  if (m.to !== net.NET.id) return;
+  const from = net.NET.peers.get(m.id); const name = from ? from.name : m.n;
+  if (m.t === 'req') {
+    if (DUEL.on || busy() || player.dead) { net.send('duel', { t: 'no', to: m.id, why: 'busy' }); return; }
+    sfx('open'); dlgCtx = { tag: '⚔️ Arena' };
+    const r = await choice('vera', `${name} (level ${m.l || 1}) challenges you to a duel in the Arena! Do you want to fight?`, ["Yes, let's fight!", 'No, thank you.']);
+    if (r === 0 && net.NET.peers.has(m.id) && !DUEL.on) { net.send('duel', { t: 'ok', to: m.id }); startDuel(m.id, 1); }
+    else net.send('duel', { t: 'no', to: m.id });
+  } else if (m.t === 'ok' && DUEL.pending === m.id) { DUEL.pending = null; startDuel(m.id, -1); }
+  else if (m.t === 'no' && DUEL.pending === m.id) { DUEL.pending = null; toast(m.why === 'busy' ? `${esc(name)} is busy right now. Try later!` : `${esc(name)} said: "No, thank you."`, 2600); }
+  else if (!DUEL.on || m.id !== DUEL.opp) return;
+  else if (m.t === 'hit' && DUEL.phase === 'fight') {
+    const taken = Math.max(1, Math.round(m.dmg * 30 / (30 + def() * 0.5)));
+    DUEL.hp = Math.max(0, DUEL.hp - taken); sfx('hit', 0.5); player.hurtT = 0.3;
+    floatText(`-${taken}${m.pw ? ' 💥' : ''}`, player.pos.clone().add(new THREE.Vector3(0, 2.4, 0)), '#ff6b5a');
+    if (performance.now() > player.c.lockUntil) player.c.play('Hit_A', 0.1, true);
+    net.send('duel', { t: 'hp', to: DUEL.opp, hp: DUEL.hp });
+    if (DUEL.hp <= 0) { net.send('duel', { t: 'end', to: DUEL.opp }); endDuel('lose'); }
+    duelHUD();
+  } else if (m.t === 'hp') { DUEL.oppHp = Math.min(DUEL.oppHp, m.hp); duelHUD(); }
+  else if (m.t === 'end') endDuel('win');
+});
+function startDuel(opp, side) {
+  const p = net.NET.peers.get(opp); if (!p) return;
+  closeModal(); endDialog();
+  Object.assign(DUEL, { on: true, opp, oppName: p.name || 'Hero', hp: DUEL_HP, oppHp: DUEL_HP, t: 0, phase: 'count', side });
+  const a = world.arena, gx = Math.cos(a.gateA), gz = Math.sin(a.gateA), px = -gz, pz = gx;
+  player.pos.set(a.x + px * 8 * side, 0, a.z + pz * 8 * side); player.ry = Math.atan2(-px * side, -pz * side);
+  cam.yaw = player.ry + Math.PI; ONL.lastSend = 0; sendState(true, true);
+  net.updateMe(myInfo()); playMusic('m_battle');
+  $('duel').classList.remove('hidden'); duelHUD();
+  let n = 3; const tick = () => { if (!DUEL.on) return; if (n > 0) { banner(String(n), `Duel against ${DUEL.oppName}`); sfx('click'); n--; setTimeout(tick, 1000); } else { DUEL.phase = 'fight'; banner('FIGHT!', 'Good luck!'); sfx('swing'); } };
+  tick();
+}
+function endDuel(result) {
+  if (!DUEL.on) return;
+  DUEL.on = false; DUEL.phase = '';
+  const txt = { win: ['🏆 You win!', `Great duel against ${DUEL.oppName}!`], lose: ['You lost…', `${DUEL.oppName} wins this time. Good game!`], draw: ["Time's up: it's a draw!", 'You were both great!'], left: ['🏆 You win!', `${DUEL.oppName} left the arena.`] }[result];
+  banner(txt[0], txt[1]);
+  if (result === 'win' || result === 'left') { ARENA.wins++; sfx('win'); player.c.play('Cheering', 0.2, true); gainXP(60); }
+  else if (result === 'lose') { ARENA.losses++; sfx('bad'); player.c.play('Death_A', 0.1, true); gainXP(20); }
+  else { sfx('star'); gainXP(35); }
+  net.updateMe(myInfo());
+  setTimeout(() => {
+    $('duel').classList.add('hidden');
+    const a = world.arena; player.pos.set(a.x + Math.cos(a.gateA) * 19, 0, a.z + Math.sin(a.gateA) * 19); player.ry = a.gateA + Math.PI / 2;
+    if (player.c) player.c.play('Idle_A', 0.3); playMusic(REALMS[curRealm >= 0 ? curRealm : 0].music);
+    if (result !== 'left' && Math.random() < 0.5) toast('Tip: say "Good game!" with the 💬 button (T)', 2600);
+  }, 3200);
+}
+function duelHUD() {
+  const el = $('duel'); if (!el) return;
+  const left = Math.max(0, Math.ceil(DUEL_TIME - DUEL.t));
+  el.innerHTML = `<div class="dside"><b>${esc(S.name || 'You')}</b><div class="bar2"><i style="width:${DUEL.hp / DUEL_HP * 100}%;background:linear-gradient(90deg,#ff8a7a,#e2453a)"></i><b>${DUEL.hp}</b></div></div><div class="dmid">⚔️<br>${left}s</div><div class="dside"><b>${esc(DUEL.oppName)}</b><div class="bar2"><i style="width:${DUEL.oppHp / DUEL_HP * 100}%;background:linear-gradient(90deg,#7cd0ff,#2f8fe0)"></i><b>${DUEL.oppHp}</b></div></div>`;
+}
+let duelHudT = 0;
+function updateDuel(dt) {
+  if (POWER.cd > 0) POWER.cd -= dt;
+  if (!DUEL.on) return;
+  if (!net.NET.peers.has(DUEL.opp)) { endDuel('left'); return; }
+  const a = world.arena, d = Math.hypot(player.pos.x - a.x, player.pos.z - a.z);
+  if (d > a.r - 0.6) { const k = (a.r - 0.6) / d; player.pos.x = a.x + (player.pos.x - a.x) * k; player.pos.z = a.z + (player.pos.z - a.z) * k; }
+  if (DUEL.phase === 'fight') {
+    DUEL.t += dt;
+    if (DUEL.t >= DUEL_TIME) endDuel(DUEL.hp > DUEL.oppHp ? 'win' : DUEL.hp < DUEL.oppHp ? 'lose' : 'draw');
+  }
+  if ((duelHudT += dt) > 0.5) { duelHudT = 0; duelHUD(); }
+}
+/** My hit on the opponent (I decide if it hits, they apply it). */
+function pvpHit(dmg, pw) {
+  if (!DUEL.on || DUEL.phase !== 'fight') return;
+  const e = oppPeer(); if (!e) return;
+  dmg = Math.round(10 + dmg * 0.3) * (pw ? 2.5 : 1); dmg = Math.round(dmg * (0.85 + Math.random() * 0.3));
+  net.send('duel', { t: 'hit', to: DUEL.opp, dmg, pw: pw ? 1 : 0 });
+  floatText(`${pw ? '💥' : ''}${dmg}`, e.pos.clone().add(new THREE.Vector3(0, 2.4, 0)), pw ? '#ffd23a' : '#ffffff'); sfx('clang', 0.5);
+  if (e.c && performance.now() > e.c.lockUntil) e.c.play('Hit_A', 0.1, true);
+}
+const takePower = () => { if (!POWER.ready) return false; POWER.ready = false; if (player.c) player.c.root.traverse(m => { if (m.isMesh && m.userData.pw) { m.material.emissiveIntensity = 0; } }); $('powBtn').classList.remove('ready'); return true; };
+function powerStrike() {
+  if (mode !== 'play' || busy() || player.dead) return;
+  if (POWER.ready) { toast('Your Power Strike is ready! Hit someone!'); return; }
+  if (POWER.cd > 0) { toast(`Power Strike: wait ${Math.ceil(POWER.cd)} seconds`); return; }
+  const L = POWER_Q[Math.floor(Math.random() * POWER_Q.length)], order = [0, 1, 2].sort(() => Math.random() - 0.5), t0 = performance.now();
+  let left = 8, done = false;
+  openModal(`<h2>💥 Power Strike!</h2><div class="doc" style="font-family:Nunito;font-size:20px"><b>${glossify(L.q)}</b></div><div style="display:grid;gap:8px;margin-top:10px">${order.map((i, j) => `<button class="btn alt" style="text-align:left;font-size:18px" data-a="${i}"><kbd>${j + 1}</kbd> ${esc(L.o[i])}</button>`).join('')}</div><div class="small" style="margin-top:8px">Quick! <b id="powT">${left}</b> seconds. Your enemy can still hit you!</div>`);
+  $('modal').dataset.lock = '1'; speak(L.q.replace('___', 'blank'), 'human');
+  const finish = (ok, chosen) => {
+    if (done) return; done = true; clearInterval(iv); delete $('modal').dataset.lock; closeModal();
+    record('VOC', L.q, chosen, L.o[0], ok, DUEL.on ? 'Arena: power strike' : 'Power strike', t0);
+    POWER.cd = 15;
+    if (ok) { POWER.ready = true; sfx('levelup', 0.6); toast('💥 POWER STRIKE ready!<br><span style="font-size:.6em">Your next hit is very strong</span>', 2000); $('powBtn').classList.add('ready'); }
+    else { sfx('bad'); toast(chosen ? `Not quite: "${esc(L.o[0])}"` : "Time's up!", 2000); }
+  };
+  const iv = setInterval(() => { left--; if ($('powT')) $('powT').textContent = left; if (left <= 0) finish(false, ''); }, 1000);
+  $('mbox').querySelectorAll('[data-a]').forEach(b => b.onclick = () => finish(b.dataset.a === '0', L.o[+b.dataset.a]));
+  dlgPowerPick = j => { const b = $('mbox').querySelectorAll('[data-a]')[j]; if (b) b.click(); };
+}
+let dlgPowerPick = null;
+
 // ======================= LOOP =======================
 const clock = new THREE.Clock(); let frame = 0, slowT = 0;
 function loop() { requestAnimationFrame(loop); step(); }
@@ -1392,7 +1561,7 @@ function step() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   updatePlayer(dt); if (player.c) player.c.mixer.update(dt);
   for (const N of Object.values(npcs)) { if (!N.c.mixer) continue; const d = Math.hypot(N.pos.x - player.pos.x, N.pos.z - player.pos.z); N.c.root.visible = d < 150; N.holder.visible = d < 60; if (d > 55) continue; N.c.mixer.update(dt); if (performance.now() > N.c.lockUntil) N.c.play('Idle_A', 0.3); }
-  if (mode === 'play') { updateMonsters(dt, t); updateProjectiles(dt); updatePeers(dt); sendState(false); if (ONL.idleT > 300 && net.NET.ch) { goOffline('away'); toast('You were away, so you left the online world.<br><span style="font-size:.6em">Move to come back!</span>', 3500); } }
+  if (mode === 'play') { updateMonsters(dt, t); updateProjectiles(dt); updatePeers(dt); sendState(false); updateDuel(dt); if (ONL.idleT > 300 && net.NET.ch) { goOffline('away'); toast('You were away, so you left the online world.<br><span style="font-size:.6em">Move to come back!</span>', 3500); } }
   for (const f of animated) f(t, dt);
   for (const k of picks) if (k.mesh.visible) { k.mesh.rotation.y = t * 1.2; }
   for (const g of groundItems) { g.mesh.userData.sp.position.y = 1.15 + Math.sin(t * 3 + g.pos.x) * 0.12; }

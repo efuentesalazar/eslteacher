@@ -6,6 +6,7 @@ export const PLACES = {
   farm: { x: 46, z: 36, name: "Ben's Farm" },
   mill: { x: -50, z: 40, name: 'Old Mill' },
   pond: { x: 42, z: -48, name: 'Fishing Pond' },
+  arena: { x: -50, z: -74, name: 'Arena' },
   leafhollow: { x: 0, z: -172, name: 'Leafhollow', town: 1 },
   glade: { x: -48, z: -188, name: 'Moonflower Glade' },
   wolflake: { x: 50, z: -196, name: 'Wolf Lake' },
@@ -39,6 +40,7 @@ export const NPCS = {
   finn: { name: 'Finn the Fisherman', model: 'Ranger', tint: '#3a8fb0', x: 35, z: -43, color: '#3a8fb0', chat: ['Shh! You will scare the fish.', 'Yesterday I caught a fish THIS big. Really!', 'The best time for fishing is early in the morning.'] },
   rob: { name: 'Rob the Innkeeper', model: 'Barbarian', tint: '#e0b080', x: 16, z: 24, color: '#c07a3a', chat: ['Welcome to the Sleepy Pony Inn!', 'We have soup, bread and the best apple juice in town.', 'Every Friday we have a quiz night. Everybody comes!'] },
   enchanter: { name: 'Elara the Enchanter', model: 'Mage', tint: '#ffd23a', x: -15, z: -13, color: '#c08a00', upgrader: true, hold: ['wand'], chat: ['Magic stones make metal stronger. And shinier!', 'At +12, your sword will shine like the sun.'] },
+  vera: { name: 'Captain Vera', model: 'Knight', tint: '#c0392b', x: -42.3, z: -56.3, color: '#c0392b', arena: true, hold: ['sword_2handed'], chat: [] },
   pip: { name: 'Pip the Postman', model: 'Rogue', tint: '#ffd23a', x: 6, z: -14, color: '#e0b020', chat: ['Letters, letters, letters! I deliver them all.', 'I walk twenty kilometres every day. My feet hurt!'] },
   board_g: { name: 'Notice Board', kind: 'board', x: 9, z: -5, color: '#8a5a2b' },
   cat_ok: { name: 'Black cat', kind: 'animal', file: 'cat', tint: '#202020', tintK: 0.85, paws: true, ribbon: true, x: -40, z: 52, color: '#333' },
@@ -94,6 +96,7 @@ export const NPCS = {
 
 // Monsters. Every zone respawns its monsters some time after they die.
 export const MONSTERS = {
+  dummy:      { name: 'Training Dummy', kind: 'dummy', hp: 9999, atk: 0, xp: 0, lvl: 1, gold: [0, 0], loot: [] },
   slime:      { name: 'Green Slime', kind: 'slime', color: '#5fd35a', size: 1, hp: 22, atk: 4, xp: 9, lvl: 1, gold: [1, 3], loot: [['slime_jelly', 0.6], ['potion_s', 0.12], ['apple', 0.2]] },
   blue_slime: { name: 'Blue Slime', kind: 'slime', color: '#4aa8ff', size: 1.2, hp: 38, atk: 6, xp: 14, lvl: 3, gold: [2, 5], loot: [['slime_jelly', 0.6], ['potion_s', 0.2]] },
   wolf:       { name: 'Grey Wolf', kind: 'animal', file: 'dog', tint: '#7a7f8a', h: 1.3, hp: 48, atk: 8, xp: 18, lvl: 4, gold: [2, 6], loot: [['wolf_fur', 0.7], ['potion_s', 0.15]] },
@@ -112,7 +115,8 @@ export const MONSTERS = {
 // Where monsters live. q/step: bosses only appear during that quest step.
 export const ZONES = [
   { m: 'slime', x: 60, z: 54, r: 14, n: 6 },
-  { m: 'slime', x: -62, z: -52, r: 16, n: 5 },
+  { m: 'slime', x: -84, z: -26, r: 14, n: 5 },
+  { m: 'dummy', x: -33.8, z: -60.8, r: 3, n: 2 },
   { m: 'slime', x: 70, z: -20, r: 12, n: 4 },
   { m: 'wolf', x: -30, z: -112, r: 12, n: 3 },
   { m: 'wolf', x: 34, z: -122, r: 12, n: 3 },
@@ -162,6 +166,7 @@ export const PICKS = [
 // Signs with directions (reading in the world).
 export const SIGNS = [
   { x: 6, z: -24, lines: ['↑ North: Whisperwood (Elves)', '→ East: Fishing Pond'] },
+  { x: -16, z: -24, lines: ['↖ The Arena', 'Duels: 1 vs 1'] },
   { x: 24, z: 6, lines: ['→ East: Stonehold (Dwarves)', '↘ Ben\'s Farm'] },
   { x: -6, z: 24, lines: ['↓ South: Sunscar Desert (Orcs)', '↙ Old Mill'] },
   { x: -24, z: -6, lines: ['← West: Mistmoor', 'Danger! Skeletons!'] },
@@ -174,6 +179,7 @@ export const SIGNS = [
 // Portals: walk close to one to activate it. Then you can travel between active portals.
 export const PORTALS = [
   { id: 'p_bright', name: 'Brightwater', realm: 0, x: -10, z: -8, color: '#ffd23a', lvl: '1–3' },
+  { id: 'p_arena', name: 'Arena', realm: 0, x: -47.4, z: -50.4, color: '#ff5a3a', lvl: 'PvP' },
   { id: 'p_leaf', name: 'Leafhollow', realm: 1, x: -7, z: -162, color: '#5fe07a', lvl: '3–6' },
   { id: 'p_wolf', name: 'Wolf Lake', realm: 1, x: 34, z: -186, color: '#5fe07a', lvl: '5–7' },
   { id: 'p_iron', name: 'Ironhearth', realm: 2, x: 178, z: 6, color: '#ff9a3a', lvl: '5–8' },
