@@ -6,6 +6,10 @@ const KN = ['Body', 'ArmLeft', 'ArmRight', 'LegLeft', 'LegRight'];
 export const ITEMS = {
   // ---- weapons ----
   stick:         { n: 'Wooden Stick', t: 'weapon', kind: '1h', atk: 2, model: 'staff', tint: '#8a5a2b', tintK: 0.8, price: 2, icon: '🪵', d: 'Just a stick. Better than nothing!' },
+  hunting_bow:   { n: 'Hunting Bow', t: 'weapon', kind: 'bow', atk: 5, model: 'bow_withString', hand: 'l', tint: '#8a5a2b', tintK: 0.4, price: 25, icon: '🏹', d: 'A simple bow for a new archer. Shoot from far away!' },
+  apprentice_staff: { n: 'Apprentice Staff', t: 'weapon', kind: 'magic', atk: 5, model: 'staff', tint: '#c9a46a', tintK: 0.4, price: 25, icon: '🪄', d: 'The first staff of a young wizard. It shoots little balls of magic.' },
+  hand_axe:      { n: 'Hand Axe', t: 'weapon', kind: '1h', atk: 6, model: 'axe_1handed', tint: '#9a9a9a', tintK: 0.3, price: 25, icon: '🪓', d: 'A small axe. Barbarians love it.' },
+  parrying_dagger: { n: 'Parrying Dagger', t: 'off', atk: 2, def: 1, model: 'dagger', hand: 'l', price: 20, icon: '🗡️', d: 'A dagger for your left hand. Rogues fight with two daggers (+2 attack).' },
   iron_sword:    { n: 'Iron Sword', t: 'weapon', kind: '1h', atk: 6, model: 'sword_1handed', price: 30, icon: '🗡️', d: 'A simple, strong sword made by Tom the blacksmith.' },
   hunter_dagger: { n: "Hunter's Dagger", t: 'weapon', kind: '1h', atk: 5, speed: 1.35, model: 'dagger', price: 25, icon: '🔪', d: 'Small and very fast. Good for quick attacks.' },
   battle_axe:    { n: 'Battle Axe', t: 'weapon', kind: '1h', atk: 9, model: 'axe_1handed', price: 60, icon: '🪓', d: 'A heavy axe. It hits hard.' },
@@ -156,3 +160,13 @@ export const TIERS = [
   ['shadow_staff', 'bone_shield', 'bone_helmet', 'orc_armor', 'bone_cloak', 'shadow_plate', 'golden_helmet']
 ];
 export const tierOf = lvl => lvl < 3 ? 0 : lvl < 5 ? 1 : lvl < 7 ? 2 : lvl < 9 ? 3 : 4;
+
+// Starting equipment for each style (given by Tom the Blacksmith)
+export const KITS = { Knight: ['iron_sword', 'wood_shield'], Ranger: ['hunting_bow'], Rogue: ['hunter_dagger', 'parrying_dagger'], Mage: ['apprentice_staff'], Barbarian: ['hand_axe', 'wood_shield'] };
+export const KIT_TXT = {
+  Knight: 'an iron sword and a wooden shield. They are not fancy, but they are strong.',
+  Ranger: 'a hunting bow. You are an archer, so you can shoot from far away!',
+  Rogue: 'two daggers, one for each hand. Quick and sneaky, like a real rogue!',
+  Mage: 'an apprentice staff. It shoots little balls of magic. Perfect for a young wizard!',
+  Barbarian: 'a hand axe and a wooden shield. Strong and simple, like a barbarian!'
+};

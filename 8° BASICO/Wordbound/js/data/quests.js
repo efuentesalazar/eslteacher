@@ -36,14 +36,13 @@ export const QUESTS = [
       { talk: 'tom', txt: 'Talk to Tom the Blacksmith (east side of the square).', say: [
         'Hello, hello! Welcome to my forge. What can I do for you?',
         { ask: 'What do you say to Tom?', k: 'CONV', o: [['Hi! The mayor sent me. I need a weapon, please.', 'A weapon for a hero! Of course.'], ['Give me a sword. Now!', 'Hey! Where are your manners? Try again, nicely.'], ['I\'m a blacksmith too.', 'Really? You don\'t look like one. What do you need?']] },
-        'Here you are: an iron sword and a wooden shield. They are not fancy, but they are strong.',
-        { give: ['iron_sword', 1] }, { give: ['wood_shield', 1] }, { give: ['potion_s', 2] },
-        'Now open your bag — press I, or tap the bag button — and equip them. Then come back so I can see you.'
+        { kit: true }, { give: ['potion_s', 2] },
+        'Now open your bag (press I, or tap the bag button) and equip your weapons. Then come back so I can see you.'
       ] },
-      { equip: 'weapon', txt: 'Open your bag (I) and equip the sword and the shield.' },
-      { talk: 'tom', txt: 'Show Tom your new sword.', say: [
+      { equip: 'weapon', txt: 'Open your bag (I) and equip your new weapons.' },
+      { talk: 'tom', txt: 'Show Tom your new weapon.', say: [
         'Look at you! A real adventurer!',
-        { ask: 'Tom says: "That sword looks great on you!" What is a good answer?', k: 'CONV', o: [['Thank you so much! It\'s perfect.', 'You\'re welcome! Take good care of it.'], ['You\'re welcome.', 'Ha! No, no. I gave YOU the sword. You say "thank you".'], ['It\'s raining.', 'Is it? I don\'t think so... Are you OK?']] },
+        { ask: 'Tom says: "That weapon looks great on you!" What is a good answer?', k: 'CONV', o: [['Thank you so much! It\'s perfect.', 'You\'re welcome! Take good care of it.'], ['You\'re welcome.', 'Ha! No, no. I gave YOU the weapon. You say "thank you".'], ['It\'s raining.', 'Is it? I don\'t think so... Are you OK?']] },
         'Oh, before you go: Farmer Ben has a problem with slimes in his fields. His farm is south-east of town. Maybe you can practise with your new sword there!'
       ] }
     ],

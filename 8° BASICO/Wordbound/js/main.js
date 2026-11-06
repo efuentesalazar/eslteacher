@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { scene, colliders, camBlockers, animated, WORLD_R, REALMS, realmWeights, realmAt, H, setProgress, label, M, load, roads, shadowize, prop } from './core.js';
 import { buildWorld, world, noticeBoard } from './world.js';
 import { makeChar, applyEquip, holdItems, makeSlime, makeAnimal, RACES, pulseGlow } from './chars.js';
-import { ITEMS, SLOTS, TYPE_NAME, QUAL, MAX_UP, isGear, entry, itemStat, fullName, itemValue, upgradeCost, TIERS, tierOf } from './data/items.js';
+import { ITEMS, SLOTS, TYPE_NAME, QUAL, MAX_UP, isGear, entry, itemStat, fullName, itemValue, upgradeCost, TIERS, tierOf, KITS, KIT_TXT } from './data/items.js';
 import { PLACES, NPCS, MONSTERS, ZONES, PICKS, PORTALS } from './data/world_data.js';
 import { QUESTS, DOCS, ACTS, SKILLS, SKILLS_ES } from './data/quests.js';
 import { GLOSS } from './data/gloss.js';
@@ -32,6 +32,7 @@ let S = fresh();
 try { const raw = localStorage.getItem(SAVE_KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
 // old saves kept equipment as plain ids: give them quality and level
 for (const k in S.eq) if (S.eq[k]) S.eq[k] = entry(S.eq[k]);
+if (S.q.welcome && S.q.welcome.st === 'done' && !Object.keys(S.flags).some(k => k.startsWith('kit_'))) S.flags.kit_Knight = true; // they already got the sword
 S.inv = S.inv.map(x => isGear(x.id) ? { q: 'c', up: 0, ...x } : x);
 function save() { try { S.pos = [+player.pos.x.toFixed(1), +player.pos.z.toFixed(1)]; localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } }
 
@@ -252,6 +253,7 @@ async function runScript(lines, who, q) {
     if (typeof el === 'string') { const [w, t] = parseLine(el, who); await line(w, t); }
     else if (el.ask || el.listen) await askQ(who, el, act);
     else if (el.doc) { $('dlg').classList.add('hidden'); await openDoc(el.doc); $('dlg').classList.remove('hidden'); }
+    else if (el.kit) { await line(who, `Here you are: ${KIT_TXT[S.look] || KIT_TXT.Knight}`); for (const id of KITS[S.look] || KITS.Knight) addItem(id, 1); S.flags['kit_' + S.look] = true; sfx('coin'); }
     else if (el.give) { addItem(el.give[0], el.give[1]); sfx('coin'); }
     else if (el.take) removeItem(el.take[0], el.take[1]);
     else if (el.gold) { S.gold += el.gold; sfx('gold'); }
@@ -370,6 +372,11 @@ async function talkTo(id) {
     await runScript(offer.intro, id, offer);
     if (offer.main) startQuest(offer);
     else { dlgCtx = { tag: `🔷 ${offer.title}` }; const r = await choice(id, n.kind === 'board' ? 'Do you accept this mission?' : 'So... will you help me?', ["Yes, I'll help!", 'Not now, sorry.']); if (r === 0) startQuest(offer); }
+    return;
+  }
+  // players who changed their style later get the starting weapons of the new style once
+  if (id === 'tom' && isDone('welcome') && !S.flags['kit_' + S.look]) {
+    await runScript([`Hey, you look different! A real ${{ Knight: 'knight', Ranger: 'archer', Rogue: 'rogue', Mage: 'wizard', Barbarian: 'barbarian' }[S.look] || 'hero'}! You need the right weapons for that.`, { kit: true }, 'Open your bag (I) and equip them. Good luck!'], 'tom');
     return;
   }
   if (n.upgrader) return upgradeFlow(id);
@@ -872,7 +879,7 @@ function killMonster(m, noLoot) {
 }
 
 // ======================= COMBAT =======================
-const MELEE = { '1h': ['Melee_1H_Attack_Chop', 'Melee_1H_Attack_Slice_Diagonal', 'Melee_1H_Attack_Stab'], '2h': ['Melee_2H_Attack_Chop', 'Melee_2H_Attack_Slice', 'Melee_2H_Attack_Spin'], fist: ['Melee_Unarmed_Attack_Punch_A', 'Melee_Unarmed_Attack_Kick'] };
+const MELEE = { '1h': ['Melee_1H_Attack_Chop', 'Melee_1H_Attack_Slice_Diagonal', 'Melee_1H_Attack_Stab'], '2h': ['Melee_2H_Attack_Chop', 'Melee_2H_Attack_Slice', 'Melee_2H_Attack_Spin'], fist: ['Melee_Unarmed_Attack_Punch_A', 'Melee_Unarmed_Attack_Kick'], dual: ['Melee_Dualwield_Attack_Chop', 'Melee_Dualwield_Attack_Slice', 'Melee_Dualwield_Attack_Stab'] };
 function nearestMonster(maxD, front) {
   let best = null, bd = maxD;
   for (const m of monsters) { if (!m.active || m.dead || !m.c.root.visible) continue; const d = m.pos.distanceTo(player.pos); if (front) { const a = Math.atan2(m.pos.x - player.pos.x, m.pos.z - player.pos.z), df = Math.abs(Math.atan2(Math.sin(a - player.ry), Math.cos(a - player.ry))); if (df > 1.2 && d > 4) continue; } if (d < bd) { bd = d; best = m; } }
@@ -896,7 +903,8 @@ function attack() {
       const [dm, cr] = roll(); shoot(from, to, 'player', dm, kind === 'magic' ? '#7fd8ff' : '#ffe08a', kind, cr);
     }, 180);
   } else {
-    const list = MELEE[kind] || MELEE['1h']; player.combo = (player.combo + 1) % list.length;
+    const dual = kind === '1h' && S.eq.off && ITEMS[wid('off')].model === 'dagger';
+    const list = dual ? MELEE.dual : MELEE[kind] || MELEE['1h']; player.combo = (player.combo + 1) % list.length;
     player.c.play(list[player.combo], 0.06, true, 1.35); sfx('swing', 0.45);
     setTimeout(() => {
       const reach = kind === '2h' ? 3.4 : 2.8;
@@ -1406,8 +1414,10 @@ async function setPlayerModel() {
   if (player.c) scene.remove(player.c.root);
   player.c = await makeChar(S.look, { race: S.race, strip: true });
   scene.add(player.c.root); player.c.root.position.copy(player.pos);
-  await applyEquip(player.c, S.eq);
+  await applyEquip(player.c, menuEquip());
 }
+/** In the menu, a hero without weapons shows the weapons of the chosen style. */
+function menuEquip() { if (mode !== 'menu' || S.eq.weapon) return S.eq; const k = KITS[S.look] || KITS.Knight; return { ...S.eq, weapon: k[0], off: k[1] || null }; }
 function buildMenu() {
   $('races').innerHTML = Object.entries(RACES).map(([k, r]) => `<button data-r="${k}" class="${S.race === k ? 'on' : ''}"><span>${RACE_ICON[k]}</span>${r.name}</button>`).join('');
   $('looks').innerHTML = LOOKS.map(([k, n, ic]) => `<button data-l="${k}" class="${S.look === k ? 'on' : ''}"><span>${ic}</span>${n}</button>`).join('');
@@ -1447,6 +1457,7 @@ async function start() {
   mode = 'play'; $('menu').classList.add('hidden'); $('hud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
   if (S.pos) player.pos.set(S.pos[0], 0, S.pos[1]); else player.pos.set(3, 0, 10);
   cam.yaw = player.ry + Math.PI; curRealm = -1; S.hp = Math.max(1, Math.min(S.hp, maxHP()));
+  refreshEquip();
   hudDirty = true; refreshMarks();
   goOnline(); onlineHUD();
   if (!S.flags.intro) {
