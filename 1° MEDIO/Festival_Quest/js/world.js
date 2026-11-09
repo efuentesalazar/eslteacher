@@ -439,6 +439,8 @@ export async function buildWorld() {
   }
 
   await buildLandmarks();
+  await buildArena();
+  buildPortals();
   for (let i = 0; i < SIDE.length; i++) await buildSide(i);
   for (let i = 0; i < 5; i++) await buildZone(i);
 
@@ -552,6 +554,60 @@ async function buildLandmarks() {
     animated.push(t => { rot.rotation.y = t * 0.6; });
     landmarks.push({ x, z, r: 3, name: 'Lighthouse' }); blocked.push({ x, z, r: 6 });
   }
+}
+
+// ---------- Arena (1 vs 1 question duels) and magic portals ----------
+export const arena = { x: 0, z: 0, r: 9, gateA: 0, coach: null };
+export const portals = [];     // {id, name, x, z, rot, color}
+
+async function buildArena() {
+  const a = 32 * Math.PI / 180, R = 44;            // next to the plaza, between Lunar New Year and Fiestas Patrias
+  const x = Math.cos(a) * R, z = Math.sin(a) * R, gateA = Math.atan2(-z, -x);
+  Object.assign(arena, { x, z, gateA });
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(arena.r, 40).rotateX(-Math.PI / 2), M('#e8d3a0', { roughness: 1 })); floor.position.set(x, 0.03, z); floor.receiveShadow = true; scene.add(floor);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(3, 3.3, 32).rotateX(-Math.PI / 2), M('#c0503a')); ring.position.set(x, 0.04, z); scene.add(ring);
+  const mid = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, arena.r * 1.6), M('#ffffff')); mid.position.set(x, 0.05, z); mid.rotation.y = gateA; scene.add(mid);
+  // low stone wall with a gate toward the plaza
+  const segs = 30, wallMat = M('#b8a98c');
+  for (let k = 0; k < segs; k++) {
+    const t = k / segs * Math.PI * 2, d = Math.atan2(Math.sin(t - gateA), Math.cos(t - gateA));
+    if (Math.abs(d) < 0.32) continue;
+    const wx = x + Math.cos(t) * (arena.r + 0.4), wz = z + Math.sin(t) * (arena.r + 0.4);
+    const w = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.1, 0.7), wallMat); w.position.set(wx, 0.55, wz); w.rotation.y = -t + Math.PI / 2; shadowize(w); scene.add(w);
+    colliders.push({ x: wx, z: wz, r: 0.75 });
+    if (k % 5 === 2) { const cols = ['#e8322f', '#2f6fe0', '#ffcc33']; const fl = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.4, 0.08), M('#7a5230')); fl.position.set(wx, 1.9, wz); const b = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.6), M(cols[k % 3], { side: THREE.DoubleSide })); b.position.set(wx + 0.45 * Math.cos(t + Math.PI / 2), 2.75, wz + 0.45 * Math.sin(t + Math.PI / 2)); b.rotation.y = -t; scene.add(fl, b); }
+  }
+  for (const s of [-1, 1]) { const px = x + Math.cos(gateA + s * 0.36) * (arena.r + 0.6), pz = z + Math.sin(gateA + s * 0.36) * (arena.r + 0.6); await prop('dg/torch_lit', px, pz, 2.2, { r: 0.4 }); }
+  for (const s of [-1, 1]) { const t = gateA + Math.PI + s * 0.9, bx = x + Math.cos(t) * (arena.r + 2.6), bz = z + Math.sin(t) * (arena.r + 2.6); prop('cb/bench', bx, bz, 0.9, { ry: -t - Math.PI / 2, r: 1 }); }
+  bunting(x + Math.cos(gateA + 0.5) * (arena.r + 1.2), z + Math.sin(gateA + 0.5) * (arena.r + 1.2), x + Math.cos(gateA - 0.5) * (arena.r + 1.2), z + Math.sin(gateA - 0.5) * (arena.r + 1.2), 3.6, ['#e8322f', '#ffcc33', '#2f6fe0']);
+  arena.coach = new THREE.Vector3(x + Math.cos(gateA) * (arena.r + 3) + Math.cos(gateA + Math.PI / 2) * 2.4, 0, z + Math.sin(gateA) * (arena.r + 3) + Math.sin(gateA + Math.PI / 2) * 2.4);
+  landmarks.push({ x, z, r: arena.r, name: 'Arena', arena: true });
+  blocked.push({ x, z, r: arena.r + 5 });
+}
+
+/** Glowing ring the player can use to travel. */
+function portalMesh(x, z, rot, color) {
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.1, 0.25, 20), M('#a79c8a')); base.position.y = 0.12;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.2, 8, 28), M('#d9c7ff', { emissive: color, emissiveIntensity: 0.7 })); ring.position.y = 1.9;
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.32, 28), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false })); disc.position.y = 1.9;
+  const swirl = new THREE.Mesh(new THREE.RingGeometry(0.3, 1.2, 24, 1, 0, Math.PI * 1.3), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false })); swirl.position.y = 1.9;
+  g.add(base, ring, disc, swirl); g.position.set(x, 0, z); g.rotation.y = rot; shadowize(base); scene.add(g);
+  colliders.push({ x: x + Math.sin(rot + Math.PI / 2) * 1.5, z: z + Math.cos(rot + Math.PI / 2) * 1.5, r: 0.35 }, { x: x - Math.sin(rot + Math.PI / 2) * 1.5, z: z - Math.cos(rot + Math.PI / 2) * 1.5, r: 0.35 });
+  const ph = rnd() * 6;
+  animated.push(t => { swirl.rotation.z = -t * 2 + ph; disc.material.opacity = 0.45 + Math.sin(t * 2 + ph) * 0.12; });
+  return g;
+}
+
+function buildPortals() {
+  const add = (id, name, x, z, color) => { const rot = Math.atan2(-x, -z); portals.push({ id, name, x, z, rot, color }); portalMesh(x, z, rot, color); blocked.push({ x, z, r: 4 }); };
+  const pa = -54 * Math.PI / 180; add('plaza', 'Festival Plaza', Math.cos(pa) * 16, Math.sin(pa) * 16, '#a64dff');
+  ZONES.forEach((zn, i) => {
+    const c = zonePos(i), u = new THREE.Vector3(-c.x, 0, -c.z).normalize(), rt = new THREE.Vector3(-u.z, 0, u.x);
+    add(zn.id, zn.name, c.x + rt.x * 5.5 + u.x * 11, c.z + rt.z * 5.5 + u.z * 11, zn.color);
+  });
+  const ga = arena.gateA, px = arena.x + Math.cos(ga) * (arena.r + 3) - Math.cos(ga + Math.PI / 2) * 3.2, pz = arena.z + Math.sin(ga) * (arena.r + 3) - Math.sin(ga + Math.PI / 2) * 3.2;
+  add('arena', 'Arena', px, pz, '#e8322f');
 }
 
 // Side quest scenes. Local frame: +dz points from the NPC toward the road, -dz goes away from it.
@@ -736,6 +792,7 @@ async function buildZone(i) {
       const a = rnd() * Math.PI * 2, d = 10 + rnd() * 6, dx = Math.cos(a) * d, dz = Math.sin(a) * d;
       if (dz > 4 && Math.abs(dx) < 5) continue;   // keep the entrance path clear
       if (Math.abs(dx - 10) < 3) continue;          // keep the river clear
+      if (Math.hypot(dx - 5.5, dz - 11) < 3.5) continue; // keep the portal clear
       P(['fo/Tree_1_A_Color1', 'fo/Tree_3_A_Color1', 'fo/Tree_4_A_Color1'][k % 3], dx, dz, 6 + rnd() * 3, { r: 0.9 });
     }
     const [kx, kz] = W(-1.5, 0.5);

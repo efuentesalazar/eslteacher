@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, buildWorld, makeChar, setProgress, colliders, animated, zoneInfo, pedestals, greatFire, ISLAND, paperLantern, camBlockers, sideInfo, gates, landmarks, roads } from './world.js';
+import { scene, buildWorld, makeChar, setProgress, colliders, animated, zoneInfo, pedestals, greatFire, ISLAND, paperLantern, camBlockers, sideInfo, gates, landmarks, roads, arena, portals } from './world.js';
 import { ZONES, BOSS, ONLINE_EXTRA, SKILLS, SIDE } from './content.js';
 import * as net from './net.js';
 import { logAnswer, student } from './track.js';
@@ -11,7 +11,7 @@ const KCOL = { E: '#1f8fd6', I: '#7a2d8f', V: '#1fb5a8', L: '#ff7a1a', Q: '#e240
 
 // ---------------- save ----------------
 const SAVE_KEY = 'festivalquest1m_v1';
-function freshSave() { return { name: '', char: 'Knight', zones: {}, stats: { E: [0, 0], I: [0, 0], V: [0, 0], L: [0, 0], Q: [0, 0] }, side: {}, final: false, intro: false, best: 0 }; }
+function freshSave() { return { name: '', char: 'Knight', zones: {}, stats: { E: [0, 0], I: [0, 0], V: [0, 0], L: [0, 0], Q: [0, 0] }, side: {}, portals: ['plaza'], arenaIntro: false, final: false, intro: false, best: 0 }; }
 let S = freshSave();
 try { const raw = localStorage.getItem(SAVE_KEY); if (raw) S = Object.assign(freshSave(), JSON.parse(raw)); } catch (e) { }
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } }
@@ -61,8 +61,12 @@ addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   keys[e.code] = true;
   if (modalOpen) return;
+  const phrOpen = !$('phr').classList.contains('hidden');
+  if (phrOpen && /^Digit\d$/.test(e.code)) { sayPhrase((+e.code.slice(5) + 9) % 10); return; }
+  if (e.code === 'Escape') $('phr').classList.add('hidden');
   if (e.code === 'KeyE' || e.code === 'Enter') interact();
   if (e.code === 'KeyM' && mode !== 'menu') { mini.classList.toggle('big'); }
+  if (e.code === 'KeyT') togglePhrases();
   if (e.code === 'Digit1') emote('Waving');
   if (e.code === 'Digit2') emote('Cheering');
   if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
@@ -75,7 +79,8 @@ cv.addEventListener('pointermove', e => { if (!drag || drag.id !== e.pointerId) 
 cv.addEventListener('pointerup', () => drag = null); cv.addEventListener('pointercancel', () => drag = null);
 cv.addEventListener('wheel', e => { cam.dist = THREE.MathUtils.clamp(cam.dist + e.deltaY * 0.01, 4, 16); }, { passive: true });
 // touch joystick
-const isTouch = matchMedia('(pointer: coarse)').matches;
+const isTouch = matchMedia('(pointer: coarse)').matches || location.search.includes('touch');
+if (isTouch) document.body.classList.add('touch');
 if (isTouch) {
   const st = $('stick'), knob = st.firstElementChild; let sid = null;
   st.addEventListener('pointerdown', e => { sid = e.pointerId; st.setPointerCapture(sid); move(e); });
@@ -85,9 +90,14 @@ if (isTouch) {
   function move(e) { const r = st.getBoundingClientRect(); let x = (e.clientX - r.left - r.width / 2) / (r.width / 2), y = (e.clientY - r.top - r.height / 2) / (r.height / 2); const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } stick.x = x; stick.y = y; knob.style.transform = `translate(${x * 40}px,${y * 40}px)`; }
   $('tJump').addEventListener('pointerdown', () => { keys.Space = true; setTimeout(() => keys.Space = false, 120); });
   $('tAct').addEventListener('pointerdown', () => interact());
+  $('tMap').addEventListener('pointerdown', () => { if (mode !== 'menu') { sfx('click'); mini.classList.toggle('big'); } });
+  $('tSay').addEventListener('pointerdown', () => togglePhrases());
+  $('tWave').addEventListener('pointerdown', () => emote('Waving'));
+  $('tCheer').addEventListener('pointerdown', () => emote('Cheering'));
   $('help').textContent = 'Joystick: move · Drag screen: camera';
 }
 $('prompt').addEventListener('click', () => interact());
+$('chatBtn').onclick = () => togglePhrases();
 
 // ---------------- UI helpers ----------------
 function toast(t, ms = 1800) { const el = $('toast'); el.innerHTML = t; el.style.opacity = 1; clearTimeout(el._t); el._t = setTimeout(() => el.style.opacity = 0, ms); }
@@ -336,7 +346,7 @@ function buildMiniBg() {
   x.fillStyle = '#3fb3e8'; x.fillRect(0, 0, S, S);
   const circ = (r, col) => { x.fillStyle = col; x.beginPath(); x.arc(S / 2, S / 2, r / MR * S / 2, 0, 7); x.fill(); };
   circ(ISLAND + 15, '#f1d9a0'); circ(ISLAND + 7, '#6cc04a');
-  landmarks.forEach(l => { const [px, pz] = mapXY(l.x, l.z); x.fillStyle = l.lake ? '#2aa6e0' : 'rgba(110,80,40,.35)'; x.beginPath(); x.arc(px, pz, Math.max(4, l.r / MR * S / 2), 0, 7); x.fill(); });
+  landmarks.forEach(l => { const [px, pz] = mapXY(l.x, l.z); x.fillStyle = l.lake ? '#2aa6e0' : l.arena ? '#e8d3a0' : 'rgba(110,80,40,.35)'; x.beginPath(); x.arc(px, pz, Math.max(4, l.r / MR * S / 2), 0, 7); x.fill(); });
   x.strokeStyle = '#f3e6b8'; x.lineWidth = S / 90; x.lineCap = 'round'; x.lineJoin = 'round';
   roads.forEach(r => { x.beginPath(); r.pts.forEach((p, i) => { const [px, pz] = mapXY(p.x, p.z); i ? x.lineTo(px, pz) : x.moveTo(px, pz); }); x.stroke(); });
   circ(13, '#e6cf9e');
@@ -353,6 +363,11 @@ function drawMini(t) {
     if (big) { mctx.font = `800 ${11 * K}px Nunito, sans-serif`; mctx.fillStyle = '#24183a'; mctx.fillText(z.name, px, pz + 22 * K); }
   });
   if (big) landmarks.forEach(l => { const [px, pz] = mapXY(l.x, l.z); mctx.font = `700 ${9 * K}px Nunito, sans-serif`; mctx.fillStyle = 'rgba(36,24,58,.75)'; mctx.fillText(l.name, px, pz); });
+  // arena and magic portals
+  { const [ax, az] = mapXY(arena.x, arena.z); mctx.strokeStyle = '#e8322f'; mctx.lineWidth = 3 * K; mctx.beginPath(); mctx.arc(ax, az, 9 * K, 0, 7); mctx.stroke(); mctx.font = `800 ${11 * K}px Nunito, sans-serif`; mctx.fillStyle = '#e8322f'; mctx.fillText('⚔', ax, az + 1); }
+  portals.forEach(p => { const [px, pz] = mapXY(p.x, p.z), on = portalOpen(p); mctx.fillStyle = on ? '#a64dff' : 'rgba(120,120,120,.7)'; mctx.beginPath(); mctx.arc(px, pz, 6 * K, 0, 7); mctx.fill(); mctx.lineWidth = 2 * K; mctx.strokeStyle = '#fff'; mctx.stroke(); });
+  // other players (group mates in green)
+  if (mode === 'online') for (const e of ON.peers.values()) { if (!e.seen) continue; const [px, pz] = mapXY(e.pos.x, e.pos.z), mate = GROUP.id && e.data.g === GROUP.id; mctx.fillStyle = mate ? '#3fdc5a' : '#29d3e8'; mctx.beginPath(); mctx.arc(px, pz, (mate ? 7 : 5) * K, 0, 7); mctx.fill(); mctx.lineWidth = 2 * K; mctx.strokeStyle = '#fff'; mctx.stroke(); }
   if (mode === 'story') sideNpcs.forEach(n => {
     const st = sst(n.q), [px, pz] = mapXY(n.pos.x, n.pos.z);
     mctx.font = `800 ${14 * K}px Nunito, sans-serif`;
@@ -429,15 +444,18 @@ function fireworks() {
   }, n * 280);
 }
 
-// ---------------- online ----------------
+// ---------------- online: one open world (same model as Wordbound) ----------------
+// Everybody joins the same room (max 20). Positions every 1.5 s only while moving.
+// Groups, duels and today's ranking live only in this session: nothing is stored.
 const ROUND = 180000, BREAK = 15000, PERIOD = ROUND + BREAK, NL = 12;
-const ON = { lan: [], score: 0, streak: 0, round: -1, peers: new Map(), lastSend: 0, lastSent: null, pool: [], podiumShown: -1 };
+const ON = { lan: [], score: 0, streak: 0, round: -1, peers: new Map(), lastSend: 0, lastPos: null, sentStop: true, moving: false, idleT: 0, hiddenT: null, status: 'off', pool: [], podiumShown: -1, prev: new THREE.Vector3() };
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const ONLINE_R = 62;   // online lanterns stay near the plaza
 function lanPos(r, i, gen) {
   const R = mulberry(r * 7919 + i * 131 + gen * 17 + 3);
   for (let tries = 0; tries < 40; tries++) {
     const a = R() * Math.PI * 2, d = 9 + R() * (ONLINE_R - 9), x = Math.cos(a) * d, z = Math.sin(a) * d;
+    if (Math.hypot(x - arena.x, z - arena.z) < arena.r + 2) continue;
     if (colliders.every(c => Math.hypot(c.x - x, c.z - z) > c.r + 1.2)) return new THREE.Vector3(x, 0, z);
   }
   return new THREE.Vector3(0, 0, 14);
@@ -455,49 +473,134 @@ function setupOnlineObjects() {
 }
 const roundNow = () => Math.floor(Date.now() / PERIOD);
 function placeLanterns() { const r = roundNow(); ON.lan.forEach((l, i) => { l.g.position.copy(lanPos(r, i, l.gen)); }); }
+const online = () => mode === 'online' && net.NET.ok;
+function me() { return { name: S.name || 'Player', char: S.char, score: ON.score, r: roundNow(), g: GROUP.id, w: ARENA.wins, d: DUEL.on ? 1 : 0, x: Math.round(player.pos.x), z: Math.round(player.pos.z) }; }
 
-async function addPeer(p) {
-  if (ON.peers.has(p.id)) return;
-  const entry = { id: p.id, c: null, target: new THREE.Vector3(0, 0, 12), ry: 0, anim: 'Idle_A', data: p };
-  ON.peers.set(p.id, entry);
+// ----- other players -----
+async function buildPeer(e) {
+  const p = e.data, token = (e.token || 0) + 1; e.token = token;
   const c = await makeChar(CHARS.some(x => x[0] === p.char) ? p.char : 'Knight');
-  if (!ON.peers.has(p.id)) return;
-  entry.c = c; c.root.position.copy(entry.target);
-  const lb = label(String(p.name || 'Player').slice(0, 14), '#ffe7a8'); lb.position.y = 3.0; c.root.add(lb);
-  scene.add(c.root);
+  if (!ON.peers.has(e.id) || e.token !== token) return;
+  if (e.c) scene.remove(e.c.root);
+  e.c = c; e.lab = null; c.root.position.copy(e.pos); c.root.rotation.y = e.ry;
+  c.root.visible = e.seen; scene.add(c.root); peerLabel(e);
 }
-function removePeer(p) { const e = ON.peers.get(p.id); if (e) { if (e.c) scene.remove(e.c.root); ON.peers.delete(p.id); } renderBoard(); }
-
-net.on('status', s => {
-  if (s === 'online') { toast(`🌐 Online · Room ${net.NET.room}`); sendState(true); }
-  else if (s === 'offline' || s === 'error') $('objD').innerHTML = 'Could not connect. You can still play alone — check the internet connection.';
-  else if (s === 'full') $('objD').innerHTML = 'All rooms are full right now. Playing alone.';
-  else $('objD').innerHTML = s;
-});
-net.on('join', p => { addPeer(p); toast(`${esc(p.name)} joined!`, 1200); });
-net.on('leave', p => removePeer(p));
-net.on('roster', () => { for (const p of net.NET.peers.values()) { const e = ON.peers.get(p.id); if (e) e.data = p; else addPeer(p); } renderBoard(); });
-net.on('st', m => { const e = ON.peers.get(m.id); if (!e) return; e.target.set(m.x, 0, m.z); e.ry = m.ry; e.anim = m.a; e.last = performance.now(); });
-net.on('claim', m => { if (m.r !== roundNow()) return; const l = ON.lan[m.i]; if (l && m.gen >= l.gen) { l.gen = m.gen + 1; l.hideUntil = performance.now() + 6000; l.g.visible = false; l.g.position.copy(lanPos(m.r, m.i, l.gen)); } });
-net.on('emo', m => { const e = ON.peers.get(m.id); if (e && e.c) e.c.play(m.e, 0.2, true); });
-
-function sendState(force) {
-  const now = performance.now(); const p = player.pos;
-  const a = player.c?.curName || 'Idle_A';
-  const moved = !ON.lastSent || Math.hypot(p.x - ON.lastSent.x, p.z - ON.lastSent.z) > 0.3 || a !== ON.lastSent.a;
-  if (force || (moved && now - ON.lastSend > 1000) || now - ON.lastSend > 5000) {
-    net.send('st', { x: +p.x.toFixed(2), z: +p.z.toFixed(2), ry: +player.ry.toFixed(2), a });
-    ON.lastSend = now; ON.lastSent = { x: p.x, z: p.z, a };
+function addPeer(p) {
+  if (ON.peers.has(p.id)) return;
+  const pos = new THREE.Vector3(p.x || 0, 0, p.z || 0);
+  const e = { id: p.id, c: null, data: p, pos, target: pos.clone(), v: { x: 0, z: 0 }, ry: 0, last: performance.now(), seen: p.x !== undefined };
+  ON.peers.set(p.id, e); buildPeer(e);
+}
+function removePeer(p) { const e = ON.peers.get(p.id); if (e) { if (e.c) scene.remove(e.c.root); ON.peers.delete(p.id); } renderBoard(); groupHUD(); }
+function peerLabel(e) {
+  if (!e.c) return; const mate = GROUP.id && e.data.g === GROUP.id;
+  if (e.lab) e.c.root.remove(e.lab);
+  const lb = label(`${mate ? '★ ' : ''}${String(e.data.name || 'Player').slice(0, 14)}`, mate ? '#7dff8a' : '#ffe7a8'); lb.position.y = 3.0; e.c.root.add(lb); e.lab = lb;
+}
+function bubble(c, text) {
+  if (!c) return;
+  const s = label(text, '#ffffff', 30, 3.4); s.position.y = 3.8; c.root.add(s);
+  if (c.bubble) c.root.remove(c.bubble); c.bubble = s;
+  setTimeout(() => { if (c.bubble === s) { c.root.remove(s); c.bubble = null; } }, 4500);
+}
+function updatePeers(dt) {
+  const now = performance.now();
+  for (const e of ON.peers.values()) {
+    if (!e.c) continue;
+    const k = Math.min(2, (now - e.last) / 1000);
+    const px = e.target.x + e.v.x * k, pz = e.target.z + e.v.z * k;
+    e.pos.x += (px - e.pos.x) * Math.min(1, dt * 4); e.pos.z += (pz - e.pos.z) * Math.min(1, dt * 4);
+    const d = e.pos.distanceTo(player.pos), c = e.c;
+    c.root.visible = e.seen && d < 140;
+    if (!c.root.visible) continue;
+    c.root.position.copy(e.pos);
+    let dr = e.ry - c.root.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); c.root.rotation.y += dr * Math.min(1, dt * 6);
+    const sp = Math.hypot(e.v.x, e.v.z) * (k < 1.9 ? 1 : 0);
+    if (performance.now() > c.lockUntil) c.play(sp > 6 ? 'Running_A' : sp > 0.5 ? 'Walking_A' : 'Idle_A', 0.25);
+    if (d < 70) c.mixer.update(dt);
   }
 }
-function me() { return { name: S.name || 'Player', char: S.char, score: ON.score, r: roundNow() }; }
+
+net.on('status', s => {
+  ON.status = s;
+  if (s === 'online') toast(`🌐 Online · ${net.NET.peers.size + 1} player${net.NET.peers.size ? 's' : ''}`);
+  else if (s === 'full') { toast('The festival is full (20 players).<br><span style="font-size:.6em">Playing alone for now. Try again later!</span>', 3500); $('objD').innerHTML = 'The online festival is full (20 players). You can still play alone.'; }
+  else if (s === 'offline') $('objD').innerHTML = 'Could not connect. You can still play alone — check the internet connection.';
+  renderBoard(); onlineButtons();
+});
+net.on('join', p => { addPeer(p); toast(`${esc(p.name || 'Someone')} joined!`, 1200); renderBoard(); });
+net.on('leave', removePeer);
+net.on('update', (p, changed) => { const e = ON.peers.get(p.id); if (!e) return; e.data = p; if (changed) buildPeer(e); else peerLabel(e); groupHUD(); });
+net.on('st', m => {
+  const e = ON.peers.get(m.id); if (!e || !isFinite(m.x) || !isFinite(m.z)) return;
+  e.target.set(m.x, 0, m.z); e.v = { x: m.vx || 0, z: m.vz || 0 }; e.ry = m.ry || 0; e.last = performance.now();
+  if (!e.seen || e.pos.distanceTo(e.target) > 25) e.pos.copy(e.target);
+  e.seen = true; if (e.c) e.c.root.visible = true;
+});
+net.on('claim', m => { if (m.r !== roundNow()) return; const l = ON.lan[m.i]; if (l && m.gen >= l.gen) { l.gen = m.gen + 1; l.hideUntil = performance.now() + 6000; l.g.visible = false; l.g.position.copy(lanPos(m.r, m.i, l.gen)); } });
+net.on('emo', m => { const e = ON.peers.get(m.id); if (e && e.c) e.c.play(m.e, 0.2, true); });
+net.on('say', m => { const e = ON.peers.get(m.id), t = PHRASES[m.p]; if (!e || !t) return; bubble(e.c, t); if (e.c && PH_ANIM[m.p]) e.c.play(PH_ANIM[m.p], 0.2, true); });
+
+function goOnline() {
+  if (mode !== 'online' || net.NET.ch) return;
+  ON.status = 'connecting'; renderBoard();
+  net.connect(me()).then(ok => { ON.lastSend = 0; ON.sentStop = false; if (ok) { $('objD').innerHTML = 'Touch the floating lanterns to answer questions. Meet other players (E), make a group, or duel them in the <b>Arena</b>!'; sendState(true); } renderBoard(); onlineButtons(); });
+}
+function goOffline(why) {
+  if (DUEL.on) endDuel('quit', true);
+  GROUP.id = null; groupHUD(); net.disconnect();
+  for (const e of ON.peers.values()) if (e.c) scene.remove(e.c.root); ON.peers.clear();
+  ON.status = why || 'off'; renderBoard(); onlineButtons(); $('phr').classList.add('hidden');
+}
+function sendState(force) {
+  if (!net.NET.ok) return;
+  const now = performance.now(), p = player.pos, moving = ON.moving;
+  const a = player.c?.curName || 'Idle_A';
+  if (moving && (force || now - ON.lastSend > 1500)) {
+    const dt = Math.max(0.3, (now - ON.lastSend) / 1000), lp = ON.lastPos || p;
+    const vx = ON.lastPos ? (p.x - lp.x) / dt : 0, vz = ON.lastPos ? (p.z - lp.z) / dt : 0;
+    net.send('st', { x: +p.x.toFixed(1), z: +p.z.toFixed(1), ry: +player.ry.toFixed(2), vx: +vx.toFixed(1), vz: +vz.toFixed(1), a });
+    ON.lastSend = now; ON.lastPos = p.clone(); ON.sentStop = false;
+  } else if ((!moving && !ON.sentStop && now - ON.lastSend > 300) || (force && !moving)) {
+    net.send('st', { x: +p.x.toFixed(1), z: +p.z.toFixed(1), ry: +player.ry.toFixed(2), vx: 0, vz: 0, a: 'Idle_A' });
+    ON.lastSend = now; ON.lastPos = p.clone(); ON.sentStop = true;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { ON.hiddenT = setTimeout(() => { if (net.NET.ch) goOffline('away'); }, 60000); }
+  else { clearTimeout(ON.hiddenT); if (ON.status === 'away' && mode === 'online') goOnline(); }
+});
 
 function renderBoard() {
   if (mode !== 'online') return;
   const r = roundNow();
-  const list = [{ name: S.name || 'You', score: ON.score, me: true }, ...[...net.NET.peers.values()].map(p => ({ name: p.name, score: p.r === r ? p.score || 0 : 0 }))].sort((a, b) => b.score - a.score);
+  const list = [{ name: S.name || 'You', score: ON.score, me: true }, ...[...net.NET.peers.values()].map(p => ({ name: p.name, score: p.r === r ? p.score || 0 : 0, mate: GROUP.id && p.g === GROUP.id }))].sort((a, b) => b.score - a.score);
   const t = Date.now() % PERIOD, left = Math.max(0, Math.ceil((ROUND - t) / 1000));
-  $('board').innerHTML = `<h3>${t < ROUND ? `⏱ ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : '🏁 Round over'} · Room ${net.NET.room || '–'}</h3><ol>${list.slice(0, 8).map(p => `<li class="${p.me ? 'me' : ''}">${esc(p.name)} — ${p.score}</li>`).join('')}</ol><div class="small">${list.length} player(s) · best: ${S.best}</div>`;
+  const st = net.NET.ok ? `🌐 ${net.NET.peers.size + 1} online` : ON.status === 'connecting' ? '🌐 Connecting…' : ON.status === 'full' ? '🌐 Festival full' : ON.status === 'away' ? '🌐 Away (move to return)' : '🌐 Offline';
+  $('board').innerHTML = `<h3>${t < ROUND ? `⏱ ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : '🏁 Round over'} · ${st}</h3><ol>${list.slice(0, 8).map(p => `<li class="${p.me ? 'me' : ''}">${p.mate ? '★ ' : ''}${esc(p.name)} — ${p.score}</li>`).join('')}</ol><div class="small">best: ${S.best} · 🏆 arena: ${ARENA.wins}</div>`;
+}
+
+// ----- quick phrases (T) -----
+const PHRASES = ['Hello! 👋', "Let's go!", 'Follow me!', 'Happy festival! 🎉', 'Thank you!', 'Good job!', 'Sorry!', 'Wait for me!', 'Where are you?', 'See you later!'];
+const PH_ANIM = { 0: 'Waving', 3: 'Cheering', 5: 'Cheering', 9: 'Waving' };
+function sayPhrase(i) {
+  if (!online()) return;
+  net.send('say', { p: i }); bubble(player.c, PHRASES[i]);
+  if (PH_ANIM[i]) player.c.play(PH_ANIM[i], 0.2, true);
+  $('phr').classList.add('hidden'); sfx('click', 0.3);
+}
+function togglePhrases() {
+  if (!online() || modalOpen) return;
+  const el = $('phr');
+  el.innerHTML = PHRASES.map((t, i) => `<button class="btn alt" data-p="${i}"><kbd>${(i + 1) % 10}</kbd> ${esc(t)}</button>`).join('');
+  el.querySelectorAll('[data-p]').forEach(b => b.onclick = () => sayPhrase(+b.dataset.p));
+  el.classList.toggle('hidden');
+}
+function onlineButtons() {
+  const on = online();
+  $('chatBtn').classList.toggle('hidden', !on || isTouch);
+  if ($('tSay')) $('tSay').classList.toggle('hidden', !on);
+  if (!on) $('phr').classList.add('hidden');
 }
 
 let onlineBusy = false;
@@ -514,48 +617,263 @@ async function onlineQuestion(i) {
       const j = +b.dataset.j, ok = j === it.correct; record(it, j, ok, 'Online Festival', t0);
       $('mbox').querySelectorAll('.opt').forEach((bb, bj) => { bb.disabled = true; if (bj === it.correct) bb.classList.add('ok'); else if (bj === j) bb.classList.add('no'); });
       let pts = 0;
-      if (ok && roundNow() === r) { ON.streak++; pts = 10 + Math.min(10, (ON.streak - 1) * 2); ON.score += pts; S.best = Math.max(S.best, ON.score); save(); net.updateMe(me()); } else ON.streak = 0;
+      if (ok && roundNow() === r) {
+        ON.streak++; pts = 10 + Math.min(10, (ON.streak - 1) * 2); ON.score += pts; S.best = Math.max(S.best, ON.score); save(); net.updateMe(me());
+        if (GROUP.id) net.send('grp', { t: 'pts', g: GROUP.id, n: S.name || 'Player', r });
+      } else ON.streak = 0;
       sfx(ok ? 'ok' : 'bad');
-      $('why').innerHTML = `<div class="why ${ok ? 'ok' : 'no'}">${ok ? `✔ +${pts} points${ON.streak > 1 ? ` (streak ×${ON.streak})` : ''}` : '✘ No points.'} ${it.why}</div>`;
+      $('why').innerHTML = `<div class="why ${ok ? 'ok' : 'no'}">${ok ? `✔ +${pts} points${ON.streak > 1 ? ` (streak ×${ON.streak})` : ''}${GROUP.id ? ' · your group gets +5 👥' : ''}` : '✘ No points.'} ${it.why}</div>`;
       $('qfoot').innerHTML = `<button class="btn">Back to the festival ➜</button>`; $('qfoot').firstChild.onclick = () => { closeModal(); res(); };
     });
   });
   onlineBusy = false; renderBoard();
 }
 
-function onlineTick() {
+function onlineTick(dt = 0.016) {
   const r = roundNow(), t = Date.now() % PERIOD, now = performance.now();
-  if (r !== ON.round) { ON.round = r; ON.score = 0; ON.streak = 0; ON.lan.forEach(l => { l.gen = 0; l.hideUntil = 0; }); placeLanterns(); net.updateMe(me()); if (ON.podiumShown >= 0 && modalOpen) closeModal(); toast('🎆 New round! Find the lanterns!'); }
+  if (r !== ON.round) { ON.round = r; ON.score = 0; ON.streak = 0; ON.lan.forEach(l => { l.gen = 0; l.hideUntil = 0; }); placeLanterns(); net.updateMe(me()); if (ON.podiumShown >= 0 && modalOpen && !DUEL.on) closeModal(); toast('🎆 New round! Find the lanterns!'); }
   const playing = t < ROUND;
   ON.lan.forEach((l, i) => {
     l.g.visible = playing && now > l.hideUntil;
-    if (l.g.visible && !modalOpen && player.pos.distanceTo(l.g.position) < 1.8) onlineQuestion(i);
+    if (l.g.visible && !modalOpen && !DUEL.on && player.pos.distanceTo(l.g.position) < 1.8) onlineQuestion(i);
   });
-  if (!playing && ON.podiumShown !== r && !modalOpen) {
+  if (!playing && ON.podiumShown !== r && !modalOpen && !DUEL.on) {
     ON.podiumShown = r;
     const list = [{ name: S.name || 'You', score: ON.score }, ...[...net.NET.peers.values()].filter(p => p.r === r).map(p => ({ name: p.name, score: p.score || 0 }))].sort((a, b) => b.score - a.score);
     openModal(`<div class="cert"><h2>🏁 Round finished!</h2><table>${list.slice(0, 6).map((p, i) => `<tr><td>${['🥇', '🥈', '🥉'][i] || i + 1 + '.'} ${esc(p.name)}</td><td>${p.score}</td></tr>`).join('')}</table><div class="small">A new round starts in a few seconds…</div></div><div class="foot"><button class="btn" id="pOk">OK</button></div>`);
     sfx('win'); player.c.play('Cheering', 0.2, true);
     $('pOk').onclick = () => closeModal();
   }
+  // moving or idle? (players who stay away 5 minutes leave the room, to save messages)
+  ON.moving = player.pos.distanceTo(ON.prev) > 0.02; ON.prev.copy(player.pos);
+  ON.idleT = ON.moving || modalOpen ? 0 : ON.idleT + dt;
+  if (ON.idleT > 300 && net.NET.ch) { goOffline('away'); toast('You were away, so you left the online festival.<br><span style="font-size:.6em">Move to come back!</span>', 3500); }
+  if (ON.status === 'away' && ON.moving && !net.NET.ch) goOnline();
   sendState(false);
-  if (now - (ON.boardT || 0) > 1000) { ON.boardT = now; renderBoard(); }
+  if (now - (ON.boardT || 0) > 1000) { ON.boardT = now; renderBoard(); groupHUD(); }
 }
 
-function emote(e) { if (mode === 'menu' || !player.c) return; player.c.play(e, 0.2, true); if (mode === 'online') net.send('emo', { e }); }
+function emote(e) { if (mode === 'menu' || !player.c) return; player.c.play(e, 0.2, true); if (online()) net.send('emo', { e }); }
 $('emotes').querySelectorAll('.btn').forEach(b => b.onclick = () => emote(b.dataset.e));
+
+// ----- groups (up to 4, only for this session) -----
+const GROUP = { id: null, since: 0 };
+const MAX_GROUP = 4;
+function groupMates() { if (!GROUP.id) return []; return [...ON.peers.values()].filter(e => e.data.g === GROUP.id); }
+function setGroup(id) { GROUP.id = id; GROUP.since = performance.now(); net.updateMe(me()); for (const e of ON.peers.values()) peerLabel(e); groupHUD(); renderBoard(); }
+function groupHUD() {
+  const el = $('grp'); if (!el) return;
+  const mates = groupMates();
+  if (GROUP.id && !mates.length && performance.now() - GROUP.since > 10000) { GROUP.id = null; net.updateMe(me()); for (const e of ON.peers.values()) peerLabel(e); }
+  if (!GROUP.id || mode !== 'online') { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  const total = ON.score + mates.reduce((a, e) => a + (e.data.r === roundNow() ? e.data.score || 0 : 0), 0);
+  el.innerHTML = `<b>👥 Your group · ${total} pts</b><div>★ ${esc(S.name || 'You')} — ${ON.score}</div>${mates.map(e => `<div>★ ${esc(e.data.name || 'Player')} — ${e.data.r === roundNow() ? e.data.score || 0 : 0}${e.pos.distanceTo(player.pos) > 70 ? ' <span class="small">(far)</span>' : ''}</div>`).join('')}<button class="btn alt" id="grpLeave">Leave group</button>`;
+  $('grpLeave').onclick = () => { setGroup(null); toast('You left the group.'); };
+}
+function invite(e) {
+  if (groupMates().length + 1 >= MAX_GROUP) { toast('Your group is full (4 players).'); return; }
+  if (e.data.g && e.data.g === GROUP.id) { toast(`${esc(e.data.name)} is already in your group.`); return; }
+  net.send('grp', { t: 'inv', to: e.id, g: GROUP.id || net.NET.id, n: S.name || 'Player' });
+  toast(`👥 Invitation sent to ${esc(e.data.name)}.`, 2200); sfx('click');
+}
+net.on('grp', async m => {
+  if (m.t === 'inv' && m.to === net.NET.id) {
+    if (modalOpen || DUEL.on || (GROUP.id && groupMates().length)) { net.send('grp', { t: 'no', to: m.id }); return; }
+    sfx('open');
+    const r = await say('Group', '#1fb5a8', `<b>${esc(m.n)}</b> invites you to join their group. In a group, every correct answer gives <b>+5 points</b> to all the other members. Do you want to join?`, [["Yes, I'd love to!"], ['No, thanks.', 'alt']]);
+    if (r === 0 && net.NET.peers.has(m.id)) { setGroup(m.g); net.send('grp', { t: 'yes', to: m.id, g: m.g }); toast(`👥 You joined ${esc(m.n)}'s group!`, 2400); sfx('win', 0.4); }
+    else net.send('grp', { t: 'no', to: m.id });
+  } else if (m.t === 'yes' && m.to === net.NET.id) { if (!GROUP.id) setGroup(m.g); const p = net.NET.peers.get(m.id); toast(`👥 ${esc(p ? p.name : 'Someone')} joined your group!`, 2400); sfx('win', 0.4); groupHUD(); }
+  else if (m.t === 'no' && m.to === net.NET.id) { const p = net.NET.peers.get(m.id); toast(`${esc(p ? p.name : 'They')} said: "No, thanks."`, 2200); }
+  else if (m.t === 'pts' && GROUP.id && m.g === GROUP.id && m.r === roundNow()) { ON.score += 5; S.best = Math.max(S.best, ON.score); save(); net.updateMe(me()); toast(`👥 +5 team points (${esc(m.n)})`, 1300); renderBoard(); }
+});
+function peerMenu(e) {
+  const p = e.data, mate = GROUP.id && p.g === GROUP.id;
+  openModal(`<h2>🎭 ${esc(p.name || 'Player')}</h2><div class="small" style="margin-bottom:10px">${p.r === roundNow() ? p.score || 0 : 0} points this round · ${p.w || 0} arena win${p.w === 1 ? '' : 's'} today${p.d ? ' · <b style="color:#c0392b">in a duel now</b>' : ''}</div>
+  <div class="foot" style="justify-content:flex-start">${mate ? '<button class="btn alt" id="pmLeave">Leave group</button>' : '<button class="btn teal" id="pmInv">👥 Invite to my group</button>'}<button class="btn pink" id="pmDuel" ${p.d || DUEL.on || DUEL.pending ? 'disabled' : ''}>⚔️ Challenge to a duel</button><button class="btn" id="pmWave">👋 Say hello</button><button class="btn alt" id="pmX">Close</button></div>`);
+  $('pmX').onclick = closeModal;
+  if ($('pmInv')) $('pmInv').onclick = () => { closeModal(); invite(e); };
+  if ($('pmLeave')) $('pmLeave').onclick = () => { closeModal(); setGroup(null); };
+  $('pmDuel').onclick = () => challenge(e.id);
+  $('pmWave').onclick = () => { closeModal(); sayPhrase(0); };
+}
+
+// ----- the Arena: 1 vs 1 question duels -----
+// Each correct answer hits the other player. Each player checks their own answers and tells the other one.
+const DUEL_HP = 100, DUEL_DMG = 20, DUEL_TIME = 90;
+const DUEL = { on: false, opp: null, oppName: '', hp: DUEL_HP, oppHp: DUEL_HP, t0: 0, phase: '', pending: null, seed: 0, qs: [], qi: 0 };
+const ARENA = { wins: 0, losses: 0 };
+let coach = null;
+const duelPool = () => [...ZONES.flatMap(z => [...z.vocab, ...z.liu, ...z.tags]), ...BOSS.items, ...ONLINE_EXTRA.filter(x => !x.q.includes('class="mini"'))];
+function seededShuffle(a, seed) { const R = mulberry(seed); a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+async function setupArena() {
+  coach = await makeChar('Ranger', '#e8322f');
+  coach.root.position.copy(arena.coach); coach.root.lookAt(arena.x, 0, arena.z); coach.root.rotation.y += Math.PI;
+  const lb = label('Coach Kai', '#ffd0c8'); lb.position.y = 3.0; coach.root.add(lb);
+  const mk = label('⚔', '#ffc23d', 56, 2.6); mk.position.y = 3.7; coach.root.add(mk);
+  scene.add(coach.root); colliders.push({ x: arena.coach.x, z: arena.coach.z, r: 0.7 });
+  coach.pos = arena.coach;
+  for (const p of portals) { const lb = label(`🌀 ${p.name}`, '#e9dcff', 26, 3.6); lb.position.set(p.x, 4.3, p.z); scene.add(lb); }
+}
+async function arenaFlow() {
+  coach.play('Waving', 0.2, true);
+  if (!S.arenaIntro) {
+    await say('Coach Kai', '#e8322f', `Welcome to the <b>Arena</b>! I'm Coach Kai. Here, two players have a friendly <b>English duel</b>: you both answer the same questions, and every correct answer is a hit!<br><br>The rules: 90 seconds, 100 HP each, and a wrong answer makes you wait a little. Be fast, but think!`, [['Got it!']]);
+    S.arenaIntro = true; save();
+  }
+  if (!online()) {
+    const r = await say('Coach Kai', '#e8322f', mode === 'online' ? 'You are not connected right now, so nobody can see you. You can practise with me!' : `To duel your classmates, open <b>🌐 Online Festival</b> from the menu. For now, you can practise with me!`, [['Practise ⚔️'], ['Maybe later', 'alt']]);
+    if (r === 0) await runQuiz({ title: '⚔️ Arena practice', color: '#e8322f', items: shuffle(duelPool()).slice(0, 8), passMin: 0 });
+    return;
+  }
+  openArenaMenu();
+}
+function openArenaMenu() {
+  const mine = { name: S.name || 'You', w: ARENA.wins, me: true };
+  const list = [...net.NET.peers.values()].map(p => ({ id: p.id, name: p.name || 'Player', w: p.w || 0, d: p.d }));
+  const rank = [mine, ...list].sort((a, b) => b.w - a.w).slice(0, 8);
+  const rows = list.length ? list.map(p => `<div class="srow"><b>⚔️ ${esc(p.name)}</b><span class="small"> ${p.w} win${p.w === 1 ? '' : 's'} today${p.d ? ' · <b style="color:#c0392b">in a duel now</b>' : ''}</span><button class="btn pink" data-ch="${p.id}" ${p.d || DUEL.pending ? 'disabled' : ''}>Challenge!</button></div>`).join('') : '<div class="small">Nobody else is online right now. Practise with Coach Kai!</div>';
+  openModal(`<h2>⚔️ The Arena</h2><div class="small" style="margin-bottom:10px">Choose a player and send a challenge. If they say yes, the duel starts: 90 seconds, same questions for both.</div>
+  <div class="arenaGrid"><div><h3 style="margin:4px 0">Players online</h3>${rows}</div>
+  <div><h3 style="margin:4px 0">🏆 Today's champions</h3>${rank.map((p, i) => `<div class="srow" style="${p.me ? 'border-color:#ff7a1a' : ''}">${['🥇', '🥈', '🥉'][i] || i + 1 + '.'} ${esc(p.name)} <span style="margin-left:auto">${p.w} 🏆</span></div>`).join('')}<div class="small">Your duels today: ${ARENA.wins} won · ${ARENA.losses} lost. This ranking is only for today and is not saved.</div></div></div>
+  <div class="foot"><button class="btn alt" id="arPr">Practise ⚔️</button><button class="btn alt" id="arX">Close</button></div>`);
+  $('arX').onclick = closeModal;
+  $('arPr').onclick = async () => { closeModal(); await runQuiz({ title: '⚔️ Arena practice', color: '#e8322f', items: shuffle(duelPool()).slice(0, 8), passMin: 0 }); };
+  $('mbox').querySelectorAll('[data-ch]').forEach(b => b.onclick = () => challenge(b.dataset.ch));
+}
+function challenge(id) {
+  const p = net.NET.peers.get(id); if (!p) return;
+  DUEL.pending = id; DUEL.seed = Math.floor(Math.random() * 1e9);
+  net.send('duel', { t: 'req', to: id, n: S.name || 'Player', s: DUEL.seed });
+  closeModal(); toast(`⚔️ Challenge sent to ${esc(p.name)}.<br><span style="font-size:.6em">Waiting for an answer…</span>`, 3000); sfx('click');
+  clearTimeout(DUEL.pendT); DUEL.pendT = setTimeout(() => { if (DUEL.pending === id) { DUEL.pending = null; toast(`${esc(p.name)} didn't answer.`); } }, 20000);
+}
+net.on('duel', async m => {
+  if (m.to !== net.NET.id) return;
+  const from = net.NET.peers.get(m.id), name = from ? from.name : m.n;
+  if (m.t === 'req') {
+    if (DUEL.on || modalOpen) { net.send('duel', { t: 'no', to: m.id, why: 'busy' }); return; }
+    sfx('open');
+    const r = await say('Coach Kai', '#e8322f', `<b>${esc(name)}</b> challenges you to an English duel in the Arena! Do you want to play?`, [["Yes, let's play! ⚔️"], ['No, thank you.', 'alt']]);
+    if (r === 0 && net.NET.peers.has(m.id) && !DUEL.on) { net.send('duel', { t: 'ok', to: m.id }); startDuel(m.id, 1, m.s); }
+    else net.send('duel', { t: 'no', to: m.id });
+  } else if (m.t === 'ok' && DUEL.pending === m.id) { DUEL.pending = null; startDuel(m.id, -1, DUEL.seed); }
+  else if (m.t === 'no' && DUEL.pending === m.id) { DUEL.pending = null; toast(m.why === 'busy' ? `${esc(name)} is busy right now. Try later!` : `${esc(name)} said: "No, thank you."`, 2600); }
+  else if (!DUEL.on || m.id !== DUEL.opp) return;
+  else if (m.t === 'hit' && DUEL.phase === 'fight') {
+    DUEL.hp = Math.max(0, DUEL.hp - DUEL_DMG); sfx('hit', 0.5); player.c.play('Hit_A', 0.1, true);
+    net.send('duel', { t: 'hp', to: DUEL.opp, hp: DUEL.hp });
+    if (DUEL.hp <= 0) { net.send('duel', { t: 'end', to: DUEL.opp }); endDuel('lose'); }
+    duelBars();
+  } else if (m.t === 'hp') { DUEL.oppHp = Math.min(DUEL.oppHp, m.hp); duelBars(); }
+  else if (m.t === 'end') endDuel('win');
+  else if (m.t === 'quit') endDuel('left');
+});
+function startDuel(opp, side, seed) {
+  const p = net.NET.peers.get(opp); if (!p) return;
+  closeModal();
+  Object.assign(DUEL, { on: true, opp, oppName: p.name || 'Player', hp: DUEL_HP, oppHp: DUEL_HP, t0: 0, phase: 'count', qs: seededShuffle(duelPool(), seed || 1), qi: 0 });
+  const ga = arena.gateA, px = -Math.sin(ga), pz = Math.cos(ga);
+  player.pos.set(arena.x + px * 4.5 * side, 0, arena.z + pz * 4.5 * side); player.ry = Math.atan2(-px * side, -pz * side);
+  cam.yaw = player.ry + Math.PI + 0.6; ON.lastSend = 0; ON.moving = true; sendState(true);
+  net.updateMe(me()); playMusic('m_boss');
+  let n = 3; const tick = () => { if (!DUEL.on) return; if (n > 0) { toast(`${n}`, 900); sfx('click'); n--; setTimeout(tick, 1000); } else { DUEL.phase = 'fight'; DUEL.t0 = performance.now(); toast('GO! ⚔️', 900); duelQuestion(); } };
+  tick();
+}
+function duelBars() {
+  const el = $('duelBars'); if (!el) return;
+  const left = Math.max(0, Math.ceil(DUEL_TIME - (performance.now() - DUEL.t0) / 1000));
+  el.innerHTML = `<div>${esc(S.name || 'You')} <div class="hp"><i style="width:${DUEL.hp}%;background:linear-gradient(90deg,#ff8a7a,#e2453a)"></i></div></div><div style="text-align:center;font-size:22px">⚔️<br>${left}s</div><div style="text-align:right">${esc(DUEL.oppName)} <div class="hp"><i style="width:${DUEL.oppHp}%;background:linear-gradient(90deg,#7cd0ff,#2f8fe0)"></i></div></div>`;
+}
+function duelQuestion() {
+  if (!DUEL.on || DUEL.phase !== 'fight') return;
+  const it = prepItem(DUEL.qs[DUEL.qi++ % DUEL.qs.length]);
+  openModal(`<h2>⚔️ Arena duel</h2><div class="duel" id="duelBars"></div><div class="qcard"><span class="tag" style="background:${KCOL[it.k]}">${SKILLS[it.k]}</span><div class="q">${it.q}</div><div class="opts">${it.opts.map((o, j) => `<button class="opt" data-j="${j}">${String.fromCharCode(65 + j)}. ${esc(o)}</button>`).join('')}</div><div id="why"></div></div>`);
+  duelBars();
+  const t0 = performance.now();
+  $('mbox').querySelectorAll('.opt').forEach(b => b.onclick = () => {
+    if (!DUEL.on) return;
+    const j = +b.dataset.j, ok = j === it.correct; record(it, j, ok, 'Arena duel', t0);
+    $('mbox').querySelectorAll('.opt').forEach((bb, bj) => { bb.disabled = true; if (bj === it.correct) bb.classList.add('ok'); else if (bj === j) bb.classList.add('no'); });
+    if (ok) {
+      DUEL.oppHp = Math.max(0, DUEL.oppHp - DUEL_DMG); net.send('duel', { t: 'hit', to: DUEL.opp });
+      sfx('hit'); player.c.play('Melee_Unarmed_Attack_Punch_A', 0.1, true); duelBars();
+      if (DUEL.oppHp <= 0) { clearTimeout(DUEL.winT); DUEL.winT = setTimeout(() => { if (DUEL.on) endDuel('win'); }, 3000); }
+    } else sfx('bad');
+    $('why').innerHTML = `<div class="why ${ok ? 'ok' : 'no'}">${ok ? '✔ Hit! −20 HP' : '✘ Missed! Wait a moment…'} ${it.why}</div>`;
+    setTimeout(duelQuestion, ok ? 1100 : 2600);
+  });
+}
+function updateDuel() {
+  if (!DUEL.on) return;
+  if (!net.NET.peers.has(DUEL.opp)) { endDuel('left'); return; }
+  if (DUEL.phase !== 'fight') return;
+  const el = performance.now() - DUEL.t0;
+  if ((ON.duelT = (ON.duelT || 0) + 1) % 15 === 0) duelBars();
+  if (el > DUEL_TIME * 1000) endDuel(DUEL.hp > DUEL.oppHp ? 'win' : DUEL.hp < DUEL.oppHp ? 'lose' : 'draw');
+}
+function endDuel(result, silent) {
+  if (!DUEL.on) return;
+  DUEL.on = false; DUEL.phase = ''; clearTimeout(DUEL.winT);
+  if (result === 'quit') { net.send('duel', { t: 'quit', to: DUEL.opp }); closeModal(); net.updateMe(me()); return; }
+  if (result === 'win' || result === 'left') { ARENA.wins++; sfx('win'); player.c.play('Cheering', 0.2, true); }
+  else if (result === 'lose') { ARENA.losses++; sfx('bad'); player.c.play('Death_A', 0.1, true); }
+  else sfx('star');
+  net.updateMe(me()); playMusic('m_online');
+  if (silent) return;
+  const txt = { win: ['🏆 You win!', `Great duel against ${esc(DUEL.oppName)}!`], lose: ['You lost…', `${esc(DUEL.oppName)} wins this time. Good game!`], draw: ["Time's up: it's a draw!", 'You were both great!'], left: ['🏆 You win!', `${esc(DUEL.oppName)} left the arena.`] }[result];
+  openModal(`<div class="cert"><h2>${txt[0]}</h2><div class="bubble" style="display:inline-block">${txt[1]}<br><span class="small">Your duels today: ${ARENA.wins} won · ${ARENA.losses} lost.</span></div><div class="small" style="margin-top:8px">Tip: say "Good job!" with the 💬 button (T).</div></div><div class="foot"><button class="btn" id="dOk">OK</button></div>`);
+  $('dOk').onclick = () => { closeModal(); const ga = arena.gateA; player.pos.set(arena.x + Math.cos(ga) * (arena.r + 2), 0, arena.z + Math.sin(ga) * (arena.r + 2)); player.ry = ga + Math.PI / 2; };
+}
+
+// ----- magic portals -----
+const portalOpen = p => mode === 'online' || p.id === 'plaza' || (S.portals || []).includes(p.id);
+function checkPortals() {
+  if (mode !== 'story') return;
+  S.portals ||= ['plaza'];
+  for (const p of portals) if (!S.portals.includes(p.id) && Math.hypot(p.x - player.pos.x, p.z - player.pos.z) < 5) { S.portals.push(p.id); save(); sfx('star'); toast(`🌀 New portal: ${esc(p.name)}`, 2000); }
+}
+function openPortals(here) {
+  sfx('open');
+  const rows = portals.map(p => {
+    const on = portalOpen(p), me = here && here.id === p.id;
+    return `<div class="srow" style="${on ? '' : 'opacity:.5'}"><b style="color:${p.color}">🌀</b> <b>${esc(p.name)}</b>${me ? '<span class="small" style="margin-left:auto"><b>You are here</b></span>' : on ? `<button class="btn" data-go="${p.id}">Travel ✨</button>` : '<span class="small" style="margin-left:auto">Not discovered yet</span>'}</div>`;
+  }).join('');
+  openModal(`<h2>🌀 Magic Portal</h2><div class="small" style="margin-bottom:10px">Where do you want to go? You can travel to any portal you have discovered. To discover a new portal, walk to it the first time.</div>${rows}<div class="foot"><button class="btn alt" id="poX">Close</button></div>`);
+  $('poX').onclick = closeModal;
+  $('mbox').querySelectorAll('[data-go]').forEach(b => b.onclick = () => travel(portals.find(P => P.id === b.dataset.go)));
+}
+function travel(P) {
+  closeModal(); sfx('star', 0.5);
+  const fl = document.createElement('div'); fl.style.cssText = `position:fixed;inset:0;z-index:40;pointer-events:none;background:radial-gradient(circle,#fff,${P.color});opacity:0;transition:opacity .35s`;
+  document.body.appendChild(fl); requestAnimationFrame(() => fl.style.opacity = 1);
+  setTimeout(() => {
+    player.pos.set(P.x + Math.sin(P.rot) * 4, 0, P.z + Math.cos(P.rot) * 4); player.ry = P.rot; cam.yaw = P.rot + Math.PI;
+    camera.position.set(player.pos.x - Math.sin(P.rot) * 6, 4, player.pos.z - Math.cos(P.rot) * 6);
+    fl.style.opacity = 0; setTimeout(() => fl.remove(), 500);
+  }, 380);
+}
 
 // ---------------- interaction ----------------
 let near = null;
 function findNear() {
-  near = null;
+  near = null; let best = 1e9;
+  const consider = (d, max, obj) => { if (d < max && d < best) { best = d; near = obj; } };
+  const pp = player.pos;
   if (mode === 'story') {
-    for (const n of npcs) if (n.pos.distanceTo(player.pos) < 3) near = { t: 'npc', n, label: `Talk to ${ZONES[n.zi].npc.name}` };
-    for (const n of sideNpcs) if (n.pos.distanceTo(player.pos) < 3) near = { t: 'side', n, label: sst(n.q).done ? `Talk to ${n.q.npc.name}` : `Help ${n.q.npc.name} ${n.q.icon}` };
-    if (boss && boss.root.visible && boss.root.position.distanceTo(player.pos) < 3.2) near = { t: 'boss', label: `Challenge ${BOSS.name}` };
+    for (const n of npcs) consider(n.pos.distanceTo(pp), 3, { t: 'npc', n, label: `Talk to ${ZONES[n.zi].npc.name}` });
+    for (const n of sideNpcs) consider(n.pos.distanceTo(pp), 3, { t: 'side', n, label: sst(n.q).done ? `Talk to ${n.q.npc.name}` : `Help ${n.q.npc.name} ${n.q.icon}` });
+    if (boss && boss.root.visible) consider(boss.root.position.distanceTo(pp), 3.2, { t: 'boss', label: `Challenge ${BOSS.name}` });
+  }
+  if (mode !== 'menu' && !DUEL.on) {
+    if (coach) consider(coach.pos.distanceTo(pp), 3, { t: 'coach', label: 'Talk to Coach Kai ⚔️' });
+    for (const p of portals) consider(Math.hypot(p.x - pp.x, p.z - pp.z), 2.8, { t: 'portal', p, label: 'Use the magic portal 🌀' });
+    if (online()) for (const e of ON.peers.values()) if (e.c && e.c.root.visible) consider(e.pos.distanceTo(pp), 3, { t: 'peer', e, label: `Meet ${String(e.data.name || 'Player').slice(0, 14)} 🎭` });
   }
   const el = $('prompt');
-  if (near && !modalOpen) { el.innerHTML = `<kbd>${isTouch ? 'Tap' : 'E'}</kbd>${near.label}`; el.classList.remove('hidden'); } else el.classList.add('hidden');
+  if (near && !modalOpen) { el.innerHTML = `<kbd>${isTouch ? 'Tap' : 'E'}</kbd>${esc(near.label)}`; el.classList.remove('hidden'); } else el.classList.add('hidden');
 }
 function interact() {
   if (modalOpen || !near) return;
@@ -563,6 +881,9 @@ function interact() {
   if (near.t === 'npc') talkNPC(near.n);
   if (near.t === 'boss') bossDuel();
   if (near.t === 'side') talkSide(near.n);
+  if (near.t === 'coach') arenaFlow();
+  if (near.t === 'portal') openPortals(near.p);
+  if (near.t === 'peer') peerMenu(near.e);
 }
 
 // ---------------- loop ----------------
@@ -639,6 +960,8 @@ function step() {
   updatePlayer(dt);
   if (player.c) player.c.mixer.update(dt);
   for (const n of [...npcs, ...sideNpcs]) { if (n.pos.distanceTo(player.pos) > 90) continue; n.c.mixer.update(dt); if (performance.now() > n.c.lockUntil) n.c.play('Idle_A', 0.3); }
+  if (coach && coach.pos.distanceTo(player.pos) < 90) { coach.mixer.update(dt); if (performance.now() > coach.lockUntil) coach.play('Idle_A', 0.3); }
+  if (mode === 'story') checkPortals();
   if (boss) { boss.mixer.update(dt); if (boss.root.visible && performance.now() > boss.lockUntil && !S.final) boss.play('Idle_B', 0.3); }
   for (const f of animated) f(t, dt);
   scrolls.flat().forEach(s => { if (s.visible) { s.userData.paper.forEach(p => p.rotation.y = t * 2); s.position.y = 1.4 + Math.sin(t * 2 + s.position.x) * 0.15; } });
@@ -651,15 +974,7 @@ function step() {
     }));
   }
   if (mode === 'online') {
-    onlineTick();
-    for (const e of ON.peers.values()) {
-      if (!e.c) continue;
-      const p = e.c.root.position, d = p.distanceTo(e.target);
-      if (d > 15) p.copy(e.target); else p.lerp(e.target, Math.min(1, dt * 1.6));
-      let dr = e.ry - e.c.root.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); e.c.root.rotation.y += dr * Math.min(1, dt * 6);
-      if (performance.now() > e.c.lockUntil) e.c.play(d > 0.15 ? (d > 2.5 ? 'Running_A' : 'Walking_A') : 'Idle_A', 0.25);
-      e.c.mixer.update(dt);
-    }
+    onlineTick(dt); updatePeers(dt); updateDuel();
     ON.lan.forEach(l => { if (l.g.visible) l.g.children[0].position.y = 1.6 + Math.sin(t * 2 + l.g.position.x) * 0.2; });
   }
   for (let i = fw.length - 1; i >= 0; i--) { const f = fw[i]; f.life -= dt; const pos = f.p.geometry.attributes.position; f.vel.forEach((v, k) => { v.y -= 6 * dt; pos.array[k * 3] += v.x * dt; pos.array[k * 3 + 1] += v.y * dt; pos.array[k * 3 + 2] += v.z * dt; }); pos.needsUpdate = true; f.p.material.opacity = Math.max(0, f.life / 1.6); if (f.life <= 0) { scene.remove(f.p); fw.splice(i, 1); } }
@@ -667,6 +982,7 @@ function step() {
   updateCamera(dt);
   findNear(); updateHUD();
   if (mode !== 'menu' && (frame++ & 1)) drawMini(t);
+  if (isTouch) { const hide = modalOpen ? 'hidden' : '', tc = $('touch'); if (tc.style.visibility !== hide) tc.style.visibility = hide; }
   renderer.render(scene, camera);
 }
 
@@ -694,7 +1010,7 @@ $('menuBtn').onclick = () => {
 };
 
 function toMenu() {
-  if (mode === 'online') { net.disconnect(); for (const e of ON.peers.values()) if (e.c) scene.remove(e.c.root); ON.peers.clear(); ON.lan.forEach(l => l.g.visible = false); }
+  if (mode === 'online') { goOffline(); ON.lan.forEach(l => l.g.visible = false); }
   mode = 'menu'; $('menu').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
   player.pos.set(2, 0, 9); refreshStory(); buildMenu(); music.pause(); music.dataset.n = '';
 }
@@ -703,7 +1019,7 @@ async function start(m) {
   if (!S.name) { $('pname').focus(); $('pname').style.borderColor = '#d9433b'; toast('Write your name first ✍️'); return; }
   sfx('click');
   mode = m; $('menu').classList.add('hidden'); $('hud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
-  $('board').classList.toggle('hidden', m !== 'online'); $('emotes').classList.toggle('hidden', m !== 'online'); $('stats').classList.toggle('hidden', m !== 'story'); mini.classList.toggle('hidden', m !== 'story'); mini.classList.remove('big');
+  $('board').classList.toggle('hidden', m !== 'online'); $('emotes').classList.toggle('hidden', m !== 'online'); $('stats').classList.toggle('hidden', m !== 'story'); mini.classList.remove('big'); $('grp').classList.add('hidden'); $('tSay').classList.add('hidden'); $('tWave').classList.toggle('hidden', m !== 'online'); $('tCheer').classList.toggle('hidden', m !== 'online');
   cam.yaw = 0; player.pos.set(2, 0, 9); player.ry = Math.PI;
   refreshStory();
   if (m === 'story') {
@@ -717,7 +1033,7 @@ async function start(m) {
     playMusic('m_online');
     setupOnlineObjects(); ON.round = -1;
     $('objT').innerHTML = 'Online Festival'; $('objD').innerHTML = 'Connecting…';
-    net.connect(($('pcode').value || '').trim(), me()).then(() => { $('objD').innerHTML = 'Touch the floating lanterns to answer questions. Fast and correct = more points!'; renderBoard(); });
+    goOnline();
   }
 }
 
@@ -727,12 +1043,13 @@ setProgress(p => { $('lbar').style.width = `${Math.round(p * 100)}%`; });
   await buildWorld();
   await setupStory();
   await setupSide();
+  await setupArena();
   await setPlayerModel(S.char);
   camera.position.set(0, 5, 20);
   $('loading').classList.add('hidden');
   refreshStory(); buildMenu(); $('menu').classList.remove('hidden');
   loop();
-  if (location.search.includes('debug')) window.FQ = { player, cam, get S() { return S; }, ZONES, zoneInfo, refreshStory, save, ON, SIDE, sideInfo, sideNpcs, sst, talkSide, step, tick: () => { onlineTick(); findNear(); } };
+  if (location.search.includes('debug')) window.FQ = { player, cam, get S() { return S; }, ZONES, zoneInfo, refreshStory, save, ON, SIDE, sideInfo, sideNpcs, sst, talkSide, step, ON, DUEL, ARENA, GROUP, portals, arena, travel, openPortals, arenaFlow, startDuel, endDuel, duelQuestion, tick: () => { onlineTick(); findNear(); } };
 })();
 
 $('bCred').onclick = () => {

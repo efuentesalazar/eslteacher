@@ -53,7 +53,7 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px soli
 #menuBtn{position:absolute;right:14px;bottom:14px;pointer-events:auto}
 #help{position:absolute;left:14px;bottom:14px;color:#fff;font-weight:700;font-size:13px;text-shadow:0 1px 2px #000;opacity:.85}
 /* online board */
-#board{position:absolute;right:14px;top:66px;background:rgba(255,248,236,.94);border-radius:14px;padding:10px 12px;min-width:210px;box-shadow:var(--shadow);font-weight:700;font-size:14px}
+#board{position:absolute;right:14px;top:198px;background:rgba(255,248,236,.94);border-radius:14px;padding:10px 12px;min-width:210px;box-shadow:var(--shadow);font-weight:700;font-size:14px}
 #board h3{margin:0 0 4px;font-size:16px}
 #board ol{margin:0;padding-left:22px}
 #board li.me{color:var(--pink)}
@@ -101,6 +101,49 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px soli
 #stick{left:14px;bottom:14px;width:110px;height:110px}#stick i{left:30px;top:30px}#tbtns{right:10px;bottom:56px;flex-direction:row}#tbtns .btn{width:62px;height:62px;font-size:13px}
 #modal{padding:6px}#mbox{max-height:98vh;padding:12px 16px;border-radius:16px}#mbox h2{font-size:20px}.bubble{font-size:15px;padding:10px 12px}.avatar{flex-basis:44px;height:44px;font-size:24px}.text{font-size:15px;max-height:74vh;padding:10px 14px}.qcard .q{font-size:16px;margin-bottom:8px}.opt{font-size:14px;padding:7px 10px}.opts{gap:5px}.why{font-size:14px;padding:7px 10px}.foot{margin-top:8px}.foot .btn{padding:8px 14px;font-size:15px}.progress{margin:2px 0 6px}.cert h2{font-size:22px!important}.cert table{font-size:13px;margin:6px auto}.cert td{padding:3px 10px}}
 @media (max-width:760px){.reading{grid-template-columns:1fr}.text{max-height:40vh}#menu{background:rgba(27,16,51,.7);justify-content:center}#menu h1{font-size:34px}#obj{font-size:13px;left:10px;top:10px;max-width:calc(100vw - 150px)}#mini{width:116px;height:116px;top:10px;right:10px}#stats{top:134px;right:10px;flex-direction:column;gap:6px}#stats .chip{font-size:14px;padding:5px 9px}#board{top:auto;bottom:90px;min-width:160px;font-size:12px}#mbox{padding:16px}.qcard .q{font-size:18px}.bubble{font-size:16px}}
+
+/* online: phrases, group, arena */
+#chatBtn{position:absolute;left:14px;bottom:44px;pointer-events:auto;font-size:14px;padding:8px 12px}
+#phr{position:absolute;left:50%;bottom:70px;transform:translateX(-50%);display:grid;grid-template-columns:repeat(5,auto);gap:6px;pointer-events:auto;z-index:7}
+#phr .btn{font-size:14px;padding:7px 10px;white-space:nowrap}#phr kbd{background:var(--gold);border-radius:5px;padding:0 5px;margin-right:3px;font-size:12px}
+#grp{position:absolute;left:14px;top:130px;background:rgba(255,248,236,.94);border-radius:14px;padding:8px 12px;box-shadow:var(--shadow);font-weight:700;font-size:14px;pointer-events:auto;min-width:170px}
+#grp b{color:#1a8f6a;display:block;margin-bottom:2px}#grp .btn{font-size:12px;padding:5px 9px;margin-top:6px}
+.srow{display:flex;align-items:center;gap:8px;border:2px solid #eadbc2;background:#fff;border-radius:12px;padding:7px 10px;margin:5px 0;font-weight:700}
+.srow .btn{margin-left:auto;font-size:14px;padding:6px 12px}
+.arenaGrid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+@media (max-width:760px){.arenaGrid{grid-template-columns:1fr}#phr{grid-template-columns:1fr 1fr;width:92vw}}
+/* ---------- phones and tablets (same layout as Wordbound) ---------- */
+#tbtns{position:absolute;inset:0;pointer-events:none;display:block!important}
+.tb{position:absolute;width:var(--s);height:var(--s);border-radius:50%;border:3px solid rgba(255,255,255,.85);pointer-events:auto;font-size:calc(var(--s)*.38);line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(#ffd468,#f0a920);box-shadow:0 4px 0 rgba(30,18,8,.45);color:#2a1d12;font-family:Nunito,sans-serif;font-weight:900;padding:0;touch-action:none;margin-right:env(safe-area-inset-right);margin-bottom:env(safe-area-inset-bottom)}
+.tb:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(30,18,8,.45)}
+.tb small{font-size:10px;font-weight:900;margin-top:1px}
+.tb.blue{background:linear-gradient(#7cd0ff,#2f8fe0);color:#fff}.tb.teal{background:linear-gradient(#7ff0e2,#1fb5a8);color:#fff}.tb.alt{background:linear-gradient(#fff8ea,#eadcbf)}.tb.gold{background:linear-gradient(#fff2a0,#ffb020)}
+body.touch #help,body.touch #emotes,body.touch #chatBtn,body.touch #menuBtn .tx{display:none!important}
+body.touch #menuBtn{width:46px;height:46px;border-radius:50%;padding:0!important;font-size:20px!important;right:8px;bottom:auto;top:134px}
+body.touch #obj{left:8px;top:8px;padding:6px 10px;max-width:calc(100vw - 132px);font-size:12px}body.touch #objT{font-size:11px}body.touch .sideHint{font-size:12px}
+body.touch #mini{width:104px;height:104px;right:8px;top:8px;border-width:3px}
+body.touch #stats{top:188px;right:8px;flex-direction:column;gap:5px}body.touch #stats .chip{font-size:13px;padding:4px 7px}
+body.touch #board{top:auto;bottom:250px;left:8px;right:auto;min-width:150px;font-size:12px;padding:6px 8px}body.touch #board h3{font-size:12px}
+body.touch #grp{top:auto;bottom:250px;left:auto;right:8px;font-size:11px;padding:5px 8px;min-width:130px}
+body.touch #arrow{top:auto;bottom:auto;top:200px;width:38px;height:38px;margin-left:-19px}
+body.touch #prompt{bottom:auto;top:46%;font-size:15px;padding:8px 14px;max-width:78vw;overflow:hidden;text-overflow:ellipsis}
+body.touch #toast{font-size:22px;top:28%}
+body.touch #phr{bottom:auto;top:30%;grid-template-columns:1fr 1fr;width:92vw}
+body.touch #stick{left:18px;bottom:28px;width:132px;height:132px;margin-bottom:env(safe-area-inset-bottom)}
+body.touch #stick i{left:38px;top:38px;width:50px;height:50px}
+/* phone held sideways: less height, so smaller buttons */
+@media (orientation:landscape){
+ body.touch #tbtns{transform:scale(.8);transform-origin:100% 100%}
+ body.touch #menuBtn{top:8px;right:118px}
+ body.touch #obj{max-width:calc(100vw - 420px)}
+ body.touch #stats{top:118px}
+ body.touch #arrow{top:62px}
+ body.touch #stick{width:116px;height:116px;bottom:16px}body.touch #stick i{left:30px;top:30px}
+ body.touch #board{bottom:auto;top:96px;left:8px}
+ body.touch #grp{bottom:auto;top:8px;right:230px}
+ body.touch #prompt{top:auto;bottom:14px;max-width:40vw;font-size:13px}
+ body.touch #phr{top:16%}
+}
 </style>
 <style>#esltStatus.warn{background:rgba(255,200,0,.22)!important}#esltStatus a{color:inherit;font-weight:800}</style>
 <script type="importmap">
@@ -128,11 +171,7 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px soli
     <button class="btn" id="bStory">📖 Story Mode</button>
     <button class="btn pink" id="bOnline">🌐 Online Festival</button>
    </div>
-   <details style="margin-top:12px"><summary class="small" style="cursor:pointer;font-weight:800">Online options (optional)</summary>
-    <label for="pcode">Class code</label>
-    <input type="text" id="pcode" maxlength="12" placeholder="Leave empty to play with everyone">
-    <div class="small">No room needed: players join automatically. A class code only keeps a group together.</div>
-   </details>
+   <div class="small" style="margin-top:10px">🌐 Online: one big festival for everybody (up to 20 players). Make groups, chat with quick phrases and duel in the ⚔️ Arena.</div>
    <div class="row" style="margin-top:12px;justify-content:space-between">
     <span class="small" id="progressTxt"></span>
     <span class="row" style="gap:6px"><button class="btn alt" style="font-size:13px;padding:6px 10px" id="bCred">Credits</button><button class="btn alt" style="font-size:13px;padding:6px 10px" id="bReset">Reset story</button></span>
@@ -150,11 +189,21 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:2px soli
  <div id="toast"></div>
  <div id="board" class="hidden"></div>
  <div id="emotes" class="hidden"><button class="btn alt" data-e="Waving">👋 Wave (1)</button><button class="btn alt" data-e="Cheering">🎉 Cheer (2)</button></div>
- <div id="help">WASD / arrows: move · Space: jump · Shift: run · Drag mouse: camera · E: talk · M: map</div>
- <button class="btn alt" id="menuBtn" style="font-size:14px;padding:8px 12px">☰ Menu</button>
+ <div id="grp" class="hidden"></div>
+ <div id="phr" class="hidden"></div>
+ <button class="btn teal hidden" id="chatBtn">💬 Phrases (T)</button>
+ <div id="help">WASD / arrows: move · Space: jump · Shift: run · Drag mouse: camera · E: talk / use · M: map · T: phrases</div>
+ <button class="btn alt" id="menuBtn" style="font-size:14px;padding:8px 12px">☰<span class="tx"> Menu</span></button>
 </div>
 
-<div id="touch" class="hidden"><div id="stick"><i></i></div><div id="tbtns"><button class="btn" id="tJump">Jump</button><button class="btn teal" id="tAct">Talk</button></div></div>
+<div id="touch" class="hidden"><div id="stick"><i></i></div><div id="tbtns">
+ <button class="tb" id="tAct" style="--s:84px;right:16px;bottom:34px">💬<small>Talk</small></button>
+ <button class="tb alt" id="tJump" style="--s:58px;right:114px;bottom:22px">⤴️<small>Jump</small></button>
+ <button class="tb blue" id="tMap" style="--s:52px;right:30px;bottom:132px">🗺️<small>Map</small></button>
+ <button class="tb teal hidden" id="tSay" style="--s:52px;right:108px;bottom:98px">💭<small>Say</small></button>
+ <button class="tb gold hidden" id="tWave" style="--s:46px;right:166px;bottom:84px">👋</button>
+ <button class="tb gold hidden" id="tCheer" style="--s:46px;right:96px;bottom:162px">🎉</button>
+</div></div>
 
 <div id="modal" class="hidden"><div id="mbox"></div></div>
 
