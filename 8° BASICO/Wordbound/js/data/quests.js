@@ -25,24 +25,24 @@ export const QUESTS = [
     id: 'welcome', main: true, realm: 0, title: 'A Stranger in Brightwater', giver: 'rosa', auto: true,
     intro: [
       'Oh! Hello there! I don\'t think we\'ve met. I\'m Rosa, the mayor of Brightwater.',
-      { ask: 'Nice to meet you!', k: 'CONV', o: [['Nice to meet you too!', 'Ha! You have good manners. I like you already.'], ['I\'m fine, thanks.', 'Hmm... I didn\'t ask how you are. But that\'s OK!'], ['Yes, please.', 'Yes, please? I think you\'re very tired from your trip.']] },
+      { ask: 'Nice to meet you!', k: 'CONV', o: [['Nice to meet you too!', 'Ha! You have good manners. I like you already.'], ['I\'m fine, thanks. And you?', 'Hmm... I didn\'t ask how you are. But that\'s OK!'], ['Yes, please.', 'Yes, please? I think you\'re very tired from your trip.']] },
       'You came at a bad moment, I\'m afraid. Look at the stone in the middle of the square.',
       'That is the Lingua Stone. For a thousand years, the Crown of Words sat on top of it. The Crown lets all the peoples of this land understand each other: humans, elves, dwarves, orcs... everybody.',
       'But last night somebody stole it. Now people are starting to forget words. This morning the baker asked me for "the thing... the round thing... for eating". She meant bread!',
-      { ask: 'What happened to the Crown of Words?', k: 'READ', o: [['Somebody stole it last night.', 'Exactly. And we don\'t know who.'], ['It broke into pieces.', 'No, it didn\'t break. Somebody took it! Listen carefully.'], ['The mayor sold it.', 'Me?! Of course not! It was stolen.']] },
+      { ask: 'What happened to the Crown of Words?', k: 'READ', o: [['Somebody stole it last night.', 'Exactly. And we don\'t know who.'], ['It fell and broke into pieces.', 'No, it didn\'t break. Somebody took it! Listen carefully.'], ['The mayor sold it to a stranger.', 'Me?! Of course not! It was stolen.']] },
       'You look like an adventurer. Will you help us? First, you need a weapon. Go and see Tom, the blacksmith. His forge is on the east side of the square, next to the big blue house.'
     ],
     steps: [
       { talk: 'tom', txt: 'Talk to Tom the Blacksmith (east side of the square).', say: [
         'Hello, hello! Welcome to my forge. What can I do for you?',
-        { ask: 'What do you say to Tom?', k: 'CONV', o: [['Hi! The mayor sent me. I need a weapon, please.', 'A weapon for a hero! Of course.'], ['Give me a sword. Now!', 'Hey! Where are your manners? Try again, nicely.'], ['I\'m a blacksmith too.', 'Really? You don\'t look like one. What do you need?']] },
+        { ask: 'What do you say to Tom?', k: 'CONV', o: [['Hi! The mayor sent me. I need a weapon, please.', 'A weapon for a hero! Of course.'], ['Give me the best sword in your shop. Right now!', 'Hey! Where are your manners? Try again, nicely.'], ['Hi! I\'m a blacksmith too, just like you.', 'Really? You don\'t look like one. What do you need?']] },
         { kit: true }, { give: ['potion_s', 2] },
         'Now open your bag (press I, or tap the bag button) and equip your weapons. Then come back so I can see you.'
       ] },
       { equip: 'weapon', txt: 'Open your bag (I) and equip your new weapons.' },
       { talk: 'tom', txt: 'Show Tom your new weapon.', say: [
         'Look at you! A real adventurer!',
-        { ask: 'Tom says: "That weapon looks great on you!" What is a good answer?', k: 'CONV', o: [['Thank you so much! It\'s perfect.', 'You\'re welcome! Take good care of it.'], ['You\'re welcome.', 'Ha! No, no. I gave YOU the weapon. You say "thank you".'], ['It\'s raining.', 'Is it? I don\'t think so... Are you OK?']] },
+        { ask: 'Tom says: "That weapon looks great on you!" What is a good answer?', k: 'CONV', o: [['Thank you so much! It\'s perfect.', 'You\'re welcome! Take good care of it.'], ['You\'re welcome! It was no problem.', 'Ha! No, no. I gave YOU the weapon. You say "thank you".'], ['Yes, I look at it every day.', 'Hmm? I said it looks great ON you. Just say "thank you"!']] },
         'Oh, before you go: Farmer Ben has a problem with slimes in his fields. His farm is south-east of town. Maybe you can practise with your new sword there!'
       ] }
     ],
@@ -52,7 +52,7 @@ export const QUESTS = [
     id: 'slimes', main: true, realm: 0, title: 'Slimes in the Wheat', giver: 'ben', req: ['welcome'],
     intro: [
       'Oh no, oh no, oh no! Another one!',
-      { ask: 'Ben looks worried. What do you say?', k: 'CONV', o: [['What\'s wrong? Can I help you?', 'Oh, thank you for asking! Yes, please!'], ['Bye!', 'Wait! Don\'t go! I need help!'], ['What time is it?', 'Time? It\'s time for a hero! I have a problem!']] },
+      { ask: 'Ben looks worried. What do you say?', k: 'CONV', o: [['What\'s wrong? Can I help you?', 'Oh, thank you for asking! Yes, please!'], ['Sorry, I\'m busy. See you later!', 'Wait! Don\'t go! I need help!'], ['Excuse me, what time is it now?', 'Time? It\'s time for a hero! I have a problem!']] },
       'Slimes! Green, sticky slimes are eating my wheat. If they eat all of it, the town won\'t have bread this winter.',
       'They live in the field east of my farm. Can you get rid of five of them? Hit them with your sword — click, or press F.'
     ],
@@ -73,8 +73,8 @@ export const QUESTS = [
       'There you are! Guard Greg wrote a report about last night. Please read it carefully.',
       { doc: 'guard_report' },
       { ask: 'When did Greg see the stranger?', k: 'READ', o: [['At midnight.', 'Yes. Midnight, when everybody was asleep.'], ['At six in the morning.', 'No — at six in the morning the Crown was already gone. Read the report again.'], ['At lunchtime.', 'No, it was dark! Look at the report again.']] },
-      { ask: 'What did the stranger look like?', k: 'READ', o: [['Tall and thin, with a long black cloak.', 'That\'s right. Not a person from Brightwater.'], ['Short and fat, with a red hat.', 'No, that sounds like Old Joe! Read again.'], ['A big green orc.', 'No, the report doesn\'t say that.']] },
-      { ask: 'Where did the stranger go?', k: 'READ', o: [['Towards the Old Mill, in the south-west.', 'Yes! So that\'s the place to look for clues.'], ['Into the tavern.', 'No... Rob would be very happy, but no.'], ['North, to the forest.', 'Not yet. First the stranger went to the mill.']] },
+      { ask: 'What did the stranger look like?', k: 'READ', o: [['Tall and thin, with a long black cloak.', 'That\'s right. Not a person from Brightwater.'], ['Short and fat, with a big red hat and boots.', 'No, that sounds like Old Joe! Read again.'], ['Big and green, like an orc from the desert.', 'No, the report doesn\'t say that.']] },
+      { ask: 'Where did the stranger go?', k: 'READ', o: [['Towards the Old Mill, in the south-west.', 'Yes! So that\'s the place to look for clues.'], ['Into the tavern, to have some dinner.', 'No... Rob would be very happy, but no.'], ['North, to the forest of the elves.', 'Not yet. First the stranger went to the mill.']] },
       'Please go to the Old Mill and look for clues. Be careful!'
     ],
     steps: [
@@ -86,7 +86,7 @@ export const QUESTS = [
       { talk: 'rosa', txt: 'Show the black feather to Mayor Rosa.', say: [
         'A black feather, cold as ice... Oh no. I have read about this in old books.',
         'Only the crows of Lord Hush have feathers like this. He is a sorcerer who hates words. He wants a world of silence.',
-        { ask: 'What does Lord Hush want?', k: 'READ', o: [['A world without words, a silent world.', 'Yes. And with the Crown, he can do it.'], ['More books for his library.', 'No! He hates words. Books are full of words!'], ['A new house in Brightwater.', 'Ha! No, he doesn\'t want to live with us.']] },
+        { ask: 'What does Lord Hush want?', k: 'READ', o: [['A world without words, a silent world.', 'Yes. And with the Crown, he can do it.'], ['More books and words for his library.', 'No! He hates words. Books are full of words!'], ['A new house in the centre of Brightwater.', 'Ha! No, he doesn\'t want to live with us.']] },
         'We can\'t fight him alone. The Crown was made with four Word Gems, one from each people. If you find the gems, we can open his tower.',
         'The elves of Whisperwood know old magic. Take this letter to Queen Elowen. Whisperwood is north of here — follow the north road.',
         { give: ['mayor_letter', 1] },
@@ -110,7 +110,7 @@ export const QUESTS = [
       ] },
       { talk: 'elowen', txt: 'Give the mayor\'s letter to Queen Elowen.', say: [
         'A human in Leafhollow? How unusual.',
-        { ask: 'How do you greet the Queen?', k: 'CONV', o: [['Good afternoon, Your Majesty. I have a letter for you.', 'Such good manners! Thank you, traveller.'], ['Hey, Queen! What\'s up?', '"What\'s up"? I am a queen, not your cousin! Try again.'], ['Give me a gem.', 'Hmm. We don\'t start conversations like that here.']] },
+        { ask: 'How do you greet the Queen?', k: 'CONV', o: [['Good afternoon, Your Majesty. I have a letter for you.', 'Such good manners! Thank you, traveller.'], ['Hey, Queen! What\'s up? I\'ve got a letter for you.', '"What\'s up"? I am a queen, not your cousin! Try again.'], ['Give me a gem and I will give you this letter.', 'Hmm. We don\'t start conversations like that here.']] },
         { take: ['mayor_letter', 1] },
         'Rosa writes that the Crown of Words was stolen... This explains why my elves can\'t understand the birds anymore.',
         'I will help you. But first, I need YOUR help. The spirits of the forest are sick, and only moonflowers can heal them.'
@@ -123,7 +123,7 @@ export const QUESTS = [
     intro: [
       'Moonflowers grow in the Moonflower Glade, west of Leafhollow.',
       'Listen carefully: moonflowers are BLUE and they glow. There are also PURPLE flowers in the glade. Those are nightshade, and they are poisonous. Do not bring me nightshade!',
-      { ask: 'Which flowers do you need?', k: 'INST', o: [['Three blue moonflowers. Not the purple ones.', 'Exactly. Go now, and be quick.'], ['Three purple flowers.', 'No! Purple ones are poisonous! Listen again: BLUE.'], ['Any flowers, it doesn\'t matter.', 'It matters a lot! Blue moonflowers only.']] }
+      { ask: 'Which flowers do you need?', k: 'INST', o: [['Three blue moonflowers. Not the purple ones.', 'Exactly. Go now, and be quick.'], ['Three purple moonflowers. Not the blue ones.', 'No! Purple ones are poisonous! Listen again: BLUE.'], ['Any three flowers. The colour doesn\'t matter.', 'It matters a lot! Blue moonflowers only.']] }
     ],
     steps: [
       { bring: 'moonflower', n: 3, to: 'elowen', txt: 'Pick 3 blue moonflowers in the glade (west) and bring them to the Queen.', at: [-48, -188], say: [
@@ -153,7 +153,7 @@ export const QUESTS = [
         'I heard the howl from here. The wolf is gone, and you found the gem. Look how it shines!',
         { give: ['gem_forest', 1] },
         'This is the Word Gem of the Forest. The dwarves of Stonehold have another one. Their city, Ironhearth, is far to the east.',
-        { ask: 'Where must you go now?', k: 'READ', o: [['East, to Ironhearth in Stonehold.', 'Yes. Safe travels!'], ['South, to the desert.', 'Not yet. First the dwarves, in the east.'], ['Back to Brightwater to sleep.', 'Sleep later! Go east.']] }
+        { ask: 'Where must you go now?', k: 'READ', o: [['East, to Ironhearth in Stonehold.', 'Yes. Safe travels!'], ['South, to the orc camp in the desert.', 'Not yet. First the dwarves, in the east.'], ['Back to Brightwater to sleep.', 'Sleep later! Go east.']] }
       ] }
     ],
     reward: { xp: 180, gold: 50, items: [['green_cloak', 1]] }
@@ -167,14 +167,14 @@ export const QUESTS = [
     steps: [
       { talk: 'durin', txt: 'Travel east to Ironhearth. Talk to the gatekeeper.', say: [
         'Hmph. Another visitor. What do you want?',
-        { ask: 'Ask Durin to let you in.', k: 'CONV', o: [['Excuse me, could you open the gate, please?', '...Well. Nobody says "please" these days. Fine.'], ['Open the gate!', 'Ha! Open it yourself. Oh, wait, you can\'t. Ask nicely.'], ['Can I have a sandwich?', 'A sandwich?! This is a gate, not a kitchen!']] },
+        { ask: 'Ask Durin to let you in.', k: 'CONV', o: [['Excuse me, could you open the gate, please?', '...Well. Nobody says "please" these days. Fine.'], ['Open the gate! I\'m in a hurry, dwarf!', 'Ha! Open it yourself. Oh, wait, you can\'t. Ask nicely.'], ['Excuse me, can I have a sandwich, please?', 'A sandwich?! This is a gate, not a kitchen!']] },
         'Before you go in, tell me: where are you from?',
-        { ask: 'Durin asks: "Where are you from?"', k: 'CONV', o: [['I\'m from far away, but now I\'m helping Brightwater.', 'Brightwater, eh? Good people. Short memories, but good people.'], ['I\'m fifteen.', 'I asked WHERE, not HOW OLD. Dwarves listen carefully. Do you?'], ['Yes, I am.', 'Yes you are... what? Answer my question!']] },
+        { ask: 'Durin asks: "Where are you from?"', k: 'CONV', o: [['I\'m from far away, but now I\'m helping Brightwater.', 'Brightwater, eh? Good people. Short memories, but good people.'], ['I\'m fifteen years old, and I\'m very strong.', 'I asked WHERE, not HOW OLD. Dwarves listen carefully. Do you?'], ['Yes, I am. Thank you for asking me.', 'Yes you are... what? Answer my question!']] },
         'Go on in. The King is in the great hall. Don\'t touch anything!'
       ] },
       { talk: 'thrain', txt: 'Talk to King Thrain in the great hall.', say: [
         'An elf gem? In the hands of a human? Interesting...',
-        { ask: 'The King says: "Why are you here?"', k: 'CONV', o: [['I\'m looking for the Word Gems to stop Lord Hush.', 'Lord Hush... So it\'s true. The darkness is back.'], ['Because I\'m hungry.', 'Then go to Helga the cook. But I don\'t think that\'s the real reason.'], ['I don\'t know.', 'You don\'t know? Then why did you walk all this way?']] },
+        { ask: 'The King says: "Why are you here?"', k: 'CONV', o: [['I\'m looking for the Word Gems to stop Lord Hush.', 'Lord Hush... So it\'s true. The darkness is back.'], ['Because I\'m hungry and I want to eat something.', 'Then go to Helga the cook. But I don\'t think that\'s the real reason.'], ['I don\'t know. I just followed the road here.', 'You don\'t know? Then why did you walk all this way?']] },
         'I will give you our gem. But we have a terrible problem. Three of my miners are lost in the Deep Mine, and skeletons are walking in the tunnels!'
       ] }
     ],
@@ -187,13 +187,13 @@ export const QUESTS = [
       'Bram was working next to the RED CART, near the entrance of the mine.',
       'Gilda went to look at the BIG BLUE CRYSTAL. It is on the east side of the mine.',
       'And Olin... Olin always hides BEHIND THE WATERFALL when he is scared. The waterfall is north of the mine.',
-      { ask: 'Where is Gilda?', k: 'LIST', o: [['Next to the big blue crystal.', 'Right. Remember the others too!'], ['Next to the red cart.', 'No, that\'s Bram. Listen again.'], ['Behind the waterfall.', 'No, that\'s Olin, the scared one.']] },
+      { ask: 'Where is Gilda?', k: 'LIST', o: [['Next to the big blue crystal.', 'Right. Remember the others too!'], ['Next to the old red mining cart.', 'No, that\'s Bram. Listen again.'], ['Behind the big waterfall.', 'No, that\'s Olin, the scared one.']] },
       'There are no maps of the mine. Use my directions. Now go!'
     ],
     steps: [
       { talk: 'bram', noArrow: true, txt: 'Find Bram: "next to the red cart, near the mine entrance".', at: [199, -56], say: [
         'Who\'s there?! Oh, a friend! I was so scared. The skeletons took my lamp!',
-        { ask: 'Bram is scared. What do you say?', k: 'CONV', o: [['Don\'t worry, you\'re safe now. Go back to the city.', 'Thank you, thank you! I\'m going home!'], ['Ha ha, you\'re scared!', 'That\'s not very nice...'], ['Give me your money.', 'What?! Are you a skeleton too?!']] }
+        { ask: 'Bram is scared. What do you say?', k: 'CONV', o: [['Don\'t worry, you\'re safe now. Go back to the city.', 'Thank you, thank you! I\'m going home!'], ['Ha ha, you\'re scared of some old skeletons!', 'That\'s not very nice...'], ['Give me your money and I will help you.', 'What?! Are you a skeleton too?!']] }
       ] },
       { talk: 'gilda', noArrow: true, txt: 'Find Gilda: "next to the big blue crystal, on the east side".', at: [226, -36], say: [
         'Shh! Look at this crystal. It\'s the biggest one I have ever seen!',
@@ -203,7 +203,7 @@ export const QUESTS = [
       { talk: 'olin', noArrow: true, txt: 'Find Olin: "behind the waterfall, north of the mine".', at: [212, -80], say: [
         'I... I\'m not hiding. I\'m resting. Behind a waterfall. Like everyone does.',
         'OK, I was hiding. There\'s a HUGE skeleton in the mine. It has a giant axe. They call it the Bone Foreman!',
-        { ask: 'What did Olin see?', k: 'LIST', o: [['A huge skeleton with a giant axe.', 'Yes! The Bone Foreman. Tell the King!'], ['A small dog.', 'A dog? No! A GIANT skeleton!'], ['Another miner.', 'No, no, it was a monster!']] }
+        { ask: 'What did Olin see?', k: 'LIST', o: [['A huge skeleton with a giant axe.', 'Yes! The Bone Foreman. Tell the King!'], ['A small dog with a bone in its mouth.', 'A dog? No! A GIANT skeleton!'], ['Another miner with a big hammer.', 'No, no, it was a monster!']] }
       ] },
       { talk: 'thrain', txt: 'Go back to King Thrain.', say: [
         'My miners are home! Thank you, friend.',
@@ -239,26 +239,26 @@ export const QUESTS = [
     steps: [
       { talk: 'ugra', txt: 'Travel south to the Sunscar Desert. Talk to the orc scout.', say: [
         'Stop. You are not an orc. What do you want in the desert?',
-        { ask: 'Ugra wants to know why you are here.', k: 'CONV', o: [['I want to talk to your chief. I come in peace.', 'Hmm. Honest words. Follow the road to the camp.'], ['None of your business!', 'Then go home, little human.'], ['I want to buy sand.', 'Sand? Ha! Take as much as you want. Now really, why are you here?']] },
+        { ask: 'Ugra wants to know why you are here.', k: 'CONV', o: [['I want to talk to your chief. I come in peace.', 'Hmm. Honest words. Follow the road to the camp.'], ['That\'s none of your business! Let me pass.', 'Then go home, little human.'], ['I want to buy some sand. Do you sell it?', 'Sand? Ha! Take as much as you want. Now really, why are you here?']] },
         'Chief Grukka is in the big tent, in the middle of the camp.'
       ] },
       { talk: 'grukka', txt: 'Talk to Chief Grukka in the middle of the camp.', say: [
         'A human with dwarf and elf gems. Strange. Grukka does not trust strangers.',
         'If you want the Sun Gem, you must pass three trials: the trial of STRENGTH, the trial of WISDOM and the trial of HEART.',
-        { ask: 'How many trials must you pass?', k: 'LIST', o: [['Three: strength, wisdom and heart.', 'Good. You listen. That is a start.'], ['Two: strength and speed.', 'No! Three. Listen when Grukka talks!'], ['One.', 'One?! Grukka said THREE.']] },
+        { ask: 'How many trials must you pass?', k: 'LIST', o: [['Three: strength, wisdom and heart.', 'Good. You listen. That is a start.'], ['Two: strength and wisdom. No heart.', 'No! Three. Listen when Grukka talks!'], ['Only one: a fight with Grukka.', 'One?! Grukka said THREE.']] },
         'First, strength. Dust bandits are attacking our caravans near the Old Ruins, in the south-west. Defeat six of them.'
       ] },
       { kill: 'bandit', n: 6, txt: 'Trial of Strength: defeat 6 dust bandits at the Old Ruins (south-west).', at: [-54, 204] },
       { talk: 'morga', txt: 'Trial of Wisdom: talk to Shaman Morga.', say: [
         'Strength is good. But wisdom is better. Read the Law of Redrock, written on this stone tablet.',
         { give: ['orc_tablet', 1] }, { doc: 'orc_law' },
-        { ask: 'What must an orc do when a stranger arrives with water?', k: 'READ', o: [['Share food with the stranger.', 'Yes. A stranger with water is a friend.'], ['Fight the stranger.', 'No. Read the law again.'], ['Run away.', 'Orcs do not run away!']] },
-        { ask: 'When is it forbidden to hunt?', k: 'READ', o: [['When the moon is full.', 'Correct. The full moon is for resting.'], ['In the morning.', 'No, the law says nothing about mornings.'], ['Every day.', 'Then orcs would be very hungry! Read again.']] },
+        { ask: 'What must an orc do when a stranger arrives with water?', k: 'READ', o: [['Share food with the stranger.', 'Yes. A stranger with water is a friend.'], ['Fight the stranger and take the water.', 'No. Read the law again.'], ['Run away and hide in the tents.', 'Orcs do not run away!']] },
+        { ask: 'When is it forbidden to hunt?', k: 'READ', o: [['When the moon is full.', 'Correct. The full moon is for resting.'], ['In the morning, before the sun is up.', 'No, the law says nothing about mornings.'], ['Every day of the year.', 'Then orcs would be very hungry! Read again.']] },
         { ask: 'According to the law, who is the strongest orc?', k: 'READ', o: [['The one who keeps their word.', 'You have wisdom. Go to Little Zug for the last trial.'], ['The one with the biggest axe.', 'Ha! No. Read the last line again.'], ['The chief.', 'Not exactly. Read the last line again.']] }
       ] },
       { talk: 'zug', txt: 'Trial of Heart: talk to Little Zug.', say: [
         '*sniff* My dog... My dog Biter is lost!',
-        { ask: 'Zug is crying. What do you say?', k: 'CONV', o: [['Oh no, I\'m sorry! Can you tell me what he looks like?', 'You... you will help me?'], ['Stop crying. Orcs don\'t cry.', '*cries louder*'], ['I don\'t like dogs.', 'But... Biter is the best dog in the world!']] },
+        { ask: 'Zug is crying. What do you say?', k: 'CONV', o: [['Oh no, I\'m sorry! Can you tell me what he looks like?', 'You... you will help me?'], ['Stop crying right now. Real orcs don\'t cry, you know.', '*cries louder*'], ['I don\'t like dogs. Maybe it\'s better without him.', 'But... Biter is the best dog in the world!']] },
         'Biter is a BROWN dog, with ONE WHITE EAR. He loves bones. Yesterday he ran towards the Old Ruins, near the big cactus, south of the camp.'
       ] },
       { talk: 'dog_ok', noArrow: true, txt: 'Find Biter: a BROWN dog with ONE WHITE EAR, near the Old Ruins.', at: [-38, 216], say: [
@@ -272,7 +272,7 @@ export const QUESTS = [
       ] },
       { talk: 'grukka', txt: 'Go back to Chief Grukka.', say: [
         'Strength. Wisdom. Heart. You have all three. Grukka was wrong about you.',
-        { ask: 'The chief says: "Grukka was wrong about you." What do you answer?', k: 'CONV', o: [['That\'s OK. Thank you for trusting me now.', 'Ha! Humble too. Grukka likes this human.'], ['Yes, you were very stupid.', '...Grukka is trying to say sorry. Be nice.'], ['I\'m hungry.', 'Later! Listen to the chief.']] },
+        { ask: 'The chief says: "Grukka was wrong about you." What do you answer?', k: 'CONV', o: [['That\'s OK. Thank you for trusting me now.', 'Ha! Humble too. Grukka likes this human.'], ['Yes, you were very stupid. I knew I was right.', '...Grukka is trying to say sorry. Be nice.'], ['OK. Can we eat now? I\'m really hungry.', 'Later! Listen to the chief.']] },
         'Take the Sun Gem. And this armour — orc armour, for an orc-friend.',
         { give: ['gem_sun', 1] }, { take: ['orc_tablet', 1] },
         'The last gem is in Mistmoor, in the west. The Bonefolk live there. They are skeletons, but friendly ones. Do not attack them!'
@@ -289,7 +289,7 @@ export const QUESTS = [
     steps: [
       { talk: 'skully', txt: 'Travel west to Bonewick in Mistmoor. Talk to Mayor Skully.', say: [
         'AAAH! A living person! Don\'t hurt me!',
-        { ask: 'Skully is scared of you. What do you say?', k: 'CONV', o: [['Sorry, I didn\'t mean to scare you. I\'m a friend.', 'Phew! My bones are still shaking. Welcome to Bonewick!'], ['Boo!', 'AAAAH! *falls into pieces* ...Not funny.'], ['Where is the gem? Tell me now!', 'You are scary AND rude. Please, be kind.']] },
+        { ask: 'Skully is scared of you. What do you say?', k: 'CONV', o: [['Sorry, I didn\'t mean to scare you. I\'m a friend.', 'Phew! My bones are still shaking. Welcome to Bonewick!'], ['Boo!', 'AAAAH! *falls into pieces* ...Not funny.'], ['I don\'t care. Where is the gem? Tell me right now!', 'You are scary AND rude. Please, be kind.']] },
         'We are the Bonefolk. We are skeletons, yes, but we are good neighbours. Lord Hush took our voices... and our Moon Gem.',
         'The Crypt Keeper guards the gem in the old crypt. Nobody remembers the way, but here is an old map. Read it carefully.',
         { give: ['map_piece', 1] }, { doc: 'marsh_map' }
@@ -314,8 +314,8 @@ export const QUESTS = [
       { go: 'tower', r: 12, txt: 'Go to the Silent Tower (far west) with the four gems.', say: [
         '@me: The four gems are shining... The door is opening!',
         '@hush: So... the little hero has come to my tower. You want the Crown? Then answer me. In my world, there are no words!',
-        { ask: 'Lord Hush says: "Words are useless. Nobody listens." What do you answer?', k: 'CONV', o: [['That\'s not true. Words help people understand each other.', '@hush: Grr... Your words are... annoying!'], ['OK, you\'re right.', '@hush: Ha ha! Then give up, little hero! ...No? Answer again!'], ['I like pizza.', '@hush: What? That is not an answer!']] },
-        { ask: 'Lord Hush says: "Why do you fight for these strange peoples?"', k: 'CONV', o: [['Because they are my friends, and friends help each other.', '@hush: Friends... I had friends once... NO! Silence!'], ['Because I\'m bored.', '@hush: Bored? Then go home!'], ['Yesterday.', '@hush: That is not even an answer to my question!']] },
+        { ask: 'Lord Hush says: "Words are useless. Nobody listens." What do you answer?', k: 'CONV', o: [['That\'s not true. Words help people understand each other.', '@hush: Grr... Your words are... annoying!'], ['OK, you\'re right. Nobody listens to anybody.', '@hush: Ha ha! Then give up, little hero! ...No? Answer again!'], ['I don\'t know. I never listen to people.', '@hush: Ha! You see? Not even you listen! ...No, wait. Answer again!']] },
+        { ask: 'Lord Hush says: "Why do you fight for these strange peoples?"', k: 'CONV', o: [['Because they are my friends, and friends help each other.', '@hush: Friends... I had friends once... NO! Silence!'], ['Because I\'m bored and I have nothing better to do.', '@hush: Bored? Then go home!'], ['Yes, I do. I fight for them every day.', '@hush: I asked WHY, not IF! That is not an answer to my question!']] },
         '@hush: Enough talking! Let silence fall!'
       ] },
       { kill: 'hush', n: 1, txt: 'Defeat Lord Hush!', at: [-226, 6] },
@@ -325,7 +325,7 @@ export const QUESTS = [
         'Let\'s put it back on the Lingua Stone... There! Can you hear that? People are talking again! Laughing! Singing!',
         { anim: 'Cheering' },
         'Elves, dwarves, orcs, the Bonefolk, humans... everybody can understand each other again. Thanks to you.',
-        { ask: 'Rosa says: "How can we ever thank you?" What is a good answer?', k: 'CONV', o: [['You don\'t need to thank me. I was happy to help.', 'A true hero. Brightwater will never forget you.'], ['Give me all your money.', 'Ha ha! Always joking. Here, a little gift.'], ['Nice to meet you.', 'We met a long time ago, silly! But thank you.']] },
+        { ask: 'Rosa says: "How can we ever thank you?" What is a good answer?', k: 'CONV', o: [['You don\'t need to thank me. I was happy to help.', 'A true hero. Brightwater will never forget you.'], ['Give me all the money in the village, please.', 'Ha ha! Always joking. Here, a little gift.'], ['Nice to meet you! It\'s my first time here.', 'We met a long time ago, silly! But thank you.']] },
         'This is the Royal Sword of the old kings, and the Hero\'s Cape. They are yours now.'
       ] }
     ],
@@ -340,7 +340,7 @@ export const QUESTS = [
     intro: [
       'Excuse me... Have you seen my cat? Her name is Whiskers. She is lost!',
       'Whiskers is BLACK, with WHITE PAWS, and she has a RED RIBBON on her neck. She likes to sleep in warm places, like near the Old Mill.',
-      { ask: 'What does Whiskers look like?', k: 'LIST', o: [['She\'s black, with white paws and a red ribbon.', 'Yes! Please find her!'], ['She\'s orange, with a red ribbon.', 'No, no! She is BLACK!'], ['She\'s white, with black paws.', 'The other way round! Black, with white paws.']] }
+      { ask: 'What does Whiskers look like?', k: 'LIST', o: [['She\'s black, with white paws and a red ribbon.', 'Yes! Please find her!'], ['She\'s orange, with white paws and a red ribbon.', 'No, no! She is BLACK!'], ['She\'s white, with black paws and a red ribbon.', 'The other way round! Black, with white paws.']] }
     ],
     steps: [
       { talk: 'cat_ok', noArrow: true, txt: 'Find Whiskers: black, white paws, red ribbon. She likes the area near the Old Mill.', at: [-40, 52], say: [
@@ -349,7 +349,7 @@ export const QUESTS = [
       ] },
       { talk: 'lily', txt: 'Tell Lily that you found Whiskers.', say: [
         'Whiskers is home! She came running! Thank you so much!',
-        { ask: 'Lily says: "Thank you so much!" What do you say?', k: 'CONV', o: [['You\'re welcome! Take care of her.', 'I will! Here, I have apples for you.'], ['Thank you too.', 'Hmm? Why are you thanking me? Ha ha!'], ['I\'m sorry.', 'Sorry? Why? You found my cat!']] }
+        { ask: 'Lily says: "Thank you so much!" What do you say?', k: 'CONV', o: [['You\'re welcome! Take care of her.', 'I will! Here, I have apples for you.'], ['Thank you too! Thanks a lot, really.', 'Hmm? Why are you thanking me? Ha ha!'], ['I\'m sorry. I\'m really, really sorry.', 'Sorry? Why? You found my cat!']] }
       ] }
     ],
     reward: { xp: 45, gold: 5, items: [['apple', 3]] }
@@ -359,7 +359,7 @@ export const QUESTS = [
     intro: [
       'Oh, dear! I have three loaves of bread to deliver, but I can\'t leave the bakery. Can you help me?',
       'The first loaf is for Old Joe. He is always sitting by the well. The second is for Anna — she is wearing a red dress today, she is at the market. And the third is for the guard at the north gate.',
-      { ask: 'Who gets the second loaf?', k: 'LIST', o: [['Anna, the woman in the red dress.', 'That\'s right!'], ['Old Joe.', 'No, Joe is the first one.'], ['The baker.', 'I AM the baker! Listen again, dear.']] },
+      { ask: 'Who gets the second loaf?', k: 'LIST', o: [['Anna, the woman in the red dress.', 'That\'s right!'], ['Old Joe, the man who can\'t hear well.', 'No, Joe is the first one.'], ['The baker, the woman who makes bread.', 'I AM the baker! Listen again, dear.']] },
       { give: ['bread', 3] }
     ],
     steps: [
@@ -372,7 +372,7 @@ export const QUESTS = [
         'Bread for me? Martha is so kind.',
         { take: ['bread', 1] },
         'Do you like my dress? I made it myself.',
-        { ask: 'Anna asks: "Do you like my dress?"', k: 'CONV', o: [['Yes, I love it! The colour is beautiful.', 'Thank you! You are very sweet.'], ['Yes, I do. I don\'t.', 'Yes or no? You are very confusing!'], ['It\'s Tuesday.', 'Um... is it?']] }
+        { ask: 'Anna asks: "Do you like my dress?"', k: 'CONV', o: [['Yes, I love it! The colour is beautiful.', 'Thank you! You are very sweet.'], ['Yes, I do. No, I don\'t. Well, maybe.', 'Yes or no? You are very confusing!'], ['Yes, I like. Is very beauty the dress.', 'Thank you... I think! You mean "Yes, I like it. It\'s very beautiful."']] }
       ] },
       { talk: 'greg', noArrow: true, txt: 'Give bread to the guard "at the north gate".', at: [4, -38], say: [
         'Bread! I\'m so hungry. I can\'t leave my post until six o\'clock.',
@@ -393,7 +393,7 @@ export const QUESTS = [
     steps: [
       { bring: 'egg', n: 5, to: 'hilda', txt: 'Find 5 eggs around the farm and bring them to Granny Hilda.', at: [50, 30], say: [
         'One, two, three, four, five! Perfect! Now I can make my chocolate cake.',
-        { ask: 'Hilda says: "Would you like a piece of cake later?"', k: 'CONV', o: [['Yes, please! That sounds delicious.', 'Lovely! Come back tomorrow.'], ['Yes, I would like.', 'Ha ha, you mean "Yes, I would." Or just "Yes, please!"'], ['No, I am a cake.', 'You are a... what? Oh, dear.']] }
+        { ask: 'Hilda says: "Would you like a piece of cake later?"', k: 'CONV', o: [['Yes, please! That sounds delicious.', 'Lovely! Come back tomorrow.'], ['Yes, I would like.', 'Ha ha, you mean "Yes, I would." Or just "Yes, please!"'], ['Yes, I like very much the cake later.', 'Ha ha! Almost. We say "Yes, please! I\'d love some."']] }
       ] }
     ],
     reward: { xp: 50, gold: 10, items: [['potion_s', 2]] }
@@ -409,14 +409,14 @@ export const QUESTS = [
         'A letter? For me? Oh... I can\'t read very well. Could you read it for me, please?',
         { doc: 'love_letter' },
         { ask: 'Finn asks: "Who wrote the letter?"', k: 'READ', o: [['Anna.', 'Anna?! The girl with the beautiful red dress?!'], ['Martha.', 'Martha? No, read the end of the letter again.'], ['Pip.', 'Pip only delivers letters! Look at the name at the end.']] },
-        { ask: 'Finn asks: "Where does she want to meet?"', k: 'READ', o: [['At the fishing pond.', 'Here?! At MY pond?'], ['At the tavern.', 'No... read it again, please.'], ['In Leafhollow.', 'That\'s very far! Are you sure?']] },
-        { ask: 'Finn asks: "When?"', k: 'READ', o: [['On Saturday at five o\'clock.', 'Saturday at five! I need a new shirt!'], ['On Monday morning.', 'Hmm, are you sure? Read it again.'], ['Tonight.', 'Tonight? Read it again, please.']] },
+        { ask: 'Finn asks: "Where does she want to meet?"', k: 'READ', o: [['At the fishing pond.', 'Here?! At MY pond?'], ['At the tavern in the square.', 'No... read it again, please.'], ['In the forest of Leafhollow.', 'That\'s very far! Are you sure?']] },
+        { ask: 'Finn asks: "When?"', k: 'READ', o: [['On Saturday at five o\'clock.', 'Saturday at five! I need a new shirt!'], ['On Monday morning at ten o\'clock.', 'Hmm, are you sure? Read it again.'], ['Tonight, when the moon is up.', 'Tonight? Read it again, please.']] },
         'Please, tell Anna... tell her YES! I\'m too shy to say it myself.',
         { take: ['love_letter', 1] }
       ] },
       { talk: 'anna', txt: 'Give Finn\'s answer to Anna at the market.', say: [
         'Did Finn read my letter? What did he say?',
-        { ask: 'What do you tell Anna?', k: 'CONV', o: [['He says yes! He will meet you on Saturday.', 'Oh! I\'m so happy! Thank you!'], ['He says no.', 'What?! Is that true? ...Your face says it isn\'t. Tell me the truth!'], ['He likes fish.', 'Yes, I know he likes fish. But what did he SAY?']] }
+        { ask: 'What do you tell Anna?', k: 'CONV', o: [['He says yes! He will meet you on Saturday.', 'Oh! I\'m so happy! Thank you!'], ['He says no. He doesn\'t want to meet you.', 'What?! Is that true? ...Your face says it isn\'t. Tell me the truth!'], ['He says he likes fish. A lot of fish.', 'Yes, I know he likes fish. But what did he SAY?']] }
       ] }
     ],
     reward: { xp: 70, gold: 20, items: [['potion_s', 2]] }
@@ -439,8 +439,8 @@ export const QUESTS = [
     id: 's_sam', realm: 0, title: 'The Shy Boy', giver: 'sam', req: ['welcome'],
     intro: [
       'Um... Can I ask you something? I want to invite Lily to play with me. But I\'m too shy. Can you help me choose what to say?',
-      { ask: 'How can Sam start?', k: 'CONV', o: [['"Hi Lily! Do you want to play with me?"', 'Oh, that\'s nice and simple!'], ['"Lily. Play. Now."', 'That sounds like an order... I don\'t want to be rude.'], ['"I don\'t want to play with you."', 'But I DO want to play with her!']] },
-      { ask: 'And what can he suggest?', k: 'CONV', o: [['"We could draw dragons together. What do you think?"', 'Yes! I love dragons!'], ['"You must draw dragons."', '"Must"? That\'s too strong. Let\'s ask, not order.'], ['"Dragons are horrible."', 'But I LOVE dragons!']] },
+      { ask: 'How can Sam start?', k: 'CONV', o: [['"Hi Lily! Do you want to play with me?"', 'Oh, that\'s nice and simple!'], ['"Lily. Come here. Play with me. Now."', 'That sounds like an order... I don\'t want to be rude.'], ['"I don\'t want to play with you."', 'But I DO want to play with her!']] },
+      { ask: 'And what can he suggest?', k: 'CONV', o: [['"We could draw dragons together. What do you think?"', 'Yes! I love dragons!'], ['"You must draw dragons with me. Start right now."', '"Must"? That\'s too strong. Let\'s ask, not order.'], ['"Dragons are horrible. Let\'s draw something else."', 'But I LOVE dragons!']] },
       'Can you go and say it to her for me? Please?'
     ],
     steps: [
@@ -479,7 +479,7 @@ export const QUESTS = [
     steps: [
       { bring: 'spotted_mushroom', n: 4, to: 'thalia', txt: 'Pick 4 red mushrooms with white spots (south-west of Leafhollow).', at: [-36, -150], say: [
         'Red with white spots, four of them. Perfect! Here, take some soup. It\'s still hot!',
-        { ask: 'Thalia asks: "How does the soup taste?"', k: 'CONV', o: [['It\'s delicious! Thank you.', 'I\'m glad you like it!'], ['It\'s blue.', 'Blue? The soup is brown...'], ['I\'m fine.', 'I asked about the soup, not about you!']] }
+        { ask: 'Thalia asks: "How does the soup taste?"', k: 'CONV', o: [['It\'s delicious! Thank you.', 'I\'m glad you like it!'], ['It tastes blue, thank you.', 'Blue? The soup is brown...'], ['I\'m fine, thank you. And you?', 'I asked about the soup, not about you!']] }
       ] }
     ],
     reward: { xp: 90, gold: 15, items: [['mushroom_soup', 2]] }
@@ -518,11 +518,11 @@ export const QUESTS = [
     steps: [
       { talk: 'oak', txt: 'Have a conversation with the Old Oak.', say: [
         'Tell me... what is your name?',
-        { ask: 'The Old Oak asks: "What is your name?"', k: 'CONV', o: [['My name is {name}. Nice to meet you!', 'Hmmm... {name}. A good name.'], ['I am fine.', 'I asked your name, little one, not how you feel.'], ['It\'s green.', 'Green? That is MY colour, not your name!']] },
+        { ask: 'The Old Oak asks: "What is your name?"', k: 'CONV', o: [['My name is {name}. Nice to meet you!', 'Hmmm... {name}. A good name.'], ['I am fine, thank you. Nice to meet you!', 'I asked your name, little one, not how you feel.'], ['Your name is Old Oak. Nice to meet you!', 'Yes, that is MY name, little one. What is YOURS?']] },
         'What do you like doing in your free time?',
-        { ask: 'The Old Oak asks: "What do you like doing in your free time?"', k: 'CONV', o: [['I like playing football and reading books.', 'Books are made of trees, you know... Hmmm, I like that.'], ['Yes, I do.', 'Yes, you do... what? Hmmm?'], ['Yesterday.', 'Yesterday is not an activity, little one.']] },
+        { ask: 'The Old Oak asks: "What do you like doing in your free time?"', k: 'CONV', o: [['I like playing football and reading books.', 'Books are made of trees, you know... Hmmm, I like that.'], ['Yes, I do. I like my free time a lot.', 'You like it... but WHAT do you do? Hmmm?'], ['I played football and read books yesterday.', 'That was yesterday, little one. What do you LIKE doing?']] },
         'How do you feel today?',
-        { ask: 'The Old Oak asks: "How do you feel today?"', k: 'CONV', o: [['I feel happy, but a bit tired.', 'Tired... yes. Adventures are tiring.'], ['I feel a tree.', 'You... feel a tree? You are touching me?'], ['On Monday.', 'That is a day, not a feeling.']] },
+        { ask: 'The Old Oak asks: "How do you feel today?"', k: 'CONV', o: [['I feel happy, but a bit tired.', 'Tired... yes. Adventures are tiring.'], ['I feel a tree.', 'You... feel a tree? You are touching me?'], ['I\'m going to the mountains on Monday.', 'That is a plan, not a feeling.']] },
         'Thank you, {name}. It is nice to have a conversation. Take these. They grew from my roots.'
       ] }
     ],
@@ -586,9 +586,9 @@ export const QUESTS = [
     intro: ['La la laaa! I am learning the old Song of the Stone, but I forget some words. Listen to me sing, and tell me which word I need!'],
     steps: [
       { talk: 'balin', txt: 'Help Balin remember the song.', say: [
-        { listen: 'Deep in the mountain, under the ground, the dwarves are working without a sound.', k: 'LIST', ask: 'Where are the dwarves working?', o: [['Under the ground, in the mountain.', 'Yes! Deep in the mountain!'], ['On the beach.', 'A dwarf on the beach? Ha!'], ['In the clouds.', 'Clouds? We are dwarves, not birds!']] },
+        { listen: 'Deep in the mountain, under the ground, the dwarves are working without a sound.', k: 'LIST', ask: 'Where are the dwarves working?', o: [['Under the ground, in the mountain.', 'Yes! Deep in the mountain!'], ['On the beach, next to the sea.', 'A dwarf on the beach? Ha!'], ['In the clouds, above the mountain.', 'Clouds? We are dwarves, not birds!']] },
         { listen: 'With hammers of iron and hearts of gold, we tell the stories our fathers told.', k: 'LIST', ask: 'What are their hearts made of, in the song?', o: [['Gold.', 'Hearts of gold! Lovely.'], ['Iron.', 'No, the HAMMERS are iron.'], ['Stone.', 'Not in this line, my friend.']] },
-        { listen: 'And when the day is over, we sing and eat and sleep, until the morning calls us back into the mountain deep.', k: 'LIST', ask: 'What do they do when the day is over?', o: [['They sing, eat and sleep.', 'Exactly! You have a good ear!'], ['They go swimming.', 'Swimming? Dwarves sink like stones!'], ['They fight dragons.', 'Not in this song!']] },
+        { listen: 'And when the day is over, we sing and eat and sleep, until the morning calls us back into the mountain deep.', k: 'LIST', ask: 'What do they do when the day is over?', o: [['They sing, eat and sleep.', 'Exactly! You have a good ear!'], ['They go swimming in the river.', 'Swimming? Dwarves sink like stones!'], ['They fight dragons in the mountain.', 'Not in this song!']] },
         'Wonderful! Now I remember the whole song. Here\'s a little gift.'
       ] }
     ],
@@ -613,7 +613,7 @@ export const QUESTS = [
     steps: [
       { bring: 'water_bucket', n: 4, to: 'nara', txt: 'Fill 4 buckets at the oasis (south-east) and bring them to Old Nara.', at: [50, 188], say: [
         'Cool, clean water! Thank you, child. You have a kind heart.',
-        { ask: 'Nara says: "Thank you, child." You answer:', k: 'CONV', o: [['No problem! It was a pleasure.', 'Such a nice young person!'], ['Child? I\'m not a child!', 'Ha! For Nara, everybody is a child.'], ['I\'m thirsty.', 'Then drink some water, child!']] }
+        { ask: 'Nara says: "Thank you, child." You answer:', k: 'CONV', o: [['No problem! It was a pleasure.', 'Such a nice young person!'], ['Child? I\'m not a child! I\'m a hero.', 'Ha! For Nara, everybody is a child.'], ['Thank you too. I\'m very thirsty now.', 'Then drink some water, child!']] }
       ] }
     ],
     reward: { xp: 120, gold: 25, items: [['potion_m', 1]] }
@@ -624,9 +624,9 @@ export const QUESTS = [
     steps: [
       { talk: 'kasim', txt: 'Practise haggling with Kasim.', say: [
         'This carpet costs one hundred gold coins.',
-        { ask: 'You think it\'s too much. What do you say?', k: 'CONV', o: [['That\'s too expensive! Can you make it cheaper?', 'Ah, you learn fast! OK... eighty gold.'], ['That\'s too cheap!', 'Too cheap?! Then pay me two hundred! Ha! No, no. Try again.'], ['I don\'t like carpets.', 'Then why are you looking at it? Try again!']] },
+        { ask: 'You think it\'s too much. What do you say?', k: 'CONV', o: [['That\'s too expensive! Can you make it cheaper?', 'Ah, you learn fast! OK... eighty gold.'], ['That\'s too cheap! Can you make it more expensive?', 'Too cheap?! Then pay me two hundred! Ha! No, no. Try again.'], ['I don\'t like carpets at all. I never buy them.', 'Then why are you looking at it? Try again!']] },
         { ask: 'Kasim says eighty gold. Make an offer.', k: 'CONV', o: [['I can pay fifty gold. What do you think?', 'Fifty? You break my heart! Sixty-five, and it\'s yours.'], ['I will pay one hundred and fifty.', 'More than my price? You are a terrible haggler!'], ['Give it to me for free.', 'Free?! My children need to eat!']] },
-        { ask: 'Kasim says sixty-five. Accept politely.', k: 'CONV', o: [['OK, it\'s a deal. Thank you!', 'Ha ha! A deal! You are a real desert trader now.'], ['Whatever.', 'Whatever? That is not how we close a deal, friend.'], ['No deal, you thief!', 'Thief?! Ha. Be polite and you get better prices.']] },
+        { ask: 'Kasim says sixty-five. Accept politely.', k: 'CONV', o: [['OK, it\'s a deal. Thank you!', 'Ha ha! A deal! You are a real desert trader now.'], ['Whatever. Just give me the carpet.', 'Whatever? That is not how we close a deal, friend.'], ['No deal, you thief!', 'Thief?! Ha. Be polite and you get better prices.']] },
         'You don\'t really need a carpet. But here is a gift for a good student. And now you can buy at my shop!'
       ] }
     ],
@@ -637,7 +637,7 @@ export const QUESTS = [
     intro: [
       'Bandits attacked my caravan last week. One box is still out there in the desert. I wrote what happened in my diary. Read it, and find my box!',
       { doc: 'kasim_diary' },
-      { ask: 'Where did Kasim hide the box?', k: 'READ', o: [['Behind the tallest cactus, south of the camp.', 'Yes. Go and look there!'], ['Under the water of the oasis.', 'Under water?! The silk would be ruined. Read again.'], ['In the chief\'s tent.', 'No, no. Read my diary again.']] }
+      { ask: 'Where did Kasim hide the box?', k: 'READ', o: [['Behind the tallest cactus, south of the camp.', 'Yes. Go and look there!'], ['Under the water of the oasis, north of the camp.', 'Under water?! The silk would be ruined. Read again.'], ['In the chief\'s tent.', 'No, no. Read my diary again.']] }
     ],
     steps: [
       { bring: 'caravan_box', n: 1, to: 'kasim', noArrow: true, txt: 'Find Kasim\'s box: "behind the tallest cactus, south of the camp".', at: [-16, 226], say: [
@@ -678,8 +678,8 @@ export const QUESTS = [
         'You found them! Please, read them to me.',
         { doc: 'bones_diary' },
         { ask: 'What was his name?', k: 'READ', o: [['Sir Reginald Clatterbones.', 'Reginald! Yes! I remember now!'], ['Mr. Skully.', 'No, Skully is the mayor. Read the first page again.'], ['Lord Hush.', 'NO! I\'m not him! Read again, please!']] },
-        { ask: 'What was his job?', k: 'READ', o: [['He was a music teacher.', 'Yes! I taught children to play the violin!'], ['He was a pirate.', 'A pirate?! No, no. Read again.'], ['He was a cook.', 'I can\'t even cook an egg. Read again!']] },
-        { ask: 'What did he love most?', k: 'READ', o: [['Playing the violin for his students.', 'Yes... that makes me so happy to remember.'], ['Sleeping all day.', 'No, I was a busy person!'], ['Eating pumpkins.', 'That\'s Clatter, not me!']] },
+        { ask: 'What was his job?', k: 'READ', o: [['He was a music teacher.', 'Yes! I taught children to play the violin!'], ['He was a pirate on a big ship.', 'A pirate?! No, no. Read again.'], ['He was a cook.', 'I can\'t even cook an egg. Read again!']] },
+        { ask: 'What did he love most?', k: 'READ', o: [['Playing the violin for his students.', 'Yes... that makes me so happy to remember.'], ['Sleeping all day in his big house.', 'No, I was a busy person!'], ['Eating pumpkins with his students.', 'That\'s Clatter, not me!']] },
         'Thank you, friend. I am Sir Reginald Clatterbones, music teacher! Take this cloak, I don\'t need it anymore.'
       ] }
     ],
@@ -718,9 +718,9 @@ export const QUESTS = [
     intro: ['I want to plant flowers in the graveyard, but I forgot how to do it! Can you help me put the steps in order?'],
     steps: [
       { talk: 'rattle', txt: 'Help Rattle plant the garden.', say: [
-        { ask: 'What do we do FIRST?', k: 'INST', o: [['First, dig a small hole in the ground.', 'Dig a hole. Got it!'], ['First, pick the flowers.', 'Pick them? They haven\'t grown yet!'], ['First, water the hole.', 'There\'s no hole yet!']] },
-        { ask: 'What do we do NEXT?', k: 'INST', o: [['Next, put the seeds in the hole and cover them with soil.', 'Seeds in, soil on top. Easy!'], ['Next, eat the seeds.', 'Eat them?! I have no stomach!'], ['Next, go to sleep.', 'Not yet! We\'re working!']] },
-        { ask: 'What do we do FINALLY?', k: 'INST', o: [['Finally, water the seeds every day.', 'Every day! I will. Thank you, friend!'], ['Finally, dig them up again.', 'Then they will never grow!'], ['Finally, forget about them.', 'Poor seeds!']] },
+        { ask: 'What do we do FIRST?', k: 'INST', o: [['First, dig a small hole in the ground.', 'Dig a hole. Got it!'], ['First, pick the flowers from the garden.', 'Pick them? They haven\'t grown yet!'], ['First, water the hole.', 'There\'s no hole yet!']] },
+        { ask: 'What do we do NEXT?', k: 'INST', o: [['Next, put the seeds in the hole and cover them with soil.', 'Seeds in, soil on top. Easy!'], ['Next, eat the seeds and cover the hole with soil.', 'Eat them?! I have no stomach!'], ['Next, go to sleep and come back in the morning.', 'Not yet! We\'re working!']] },
+        { ask: 'What do we do FINALLY?', k: 'INST', o: [['Finally, water the seeds every day.', 'Every day! I will. Thank you, friend!'], ['Finally, dig the seeds up again every day.', 'Then they will never grow!'], ['Finally, forget about them.', 'Poor seeds!']] },
         'In spring, the graveyard will be full of colours. Here, take some ghost dust. It shines in the dark.',
         { give: ['ghost_dust', 3] }
       ] }
