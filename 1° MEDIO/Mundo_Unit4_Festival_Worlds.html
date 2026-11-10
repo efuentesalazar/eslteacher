@@ -2252,10 +2252,11 @@ function netLoad(){return new Promise((res,rej)=>{if(window.firebase&&firebase.d
 async function netStart(room){if(NET.base||!(FIREBASE_CONFIG||LAN.on))return;NET.room=room;NET.ok=true;netBadge();
  try{const fb=LAN.on?LANFB:(await netLoad(),firebase);if(!fb.apps.length)fb.initializeApp(FIREBASE_CONFIG);const db=fb.database();
   const base=db.ref('rooms/'+room);NET.base=base;NET.me=base.child('p/'+NET.id);NET.me.onDisconnect().remove();
+  if(!LAN.on){try{base.child('p').once('value',x=>{const now=Date.now(),all=x.val()||{};for(const k in all)if(k!==NET.id&&(!all[k]||!all[k].t||now-all[k].t>72e5)){try{base.child('p/'+k).remove()}catch(e){}}})}catch(e){}}
   const pr=base.child('p');pr.on('child_added',x=>peerUp(x.key,x.val()));pr.on('child_changed',x=>peerUp(x.key,x.val()));pr.on('child_removed',x=>peerDel(x.key));
   base.child('team').on('value',x=>{const v=x.val();if(v===true)openTeam(true);else if(v===false&&teamOpen)closeTeam()});
   base.child('quiz').on('value',x=>quizUpd(x.val()));
-  db.ref('.info/connected').on('value',x=>{NET.on=!!x.val();if(NET.on)NET.force=true;netBadge()});
+  db.ref('.info/connected').on('value',x=>{NET.on=!!x.val();if(NET.on){NET.force=true;try{NET.me.onDisconnect().remove()}catch(e){}}netBadge()});
   NET.force=true}
  catch(e){NET.ok=false;NET.base=null;netBadge();note(LAN.on?'No se pudo conectar con el servidor de la clase. Puedes jugar en modo individual.':'No se pudo conectar al modo en línea. Puedes jugar en modo individual.',4000)}}
 function peerUp(id,v){if(!v||id===NET.id)return;let p=NET.peers.get(id);
@@ -2271,7 +2272,7 @@ function peerDel(id){const p=NET.peers.get(id);if(p){scene.remove(p.ch.g);NET.pe
 function netSend(now){if(!NET.me||!NET.on)return;const mv=Math.abs(P.x-NET.lx)+Math.abs(P.y-NET.ly)+Math.abs(P.z-NET.lz)+Math.abs(P.face-NET.lf)*.3;
  if(!(NET.force||(now-NET.last>150&&mv>.04)||now-NET.last>4000))return;
  NET.force=false;NET.last=now;NET.lx=P.x;NET.ly=P.y;NET.lz=P.z;NET.lf=P.face;
- try{const r=NET.me.set({n:S.name||'Player',av:S.av,x:+P.x.toFixed(2),y:+P.y.toFixed(2),z:+P.z.toFixed(2),f:+P.face.toFixed(2),m:NET.m||'',mt:NET.mt||0,c:NET.c||0,ct:NET.ct||0,tch:NET.teacher?1:0});if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+ try{const r=NET.me.set({n:S.name||'Player',t:Date.now(),av:S.av,x:+P.x.toFixed(2),y:+P.y.toFixed(2),z:+P.z.toFixed(2),f:+P.face.toFixed(2),m:NET.m||'',mt:NET.mt||0,c:NET.c||0,ct:NET.ct||0,tch:NET.teacher?1:0});if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 
 /* ================= QUIZ EN VIVO ================= */
 const QCOL=[['RED','qR'],['BLUE','qB'],['GREEN','qG']];
@@ -2286,7 +2287,7 @@ function quizUpd(v){NET.quiz=v;const bar=$('#quizBar');
   if(NET.teacher)bar.innerHTML=`<div class="eyebrow">LIVE QUIZ #${v.n+1} · REVISADA</div><div>The answer is ${ans}</div>`;
   else if(NET.qseen.has(v.t)&&!NET.qdone.has(v.t)){NET.qdone.add(v.t);const pad=quizPad(),ok=pad===q.a;
    if(ok){pts(2);addOk();sGood();confetti()}else sBad();
-   try{NET.base.child('res/'+v.t+'/'+NET.id).set({n:S.name,ok:ok?1:0})}catch(e){}
+   try{const rr=NET.base.child('res/'+v.t+'/'+NET.id);rr.set({n:S.name,ok:ok?1:0});if(!LAN.on)rr.onDisconnect().remove()}catch(e){}
    bar.innerHTML=`<div class="eyebrow">LIVE QUIZ #${v.n+1}</div><div class="qq">${ok?'CORRECT! +2 · +1 ACIERTO':pad<0?'No estabas en ninguna plataforma.':'Not this time!'}</div><div>The answer is ${ans}</div>`}
   else bar.innerHTML=`<div class="eyebrow">LIVE QUIZ #${v.n+1}</div><div>The answer is ${ans}</div>`}
  tRefresh()}
@@ -2300,9 +2301,9 @@ function tCtl(){const el=$('#tCtl');if(!el)return;
  el.innerHTML=`<div class="rule"><b>${LAN.on?'Red de la clase':'Sala '+NET.room}</b> · ${NET.on?'en línea':'sin conexión'} · ${NET.peers.size+1} jugadores conectados (tú incluido).<br>${q.st==='open'&&cur?`<b>Pregunta en curso #${q.n+1}:</b> ${cur.q} · Clave: ${QCOL[cur.a][0]} (${cur.o[cur.a]})`:q.st==='check'&&cur?`<b>Revisada #${q.n+1}:</b> ${NET.res.ok} correctas de ${NET.res.all} respuestas.`:'No hay una pregunta activa.'}</div>
  <div class="row" style="margin-top:8px"><button class="btn go" id="tqNext">${q.st==='open'?'Lanzar otra pregunta':'Lanzar pregunta'} #${((q.n==null?-1:q.n)+1)%QUIZ.length+1}</button><button class="btn gold" id="tqCheck" ${q.st!=='open'?'disabled':''}>Revisar respuestas</button><button class="btn" id="tqOff">Ocultar quiz</button><button class="btn cyan" id="tTeam">${teamOpen?'Cerrar Team Room':'Abrir Team Room'}</button></div>
  <p class="small" style="margin-top:6px">Flujo: lanza la pregunta, da unos segundos para que corran a la plataforma roja, azul o verde de la plaza y luego presiona «Revisar respuestas».</p>`;
- $('#tqNext').onclick=()=>{const n=((q.n==null?-1:q.n)+1)%QUIZ.length;NET.base.child('quiz').set({n,st:'open',t:Date.now()})};
+ $('#tqNext').onclick=()=>{const n=((q.n==null?-1:q.n)+1)%QUIZ.length;try{NET.base.child('res').remove()}catch(e){}NET.base.child('quiz').set({n,st:'open',t:Date.now()})};
  $('#tqCheck').onclick=()=>NET.base.child('quiz').update({st:'check'});
- $('#tqOff').onclick=()=>NET.base.child('quiz').update({st:'off'});
+ $('#tqOff').onclick=()=>{NET.base.child('quiz').update({st:'off'});try{NET.base.child('res').remove()}catch(e){}};
  $('#tTeam').onclick=()=>{if(teamOpen){NET.base.child('team').set(false);closeTeam()}else openTeam();tCtl()}}
 
 /* ================= TEAM ROOM ================= */
