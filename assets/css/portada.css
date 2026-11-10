@@ -107,7 +107,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:cent
 .btn:active{transform:translateY(4px);box-shadow:0 0 0 var(--bd),0 2px 6px rgba(0,0,0,.25)}
 .btn.play{--b:var(--green);--bd:var(--green-d);--fg:#fff}
 .btn.talk{--b:var(--purple);--bd:var(--purple-d);--fg:#fff}
-.btn.hint{--b:var(--yellow);--bd:var(--yellow-d);--fg:var(--ink)}
+.btn.hint{--b:var(--yellow);--bd:var(--yellow-d);--fg:var(--ink);color:var(--fg)}   /* color explícito: la regla .hint de los textos de ayuda lo dejaba gris */
+.btn.hint:not(.sm){font-size:14px}
 .btn.ghost{--b:rgba(255,255,255,.1);--bd:rgba(0,0,0,.45);--fg:var(--bone);box-shadow:inset 0 0 0 2px rgba(255,255,255,.22),0 4px 0 var(--bd)}
 .btn.ghost:hover{--b:rgba(255,255,255,.18);box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 5px 0 var(--bd)}
 .btn.ghost:active{box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 0 0 var(--bd)}
@@ -148,9 +149,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:cent
 .icon-btn{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:18px;background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18);transition:background .2s}
 .icon-btn:hover{background:rgba(255,255,255,.2)}
 .links a{white-space:nowrap}
-@media (max-width:1120px){.links{display:none}}
+@media (max-width:1150px){.links{display:none}}
 @media (max-width:900px){nav .btn.navplay{display:none}}
 @media (max-width:900px){#nav-login{display:none}}   /* en celular el ingreso está en la barra de abajo ("Log in") */
+/* Sin sesión, el botón "Entrar" ocupa lugar en la barra: se ocultan antes "Play" y los enlaces para que nada se salga */
+@media (max-width:1340px){nav.guest .btn.navplay{display:none}}
+@media (max-width:1200px){nav.guest .links{display:none}}
+/* Botón "Entrar" del inicio: solo en celular (en computador ya está arriba); texto oscuro para que se lea sobre el amarillo */
+#hero-login{--fg:#10101c;display:none}
+@media (max-width:900px){#hero-login{display:inline-flex}}
 
 /* Ficha del jugador en la barra superior */
 .me{display:flex;align-items:center;gap:10px;height:46px;padding:0 14px 0 6px;border-radius:999px;background:rgba(0,0,0,.45);
@@ -272,7 +279,7 @@ section{position:relative;min-height:100vh;min-height:100svh;padding:120px var(-
 .q{font-family:var(--display);font-weight:500;font-size:clamp(22px,3vw,32px);line-height:1.2;margin-bottom:16px}
 .q em{font-style:normal;color:var(--accent);border-bottom:3px solid var(--accent)}
 .wp{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
-.wp .hint{font-size:14px;color:var(--ash);margin-top:4px}
+.wp p.hint{font-size:14px;color:var(--ash);margin-top:4px}
 .gap{font-size:clamp(18px,2.4vw,22px);line-height:1.4;margin:10px 0 12px}
 .gap b{display:inline-block;min-width:90px;border-bottom:3px dashed var(--accent);font-weight:500;color:var(--accent);text-align:center}
 .wp-msg{min-height:22px;font-size:15px;line-height:1.45;margin-top:10px}
