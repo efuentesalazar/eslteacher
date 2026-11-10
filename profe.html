@@ -63,6 +63,32 @@ tr:hover td{background:rgba(255,255,255,.04)}
 .acts{display:flex;gap:8px}
 .newpin{font-family:var(--mono);font-size:1.4em;color:var(--yellow);letter-spacing:.12em;margin-left:6px}
 #pinbox{margin-bottom:12px;border-color:var(--yellow)}
+/* ficha por alumno */
+a.stu{color:inherit;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}
+a.stu:hover{color:var(--accent)}
+td.c.few{opacity:.55;font-weight:500}
+.pick{display:inline-flex;gap:8px;align-items:center;font-size:13px;color:var(--mut);margin-bottom:10px}
+.pick select{min-height:36px;padding:4px 10px;font-size:13px}
+#ficha{position:fixed;inset:0;z-index:50;overflow:auto;background:var(--bg);padding:24px 16px 60px}
+#ficha .in{max-width:1000px;margin:0 auto;display:grid;gap:16px}
+#ficha header{margin:0}
+.chipk{display:inline-block;margin:2px 4px 2px 0;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.chipk small{font-weight:500;opacity:.8}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 16px;font-size:14px;line-height:1.4}
+.kv b{display:block;color:var(--mut);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+body.ficha-on{overflow:hidden}
+@media print{
+  body{background:#fff!important;color:#000}
+  body.ficha-on{overflow:visible}
+  body.ficha-on > *:not(#ficha){display:none!important}
+  #ficha{position:static;padding:0;background:#fff;color:#000;--card:#fff;--txt:#000;--mut:#444;--line:#bbb;--accent:#0a58ca}
+  #ficha .noprint{display:none!important}
+  #ficha .table{max-height:none;overflow:visible}
+  #ficha .box,#ficha .card,#ficha tr{break-inside:avoid}
+  #ficha th{background:#eee;color:#000;position:static}
+  #ficha .days .d b{color:#000}
+  .lv0,.lv1,.lv2,.chipk,.days .d i{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 .empty{padding:30px;text-align:center;color:var(--mut)}
 .foot{margin-top:14px;font-size:12px;color:var(--mut)}
 /* análisis de juegos */
@@ -137,6 +163,9 @@ td.q{white-space:normal;min-width:260px;max-width:460px;line-height:1.4}
   <div class="an hidden" id="analysis"></div>
   <p class="foot" id="foot"></p>
 </div>
+
+<!-- Ficha de un alumno (se abre al hacer clic en su nombre) -->
+<div id="ficha" class="hidden" role="dialog" aria-modal="true" aria-label="Ficha del alumno"><div class="in" id="ficha-body"></div></div>
 
 <script>
 const DB_URL = "https://tlihbmgokuhvppbchvrz.supabase.co";
@@ -235,6 +264,11 @@ const GAMES = {
 function LECTURA(cofres){ return { L: "Lectura: localizar", I: "Lectura: interpretar", R: "Lectura: reflexionar", C: cofres }; }
 $("f-game").innerHTML = Object.entries(GAMES).map(([id, g]) => `<option value="${id}">${esc(g.name)}</option>`).join("");
 let an = null;
+// El mapa de calor se mide al primer intento de cada pregunta (lo que el alumno sabía); se puede cambiar a todos los intentos
+let heatFirst = true;
+const SK = s => (heatFirst ? s.skills_first : s.skills) || {};
+const TOT = s => Object.values(SK(s)).reduce((a, v) => [a[0] + v[0], a[1] + v[1]], [0, 0]);
+const stuLink = s => `<a class="stu" href="#" data-stu="${esc(s.id)}" title="Ver la ficha de ${esc(s.name)}">${esc(s.name)}</a>`;
 const pct = (ok, t) => t ? Math.round(ok / t * 100) : null;
 const lv = p => p == null ? "lvn" : p < 50 ? "lv0" : p < 75 ? "lv1" : "lv2";
 const LV_TXT = ["Necesita apoyo", "En proceso", "Logrado"];
@@ -264,7 +298,7 @@ function renderAnalysis(){
   const firstVals = an.items.filter(i => i.pct_first != null);
   const firstAvg = firstVals.length ? Math.round(firstVals.reduce((a, i) => a + i.pct_first, 0) / firstVals.length) : null;
   // logro del grupo por habilidad
-  const bySkill = keys.map(k => { let ok = 0, t = 0; played.forEach(s => { const v = s.skills && s.skills[k]; if (v){ ok += v[0]; t += v[1]; } }); return { k, ok, t, p: pct(ok, t) }; });
+  const bySkill = keys.map(k => { let ok = 0, t = 0; played.forEach(s => { const v = SK(s)[k]; if (v){ ok += v[0]; t += v[1]; } }); return { k, ok, t, p: pct(ok, t) }; });
 
   if (!an.students.length || !played.length && !sec){
     $("analysis").innerHTML = `<div class="box"><h2>Aún no hay respuestas de ${esc(g.name)}</h2>
@@ -282,7 +316,7 @@ function renderAnalysis(){
       ${it ? `<span class="why">Pregunta más difícil: “${esc(it.question)}” — solo ${it.pct_first}% acertó al primer intento.${w ? ` Error más elegido: “${esc(w.c)}” (${w.n} veces); la correcta es “${esc(it.right_answer)}”.` : ""}</span>` : ""}</li>`);
   });
   keys.forEach(k => {
-    const need = played.filter(s => { const v = s.skills && s.skills[k]; return v && v[1] >= 4 && pct(v[0], v[1]) < 50; });
+    const need = played.filter(s => { const v = SK(s)[k]; return v && v[1] >= 4 && pct(v[0], v[1]) < 50; });
     if (need.length >= 2) acts.push(`<li>👥 <b>Grupo de apoyo en ${esc(skName(k))}</b> (${need.length} alumnos bajo 50%)
       <span class="why">${need.map(s => esc(s.name)).join(" · ")}</span></li>`);
   });
@@ -293,11 +327,14 @@ function renderAnalysis(){
   if (!acts.length) acts.push(`<li>Aún hay pocos datos para sugerir acciones. Con unas 10 respuestas por habilidad aparecerán sugerencias.</li>`);
 
   // ---- Mapa de calor alumno × habilidad ----
-  const heatRows = st.slice().sort((a, b) => (pct(a.ok, a.total) ?? 999) - (pct(b.ok, b.total) ?? 999) || (a.n ?? 99) - (b.n ?? 99));
-  const cell = v => { const p = v ? pct(v[0], v[1]) : null; return `<td class="c ${lv(p)}" title="${p == null ? "Sin respuestas" : `${v[0]} de ${v[1]} correctas · ${LV_TXT[p < 50 ? 0 : p < 75 ? 1 : 2]}`}">${p == null ? "—" : p + "%"}</td>`; };
+  const P = s => { const t = TOT(s); return pct(t[0], t[1]); };
+  const heatRows = st.slice().sort((a, b) => (P(a) ?? 999) - (P(b) ?? 999) || (a.n ?? 99) - (b.n ?? 99));
+  // Con menos de 5 respuestas el porcentaje es poco confiable: la celda se muestra atenuada
+  const cell = v => { const p = v && v[1] ? pct(v[0], v[1]) : null, few = p != null && v[1] < 5;
+    return `<td class="c ${lv(p)}${few ? " few" : ""}" title="${p == null ? "Sin respuestas" : `${v[0]} de ${v[1]} correctas · ${LV_TXT[p < 50 ? 0 : p < 75 ? 1 : 2]}${few ? " · pocas respuestas: tómalo con cuidado" : ""}`}">${p == null ? "—" : p + "%"}</td>`; };
   const heat = `<table><thead><tr><th>Curso</th><th>N°</th><th>Alumno</th><th>Logro total</th>${keys.map(k => `<th>${esc(skName(k))}</th>`).join("")}<th>Respuestas</th><th>Días</th><th>Última vez</th></tr></thead><tbody>
-    ${heatRows.map(s => `<tr class="${s.total ? "" : "none"}"><td>${esc(s.section)}</td><td class="num">${s.n ?? ""}</td><td>${esc(s.name)}</td>${cell(s.total ? [s.ok, s.total] : null)}
-      ${keys.map(k => cell(s.skills && s.skills[k])).join("")}<td class="num">${s.total}</td><td class="num">${s.days}</td><td>${s.last ? `${ago(s.last)}` : "—"}</td></tr>`).join("")}</tbody></table>`;
+    ${heatRows.map(s => `<tr class="${s.total ? "" : "none"}"><td>${esc(s.section)}</td><td class="num">${s.n ?? ""}</td><td>${stuLink(s)}</td>${cell(s.total ? TOT(s) : null)}
+      ${keys.map(k => cell(SK(s)[k])).join("")}<td class="num">${s.total}</td><td class="num">${s.days}</td><td>${s.last ? `${ago(s.last)}` : "—"}</td></tr>`).join("")}</tbody></table>`;
 
   // ---- Preguntas más difíciles ----
   const items = an.items.filter(i => !q).slice(0, 25);
@@ -320,13 +357,16 @@ function renderAnalysis(){
     </div>
     <div class="box"><h2>Qué hacer esta semana</h2><p class="sub">Sugerencias calculadas con las respuestas de ${esc(g.name)}${sec ? " en " + esc(sec) : ""}.</p><ul class="actions">${acts.join("")}</ul></div>
     <div class="box"><h2>Logro por alumno y habilidad</h2>
-      <p class="sub">Porcentaje de respuestas correctas. Primero aparecen quienes más apoyo necesitan. Pasa el mouse por una celda para ver el detalle.</p>
+      <p class="sub">Porcentaje de respuestas correctas. Primero aparecen quienes más apoyo necesitan. Pasa el mouse por una celda para ver el detalle; las celdas atenuadas tienen menos de 5 respuestas. Haz clic en un nombre para ver la ficha del alumno.</p>
+      <label class="pick">Medir con <select id="heat-mode"><option value="1">Primer intento de cada pregunta (lo que sabían)</option><option value="0">Todos los intentos (incluye reintentos)</option></select></label>
       <div class="legend"><span style="--c:#6a2130">Necesita apoyo (menos de 50%)</span><span style="--c:#5e4c10">En proceso (50–74%)</span><span style="--c:#22521c">Logrado (75% o más)</span></div>
       <div class="table">${heat}</div></div>
     <div class="box"><h2>Preguntas más difíciles</h2>
       <p class="sub">Ordenadas por acierto al primer intento. El error más elegido muestra la <b>idea equivocada</b> que tiene el grupo: es lo que conviene aclarar en clase.</p>
       ${items.length ? `<div class="table">${itemTbl}</div>` : `<div class="empty">${q ? "Borra la búsqueda para ver las preguntas." : "Sin datos todavía."}</div>`}</div>
     <div class="box"><h2>Logro por día</h2><p class="sub">Porcentaje de respuestas correctas cada día (últimos 30 días con actividad).</p>${days}</div>`;
+  $("heat-mode").value = heatFirst ? "1" : "0";
+  $("heat-mode").addEventListener("input", e => { heatFirst = e.target.value === "1"; renderAnalysis(); });
 }
 
 const COLS = {
@@ -344,7 +384,7 @@ const COLS = {
 function rows(){
   const sec = $("f-sec").value, q = $("f-q").value.trim().toLowerCase(), only = $("f-only").checked;
   let out = view === "students"
-    ? data.students.map(s => ({ section: s.section, n: s.n, name: s.name, reports: s.reports, active_days: s.active_days, ...(s.last || {}) }))
+    ? data.students.map(s => ({ id: s.id, section: s.section, n: s.n, name: s.name, reports: s.reports, active_days: s.active_days, ...(s.last || {}) }))
     : data.reports.slice();
   out = out.filter(r => (!sec || r.section === sec) && (!q || r.name.toLowerCase().includes(q)) && (!only || view === "history" || r.reports > 0));
   if (sortKey) out.sort((a, b) => { const x = a[sortKey] ?? -1, y = b[sortKey] ?? -1; return (x > y ? 1 : x < y ? -1 : 0) * sortDir; });
@@ -370,6 +410,7 @@ function render(){
     <tbody>${list.length ? list.map(r => `<tr class="${view === "students" && !r.reports ? "none" : ""}">${cols.map(([k, , isNum]) => {
       if (k === "created_at") return `<td>${r[k] ? `${fmtDate(r[k])} <span class="pill ${Date.now() - new Date(r[k]) < 7 * 864e5 ? "new" : "old"}">${ago(r[k])}</span>` : "—"}</td>`;
       if (k === "hard_words" || k === "sound_issues" || k === "zone_summary") return `<td class="wrapcell">${esc(r[k] || "")}</td>`;
+      if (k === "name" && r.id) return `<td>${stuLink(r)}</td>`;
       if (k === "auto") return `<td>${r.auto ? `<span class="pill">🔄 Automático</span>` : `<span class="pill new">📤 Enviado</span>`}</td>`;
       return `<td class="${isNum ? "num" : ""}">${r[k] ?? (isNum ? "—" : "")}</td>`; }).join("")}</tr>`).join("")
       : `<tr><td class="empty" colspan="${cols.length}">${view === "history" ? "Aún no hay reportes." : "No hay alumnos con esos filtros."}</td></tr>`}</tbody>`;
@@ -386,8 +427,8 @@ $("export").addEventListener("click", () => {
     if (!an) return;
     const g = GAMES[$("f-game").value] || { skills: {} }, keys = [...new Set([...Object.keys(g.skills), ...an.items.map(i => i.skill).filter(Boolean)])];
     const p = (v) => v && v[1] ? Math.round(v[0] / v[1] * 100) + "%" : "";
-    const csv = [["Curso","N°","Alumno","Logro total",...keys.map(k => g.skills[k] || k),"Respuestas","Días","Última vez"].join(";"),
-      ...an.students.map(s => [s.section, s.n, s.name, p([s.ok, s.total]), ...keys.map(k => p(s.skills && s.skills[k])), s.total, s.days,
+    const csv = [["Curso","N°","Alumno", heatFirst ? "Logro (primer intento)" : "Logro (todos los intentos)",...keys.map(k => g.skills[k] || k),"Respuestas","Días","Última vez"].join(";"),
+      ...an.students.map(s => [s.section, s.n, s.name, p(TOT(s)), ...keys.map(k => p(SK(s)[k])), s.total, s.days,
         s.last ? new Date(s.last).toLocaleString("es-CL") : ""].map(cell).join(";")),
       "", ["Pregunta","Habilidad","Respuesta correcta","Acierto 1er intento","Alumnos","Error más elegido","Veces"].join(";"),
       ...an.items.map(i => [i.question, g.skills[i.skill] || i.skill, i.right_answer, (i.pct_first ?? "") + "%", i.students,
@@ -431,7 +472,7 @@ function renderKeys(){
   const state = (st, l) => st === 3 ? `<span class="pill red">🔒 Bloqueado hasta mañana</span>` : st === 2 ? `<span class="pill red">🔒 Bloqueado 15 minutos</span>`
     : st === 1 ? `<span class="pill old">${l.f24} intento${l.f24 > 1 ? "s" : ""} fallido${l.f24 > 1 ? "s" : ""}</span>` : "—";
   $("tbl").innerHTML = `<thead><tr><th>Curso</th><th>N°</th><th>Nombre</th><th>Ingreso (últimas 24 h)</th><th>Último intento fallido</th><th>Acciones</th></tr></thead>
-    <tbody>${list.length ? list.map(({ s, l, st }) => `<tr><td>${esc(s.section)}</td><td class="num">${s.n ?? ""}</td><td>${esc(s.name)}</td>
+    <tbody>${list.length ? list.map(({ s, l, st }) => `<tr><td>${esc(s.section)}</td><td class="num">${s.n ?? ""}</td><td>${stuLink(s)}</td>
       <td>${state(st, l)}</td><td>${l ? fmtDate(l.last) : "—"}</td>
       <td><div class="acts">${st ? `<button class="btn ghost sm" type="button" data-unlock="${esc(s.id)}">Desbloquear</button>` : ""}<button class="btn sm" type="button" data-pin="${esc(s.id)}">Nueva clave</button></div></td></tr>`).join("")
       : `<tr><td class="empty" colspan="6">No hay alumnos con esos filtros.</td></tr>`}</tbody>`;
@@ -456,6 +497,68 @@ $("tbl").addEventListener("click", async e => {
     renderKeys(); box.scrollIntoView({ block: "nearest" });
   } catch(err){ alert("No se pudo completar. Revisa tu internet e inténtalo otra vez."); b.disabled = false; }
 });
+
+/* =====================================================================
+   FICHA POR ALUMNO: todo lo que ha hecho en los juegos y en la portada
+   (clic en el nombre en cualquier tabla; se puede imprimir para apoderados)
+   ===================================================================== */
+document.addEventListener("click", e => { const a = e.target.closest("[data-stu]"); if (a){ e.preventDefault(); openFicha(a.dataset.stu); } });
+addEventListener("keydown", e => { if (e.key === "Escape") closeFicha(); });
+function closeFicha(){ $("ficha").classList.add("hidden"); document.body.classList.remove("ficha-on"); }
+async function openFicha(id){
+  const t = ss.get("eslt_teacher"); if (!t) return;
+  $("ficha").classList.remove("hidden"); document.body.classList.add("ficha-on"); $("ficha").scrollTop = 0;
+  $("ficha-body").innerHTML = `<div class="box empty">Cargando ficha…</div>`;
+  try {
+    const days = view === "analysis" ? +$("f-days").value : 120;
+    const r = await db("eslt_teacher_student", { p_token: t, p_student: id, p_days: days });
+    if (!r.ok){ closeFicha(); if (r.error === "session") expired(); return; }
+    renderFicha(r, days);
+  } catch(err){ $("ficha-body").innerHTML = `<div class="box empty">No se pudo cargar la ficha. Revisa tu internet. <button class="btn ghost sm" type="button" onclick="closeFicha()">Cerrar</button></div>`; }
+}
+function renderFicha(r, days){
+  const s = r.student, games = r.games || [], daily = (r.daily || []).slice(-30), wrong = r.wrong || [];
+  const last = ((data && data.students.find(x => x.id === s.id)) || {}).last;
+  const gname = id => (GAMES[id] || {}).name || id, sname = (id, k) => ((GAMES[id] || {}).skills || {})[k] || k;
+  const gshort = id => gname(id).split(" · ")[0].split(":")[0].split(" (")[0];
+  const total = games.reduce((a, g) => a + g.total, 0), mins = Math.round(games.reduce((a, g) => a + (+g.ms || 0), 0) / 60000);
+  const skills = games.flatMap(g => Object.entries(g.skills_first || {}).map(([k, v]) => ({ g: g.game, k, ok: v[0], t: v[1], p: pct(v[0], v[1]) })));
+  const first = skills.reduce((a, x) => [a[0] + x.ok, a[1] + x.t], [0, 0]);
+  const strong = skills.filter(x => x.t >= 5 && x.p >= 75).sort((a, b) => b.p - a.p).slice(0, 6);
+  const weak = skills.filter(x => x.t >= 5 && x.p < 50).sort((a, b) => a.p - b.p).slice(0, 6);
+  const chip = (x, withGame) => `<span class="chipk ${lv(x.p)}" title="${esc(gname(x.g))}">${esc(sname(x.g, x.k))}${withGame ? " · " + esc(gshort(x.g)) : ""} ${x.p}% <small>(${x.ok}/${x.t})</small></span>`;
+  const period = days >= 400 ? "todo el año" : `últimos ${days} días`;
+  $("ficha-body").innerHTML = `
+    <header>
+      <div><span class="cap">Ficha del alumno · ${esc(period)}</span><h1>${esc(s.name)}</h1><span class="cap">${esc(s.section)}${s.n ? " · N° " + s.n : ""} · ${new Date().toLocaleDateString("es-CL")}</span></div>
+      <div class="row noprint"><button class="btn green" type="button" onclick="print()">🖨 Imprimir</button><button class="btn ghost" type="button" onclick="closeFicha()">✕ Cerrar</button></div>
+    </header>
+    <div class="cards" style="margin:0">
+      <div class="card"><b>${total}</b><span>Respuestas en juegos y portada</span></div>
+      <div class="card"><b>${pct(first[0], first[1]) ?? "—"}${first[1] ? "%" : ""}</b><span>Logro al primer intento (${first[1]} preguntas distintas)</span></div>
+      <div class="card"><b>${(r.daily || []).length}</b><span>Días con actividad</span></div>
+      <div class="card"><b>${mins}<span style="font-size:16px;color:var(--mut)"> min</span></b><span>Respondiendo preguntas (solo juegos que miden el tiempo)</span></div>
+    </div>
+    <div class="box"><h2>Resumen</h2>
+      ${!total ? `<p class="sub" style="margin:0">Aún no hay respuestas de este alumno en el período. Recuerda que solo se guardan cuando juega <b>con su sesión iniciada</b>.</p>`
+        : `<p class="sub">Habilidades con al menos 5 preguntas respondidas, medidas al primer intento.</p>
+           <div class="kv"><div><b>🌟 Fortalezas</b>${strong.length ? strong.map(x => chip(x, 1)).join("") : "Aún sin datos suficientes"}</div>
+           <div><b>🔁 Necesita apoyo</b>${weak.length ? weak.map(x => chip(x, 1)).join("") : "Ninguna habilidad bajo 50%"}</div></div>`}</div>
+    ${games.length ? `<div class="box"><h2>Por juego</h2><p class="sub">Logro al primer intento por habilidad. Necesita apoyo: menos de 50% · En proceso: 50–74% · Logrado: 75% o más.</p>
+      <div class="table"><table><thead><tr><th>Juego</th><th>Respuestas</th><th>Días</th><th>Última vez</th><th>Habilidades (primer intento)</th></tr></thead><tbody>
+      ${games.map(g => `<tr><td style="white-space:normal;min-width:170px">${esc(gname(g.game))}</td><td class="num">${g.total}</td><td class="num">${g.days}</td><td>${ago(g.last)}</td>
+        <td style="white-space:normal">${Object.entries(g.skills_first || {}).map(([k, v]) => chip({ g: g.game, k, ok: v[0], t: v[1], p: pct(v[0], v[1]) })).join("")}</td></tr>`).join("")}</tbody></table></div></div>` : ""}
+    ${last ? `<div class="box"><h2>Práctica en la portada</h2><p class="sub">Último reporte: ${fmtDate(last.created_at)}.</p>
+      <div class="kv"><div><b>XP</b>${last.xp ?? "—"}</div><div><b>Racha de días</b>${last.streak ?? "—"}</div><div><b>Palabras del día completas</b>${last.words ?? "—"}</div>
+        <div><b>Pronunciación (promedio)</b>${last.pron_avg ?? "—"}</div><div><b>Sonidos a mejorar</b>${esc(last.sound_issues || "—")}</div>
+        <div><b>Palabras difíciles</b>${esc(last.hard_words || "—")}</div><div><b>Challenge Zone</b>${esc(last.zone_summary || "—")}</div></div></div>` : ""}
+    ${daily.length ? `<div class="box"><h2>Actividad por día</h2><p class="sub">Respuestas por día y porcentaje correcto (últimos 30 días con actividad).</p>
+      <div class="days" style="height:170px">${(m => daily.map(d => { const p = pct(d.ok, d.total); return `<div class="d" title="${d.total} respuestas · ${p}% correctas"><b>${d.total}</b><i style="height:${Math.max(4, Math.round(d.total / m * 100))}%"></i><span>${d.day.slice(8, 10)}/${d.day.slice(5, 7)}</span><span>${p}%</span></div>`; }).join(""))(Math.max(...daily.map(d => d.total)))}</div></div>` : ""}
+    ${wrong.length ? `<div class="box"><h2>Últimos errores</h2><p class="sub">Las ${wrong.length} respuestas incorrectas más recientes: sirven para conversar con el alumno sobre qué confundió.</p>
+      <div class="table"><table><thead><tr><th>Fecha</th><th>Juego</th><th>Pregunta</th><th>Respondió</th><th>Correcta</th></tr></thead><tbody>
+      ${wrong.map(w => `<tr><td>${fmtDate(w.at)}</td><td style="white-space:normal;min-width:120px">${esc(gshort(w.game))}<br><span class="skill">${esc(sname(w.game, w.skill))}</span></td>
+        <td class="q">${esc(w.question)}</td><td class="wrapcell">${esc(w.chosen || "—")}</td><td class="wrapcell" style="color:inherit">${esc(w.right_answer || "")}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
+}
 
 if (ss.get("eslt_teacher")) load();
 </script>
