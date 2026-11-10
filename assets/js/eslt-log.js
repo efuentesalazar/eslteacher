@@ -2,7 +2,8 @@
    Se carga con: <script src="../assets/js/eslt-log.js"></script>
    y el juego llama: eslLog('id-juego', {activity, item:{q, k, id?}, chosen, right, ok})
    Usa la sesión del alumno de eslteacher.cl. Si no hay sesión, no guarda nada.
-   El envío lo hace eslt-track.js (mismo archivo que usan los otros juegos). */
+   El envío, el aviso de sesión ("Jugando como…" / "No has iniciado sesión") y el ingreso
+   dentro del juego los hace eslt-track.js (mismo archivo que usan los otros juegos). */
 (function () {
   let mod = null, pend = [];
   // id corto y estable a partir de un texto
@@ -24,27 +25,7 @@
     } catch (e) { }
   };
 
-  function banner(st) {
-    try {
-      const d = document.createElement('div');
-      d.setAttribute('role', 'status');
-      d.style.cssText = 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:99999;max-width:min(560px,calc(100% - 24px));' +
-        'padding:8px 14px;border-radius:12px;font:600 13px/1.4 system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer;' +
-        (st ? 'background:#d9f7c7;color:#1d3b10' : 'background:#ffe9a8;color:#4a3500');
-      d.innerHTML = st
-        ? '📊 Hola, <b></b>. Tu profe verá tu avance. <span style="opacity:.6">✕</span>'
-        : '⚠️ No has iniciado sesión: tu profe no verá tu avance. <a href="https://eslteacher.cl/" target="_blank" rel="noopener" style="color:inherit">Entra en eslteacher.cl</a> (Mi perfil) y vuelve a abrir el juego. <span style="opacity:.6">✕</span>';
-      if (st) d.querySelector('b').textContent = (st.first_name || st.name || '') + (st.section ? ' (' + st.section + ')' : '');
-      d.onclick = e => { if (e.target.tagName !== 'A') d.remove(); };
-      document.body.appendChild(d);
-      setTimeout(() => d.remove(), st ? 6000 : 12000);
-    } catch (e) { }
-  }
-
   import('/assets/js/eslt-track.js').then(m => {
     mod = m; pend.forEach(a => m.logAnswer(a[0], a[1])); pend = [];
-    // Con sesión, el aviso ("Jugando como…", "¿No eres tú?") lo muestra eslt-track.js; aquí solo el de "sin sesión"
-    const warn = () => { if (!m.student()) banner(null); };
-    if (document.body) warn(); else addEventListener('DOMContentLoaded', warn);
   }).catch(() => { });
 })();

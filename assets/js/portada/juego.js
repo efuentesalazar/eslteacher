@@ -76,6 +76,9 @@ function addXP(n){
 function renderMe(){
   const av = (store.get("profile", {}).avatar) || "🙂", sess = store.get("session", null);
   $("me-av").textContent = av; $("tab-av").textContent = av;
+  // Sin sesión: botón "Entrar" bien visible (arriba, en el inicio y en la barra del celular)
+  ["nav-login", "hero-login"].forEach(id => { const b = $(id); if (b) b.classList.toggle("hidden", !!sess); });
+  $("tab-av").textContent = sess ? av : "🔑"; $("tab-me").lastChild.textContent = sess ? "Me" : "Log in";
   $("me").title = sess ? `${sess.first_name} · ${sess.section}` : "Mi perfil · Ingresa con tu RUT";
   $("me-streak").lastElementChild.textContent = dayStreak();
   $("me-xp").lastElementChild.textContent = xp;

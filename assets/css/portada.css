@@ -150,6 +150,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:cent
 .links a{white-space:nowrap}
 @media (max-width:1120px){.links{display:none}}
 @media (max-width:900px){nav .btn.navplay{display:none}}
+@media (max-width:900px){#nav-login{display:none}}   /* en celular el ingreso está en la barra de abajo ("Log in") */
 
 /* Ficha del jugador en la barra superior */
 .me{display:flex;align-items:center;gap:10px;height:46px;padding:0 14px 0 6px;border-radius:999px;background:rgba(0,0,0,.45);

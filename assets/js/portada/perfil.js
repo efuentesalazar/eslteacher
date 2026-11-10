@@ -112,6 +112,8 @@ function closeProfile(){
 }
 $("me").addEventListener("click", openProfile);
 $("tab-me").addEventListener("click", openProfile);
+// (con "if": si el navegador aún tiene guardada una portada antigua sin estos botones, nada falla)
+["nav-login", "hero-login"].forEach(id => { const b = $(id); if (b) b.addEventListener("click", openProfile); });
 $("p-close").addEventListener("click", closeProfile);
 $("profile").addEventListener("click", e => { if (e.target.id === "profile") closeProfile(); });
 $("p-save").addEventListener("click", () => {

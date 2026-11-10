@@ -153,3 +153,8 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
   - **"Challenge Zone"** (id `challenge-zone`): una habilidad por tipo de ejercicio (SCR, USE, VOC, MIS, WF, DICT, READ). La actividad incluye el nivel (A1, A2, B1).
 - El código está en `assets/js/portada/datos.js` (`logPortada`) y en cada sección (`voz.js`, `diagnostico.js`, `zone.js`).
 - El reporte diario resumido sigue funcionando igual.
+
+## Novedades (10-11-2026): ingreso de alumnos más visible
+- **Portada**: sin sesión aparece un botón verde **"🔑 Entrar · Log in"** arriba, otro en el inicio ("Entrar con tu RUT") y, en celular, la barra de abajo dice "Log in". Con sesión iniciada desaparecen.
+- **Dentro de cada juego**: si el alumno no inició sesión, el aviso de arriba trae el botón **"🔑 Entrar aquí"**, que abre el formulario (curso, RUT, clave) sobre el juego; al entrar, el juego se recarga con la sesión. El enlace "Entra en eslteacher.cl" del menú de los juegos 3D abre el mismo formulario.
+- Todo está en `assets/js/eslt-track.js` (`openLogin`). Si cambia la lista de cursos, actualízala ahí (`SECTIONS`) y en `assets/js/portada/datos.js`.
