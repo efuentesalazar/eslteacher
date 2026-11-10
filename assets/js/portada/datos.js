@@ -92,3 +92,13 @@ const store = { get(k, d){ try { const v = localStorage.getItem("eslt_" + k); re
                 set(k, v){ try { localStorage.setItem("eslt_" + k, JSON.stringify(v)); } catch(e){} } };
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/* Registro de respuestas para el Panel del profe → "Análisis de juegos" (el mismo que usan los juegos).
+   Solo guarda si el alumno inició sesión. Juegos: "portada" (palabra del día, desafío, pronunciación)
+   y "challenge-zone". Para registrar algo nuevo: logPortada(juego, {activity, item:{q, k, id?}, chosen, right, ok, ms}). */
+window.ESLT_PORTADA = true;            // la portada ya comprueba la sesión por su cuenta (perfil.js)
+let trackMod = null; const trackPend = [];
+function logPortada(game, d){
+  try { if (trackMod) trackMod.logAnswer(game, d); else if (trackPend.length < 200) trackPend.push([game, d]); } catch(e){}
+}
+import("/assets/js/eslt-track.js").then(m => { trackMod = m; trackPend.splice(0).forEach(a => m.logAnswer(a[0], a[1])); }).catch(() => {});
+

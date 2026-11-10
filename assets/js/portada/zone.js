@@ -23,6 +23,13 @@ function zDefaultLevel(){
 let zLevel = store.get("zLevel", "") || zDefaultLevel();
 let zr = null;                                                  // ronda en curso
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+// Registro para el Panel del profe (juego "challenge-zone"; una habilidad por tipo de ejercicio)
+const ZSKILL = { scramble:"SCR", use:"USE", vocab:"VOC", mistake:"MIS", wf:"WF", dict:"DICT", read:"READ" };
+const zLog = (q, chosen, right, ok) => logPortada("challenge-zone", { activity: `${zr.T.name} · ${zLevel}`, ms: Date.now() - zr.t0,
+  item: { q, k: ZSKILL[zr.T.id] }, chosen, right, ok: !!ok });
+// Texto de un espacio de "Vocabulary in context": el trozo de texto alrededor del espacio
+const zGapQ = (t, g) => { const s = t.replace(/\{(\d)\}/g, (_, n) => +n - 1 === g ? "_____" : "(…)"), i = s.indexOf("_____");
+  return `(${g + 1}) …${s.slice(Math.max(0, i - 70), i + 75).trim()}…`; };
 const zNorm = s => norm(s).replace(/[’']/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 
 function zRenderLevels(){
@@ -65,7 +72,7 @@ function zStart(type){
 $("zn-back").addEventListener("click", zMenu);
 
 function zShow(){
-  const it = zr.items[zr.i];
+  const it = zr.items[zr.i]; zr.t0 = Date.now();
   $("zn-count").textContent = `${zr.i + 1}/${zr.items.length}`;
   $("zn-bar").style.width = (zr.i / zr.items.length * 100) + "%";
   $("zn-msg").textContent = ""; $("zn-body").innerHTML = ""; $("zn-foot").innerHTML = "";
@@ -108,6 +115,7 @@ const Z = {
     zCheckBtn("Check", () => {
       const ans = zNorm(line.map(p => p.w).join(" "));
       const ok = [it.s, ...(it.alt || [])].some(x => zNorm(x) === ans);
+      zLog("Put in order: " + it.s, line.map(p => p.w).join(" "), it.s, ok);
       $("zs-line").classList.add(ok ? "ok" : "bad"); $("zs-pool").innerHTML = "";
       $("zs-line").querySelectorAll("button").forEach(b => b.disabled = true);
       zDone(ok ? 1 : 0, 1, ok ? "" : `La oración correcta es: <b>${esc(it.s)}</b>`);
@@ -123,6 +131,7 @@ const Z = {
       <div class="opts">${order.map((i, k) => `<button class="opt" type="button" data-i="${i}"><i>${"ABC"[k]}</i>${esc(it.o[i])}</button>`).join("")}</div>`;
     $("zn-body").querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
       const ok = +b.dataset.i === it.a;
+      zLog(it.q, it.o[+b.dataset.i], it.o[it.a], ok);
       $("zn-body").querySelectorAll(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("ok"); });
       if (!ok){ b.classList.add("bad"); shake(b); }
       $("zn-body").querySelector(".gapb").textContent = it.o[it.a];
@@ -142,6 +151,7 @@ const Z = {
       let ok = 0;
       sels.forEach(s => {
         const right = it.a[+s.dataset.g], good = s.value === right; ok += good;
+        zLog(zGapQ(it.t, +s.dataset.g), s.value, right, good);
         s.classList.add(good ? "ok" : "bad"); s.disabled = true;
         if (!good) s.insertAdjacentHTML("afterend", `<span class="fixw">→ ${esc(right)}</span>`);
       });
@@ -157,6 +167,7 @@ const Z = {
       <div class="zn-words">${toks.map((t, k) => `<button type="button" data-k="${k}">${esc(t)}</button>`).join("")}</div>`;
     $("zn-body").querySelectorAll(".zn-words button").forEach(b => b.addEventListener("click", () => {
       const k = +b.dataset.k, ok = k === badIdx;
+      zLog("Find the mistake: " + it.s, toks[k].replace(/[.,?!]/g, ""), it.bad, ok);
       $("zn-body").querySelectorAll(".zn-words button").forEach(x => x.disabled = true);
       const wrongBtn = $("zn-body").querySelector(`[data-k="${badIdx}"]`);
       wrongBtn.classList.add(ok ? "ok" : "bad");
@@ -179,6 +190,7 @@ const Z = {
       if (!/^[a-z'-]+$/.test(v)){ $("zn-msg").textContent = "Escribe solo una palabra, sin números ni espacios."; shake(inp); return; }
       tries++;
       const ok = it.a.includes(v);
+      zLog(`${it.s} (${it.base})`, v, it.a[0], ok);
       if (!ok && tries < 3){
         const ans = it.a[0];
         $("zn-msg").innerHTML = tries === 1
@@ -212,6 +224,7 @@ const Z = {
       tries++;
       const res = align(words(s), words(v));
       const good = res.filter(r => r.status === "ok").length, ok = good === res.length && words(v).length === res.length;
+      zLog("Dictation: " + s, v, s, ok);
       if (!ok && tries < 2){
         const partial = res.map(r => r.status === "ok" ? `<span class="w-ok">${esc(r.word)}</span>` : `<span class="w-miss">${"_".repeat(Math.max(3, r.word.length))}</span>`).join(" ");
         $("zn-msg").innerHTML = `✘ Llevas ${good} de ${res.length} palabras. Escucha otra vez y corrige (último intento):<div class="zn-dict">${partial}</div>`;
@@ -242,6 +255,7 @@ const Z = {
       let ok = 0;
       $("zn-body").querySelectorAll(".zn-rq").forEach(box => {
         const q = it.qs[+box.dataset.q], p = picks[box.dataset.q]; ok += p === q.a;
+        zLog(`${it.title}: ${q.q}`, q.o[p], q.o[q.a], p === q.a);
         box.querySelectorAll(".opt").forEach(x => { x.disabled = true; x.classList.remove("pick");
           if (+x.dataset.o === q.a) x.classList.add("ok"); else if (+x.dataset.o === p) x.classList.add("bad"); });
       });

@@ -164,6 +164,8 @@ let hintLevel = 0;
 function checkGap(){
   const w = WORDS[wIndex][1], v = norm($("wp-in").value.trim()).replace(/[^a-z' -]/g, "");
   if (!v){ $("wp-msg1").textContent = "Escribe la palabra que falta."; return; }
+  logPortada("portada", { activity: "Word of the day", item: { id: "w:" + w, k: "WRIT", q: WORDS[wIndex][3].replace(wordRe(w), "_____") },
+    chosen: $("wp-in").value.trim(), right: w, ok: v === norm(w) });
   if (v === norm(w)){
     $("wp-msg1").textContent = "✅ ¡Correcto! “" + WORDS[wIndex][3] + "”";
     sfx("correct"); confetti(60, $("wp-check"));
@@ -257,7 +259,7 @@ function newQuiz(){
   const type = ["meaning", "reverse", "gap"][rnd1(3)];
   const field = type === "meaning" ? 2 : 1;            // opciones en español o en inglés
   const opts = [a, ...distractors(a, field)].sort(() => Math.random() - .5);
-  qz = { a, opts, done: false };
+  qz = { a, opts, done: false, type, field, t0: Date.now() };
   const tag = a === todayIndex ? `<span class="qtag">⭐ Word of the day</span>` : hard[a] ? `<span class="qtag hard">🎯 Repaso</span>` : "";
   if (type === "meaning"){
     $("qz-type").textContent = "What does it mean? · ¿Qué significa?";
@@ -275,6 +277,13 @@ function newQuiz(){
 function answer(b){
   if (qz.done) return; qz.done = true;
   const ok = +b.dataset.i === qz.a;
+  { // queda en el Panel del profe (solo con sesión iniciada)
+    const [, w, es, ex] = WORDS[qz.a];
+    logPortada("portada", { activity: "Quick challenge", ms: Date.now() - qz.t0,
+      item: { k: { meaning: "MEAN", reverse: "REV", gap: "GAP" }[qz.type],
+              q: qz.type === "meaning" ? `What does “${w}” mean?` : qz.type === "reverse" ? `How do you say “${es}” in English?` : ex.replace(wordRe(w), "_____") },
+      chosen: WORDS[+b.dataset.i][qz.field], right: WORDS[qz.a][qz.field], ok });
+  }
   $("qz-opts").querySelectorAll(".opt").forEach(x => { if (+x.dataset.i === qz.a) x.classList.add("ok"); });
   if (!ok){ b.classList.add("bad"); shake(b); sfx("wrong"); markHard(qz.a); }
   else {

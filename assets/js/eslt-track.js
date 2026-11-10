@@ -118,4 +118,5 @@ async function checkSession() {
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(true); });
 addEventListener('pagehide', () => flush(true));
 if (queue.length) schedule(3000);
-if (document.readyState === 'loading') addEventListener('DOMContentLoaded', checkSession); else checkSession();
+// En la portada no se muestra el aviso: ahí la sesión se ve y se comprueba en "Mi perfil"
+if (!window.ESLT_PORTADA) { if (document.readyState === 'loading') addEventListener('DOMContentLoaded', checkSession); else checkSession(); }

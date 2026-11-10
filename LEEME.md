@@ -146,3 +146,10 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Juegos**: al abrir, comprueban que la sesión siga válida. Muestran "Jugando como … ¿No eres tú?" (cierra la sesión, para computadores compartidos) o un aviso si la sesión venció.
 - **Un solo registro de respuestas**: el `js/track.js` de cada juego ahora solo reexporta `/assets/js/eslt-track.js`. En un juego nuevo, importa directo desde `/assets/js/eslt-track.js`.
 - Base de datos: funciones nuevas `eslt_session_check`, `eslt_teacher_locks`, `eslt_teacher_unlock` y `eslt_teacher_reset_pin`.
+
+## Novedades (10-11-2026): la portada también registra cada respuesta
+- Con sesión iniciada, la portada guarda cada respuesta igual que los juegos (Panel del profe → "Análisis de juegos"):
+  - **"Portada: palabra del día, desafío y pronunciación"** (id `portada`): Quick challenge (MEAN, REV, GAP), completar la palabra del día (WRIT) y Speak & shine (PRON: lo que había que decir y lo que entendió el reconocedor; las frases propias no se registran).
+  - **"Challenge Zone"** (id `challenge-zone`): una habilidad por tipo de ejercicio (SCR, USE, VOC, MIS, WF, DICT, READ). La actividad incluye el nivel (A1, A2, B1).
+- El código está en `assets/js/portada/datos.js` (`logPortada`) y en cada sección (`voz.js`, `diagnostico.js`, `zone.js`).
+- El reporte diario resumido sigue funcionando igual.

@@ -170,7 +170,10 @@ function evaluate(){
   const fb = $("fb"); fb.classList.remove("hidden");
   const data = localFeedback(target.text, heardText, confidence);
   renderFeedback(data);
-  attempts = [...attempts, data.score].slice(-8); store.set("attempts", attempts);
+  // Panel del profe: qué había que decir y qué entendió el reconocedor (no se registran las frases propias)
+  if (mode !== "own") logPortada("portada", { activity: "Speak & shine · " + mode, item: { k: "PRON", q: "Say: " + target.text },
+    chosen: heardText, right: target.text, ok: data.level !== "keep_practicing" });
+  attempts =[...attempts, data.score].slice(-8); store.set("attempts", attempts);
   $("history").textContent = "Your last scores · Tus últimos puntajes: " + attempts.join(" · ");
   stats.pronBest = Math.max(stats.pronBest || 0, data.score);
   stats.pronCount = (stats.pronCount || 0) + 1; stats.pronSum = (stats.pronSum || 0) + data.score;
