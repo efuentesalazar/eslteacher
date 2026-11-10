@@ -10,8 +10,24 @@
   function hash(s) { s = String(s); let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
   window.eslHash = hash;
 
+  // Tiempo de respuesta: estos juegos muestran las alternativas como botones ".opt".
+  // Se anota el momento en que aparecen en pantalla y, al responder, se calcula cuánto tardó el alumno.
+  // (Si el juego ya envía "ms", se respeta. En ejercicios sin alternativas queda sin tiempo.)
+  let shownAt = 0;
+  try {
+    new MutationObserver(list => {
+      for (const m of list) for (const n of m.addedNodes) {
+        if (n.nodeType === 1 && (n.matches('.opt') || n.querySelector('.opt'))) { shownAt = performance.now(); return; }
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) { }
+
   window.eslLog = function (game, d) {
-    try { if (mod) mod.logAnswer(game, d); else pend.push([game, d]); } catch (e) { }
+    try {
+      if (d && d.ms == null && shownAt) { const ms = performance.now() - shownAt; if (ms > 0 && ms < 600000) d.ms = ms; }
+      shownAt = 0;
+      if (mod) mod.logAnswer(game, d); else pend.push([game, d]);
+    } catch (e) { }
   };
 
   // Cofres (#chestB): lee la pregunta y las opciones desde la pantalla

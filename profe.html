@@ -151,7 +151,7 @@ td.q{white-space:normal;min-width:260px;max-width:460px;line-height:1.4}
     <label id="only-wrap"><input type="checkbox" id="f-only"> Solo con reportes</label>
     <select id="f-game" class="hidden" aria-label="Juego"></select>
     <select id="f-days" class="hidden" aria-label="Período">
-      <option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="120" selected>Últimos 4 meses</option><option value="400">Todo el año</option>
+      <option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="120" selected>Últimos 4 meses</option><option value="400">Todo este año</option>
     </select>
   </div>
   <div class="tabs">
@@ -205,7 +205,7 @@ async function load(){
   try {
     const r = await db("eslt_teacher_data", { p_token: t });
     if (!r.ok){ ss.set("eslt_teacher", null); $("gate").classList.remove("hidden"); $("app").classList.add("hidden"); $("gate-msg").textContent = "Tu sesión expiró. Ingresa otra vez."; return; }
-    data = r; $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); render();
+    data = r; if (r.year) addYears(r.year); $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); render();
   } catch(err){ alert("No se pudieron cargar los datos. Revisa tu internet."); }
 }
 $("refresh").addEventListener("click", () => view === "analysis" ? loadAnalysis() : view === "keys" ? load().then(loadLocks) : load());
@@ -266,6 +266,9 @@ const GAMES = {
 function LECTURA(cofres){ return { L: "Lectura: localizar", I: "Lectura: interpretar", R: "Lectura: reflexionar", C: cofres }; }
 $("f-game").innerHTML = Object.entries(GAMES).map(([id, g]) => `<option value="${id}">${esc(g.name)}</option>`).join("");
 let an = null;
+// Período del análisis: últimos N días del año en curso, o un año anterior completo ("y2026")
+const period = () => { const v = $("f-days").value; return v[0] === "y" ? { days: 400, year: +v.slice(1) } : { days: +v, year: null }; };
+function addYears(cy){ for (let y = cy - 1; y >= 2026; y--) if (!$("f-days").querySelector(`[value="y${y}"]`)) $("f-days").insertAdjacentHTML("beforeend", `<option value="y${y}">Año ${y} (anterior)</option>`); }
 // El mapa de calor se mide al primer intento de cada pregunta (lo que el alumno sabía); se puede cambiar a todos los intentos
 let heatFirst = true;
 const SK = s => (heatFirst ? s.skills_first : s.skills) || {};
@@ -281,7 +284,7 @@ async function loadAnalysis(){
   $("analysis").innerHTML = `<div class="box empty">Cargando análisis…</div>`;
   const req = loadAnalysis.n = (loadAnalysis.n || 0) + 1; // si cambias el filtro rápido, solo vale la última respuesta
   try {
-    const r = await db("eslt_teacher_analysis", { p_token: t, p_game: $("f-game").value, p_section: $("f-sec").value || null, p_days: +$("f-days").value });
+    const r = await db("eslt_teacher_analysis", { p_token: t, p_game: $("f-game").value, p_section: $("f-sec").value || null, p_days: period().days, p_year: period().year });
     if (req !== loadAnalysis.n) return;
     if (!r.ok){ ss.set("eslt_teacher", null); $("gate").classList.remove("hidden"); $("app").classList.add("hidden"); $("gate-msg").textContent = "Tu sesión expiró. Ingresa otra vez."; return; }
     an = r; renderAnalysis();
@@ -512,8 +515,8 @@ async function openFicha(id){
   $("ficha").classList.remove("hidden"); document.body.classList.add("ficha-on"); $("ficha").scrollTop = 0;
   $("ficha-body").innerHTML = `<div class="box empty">Cargando ficha…</div>`;
   try {
-    const days = view === "analysis" ? +$("f-days").value : 120;
-    const r = await db("eslt_teacher_student", { p_token: t, p_student: id, p_days: days });
+    const per = view === "analysis" ? period() : { days: 120, year: null }, days = per.days;
+    const r = await db("eslt_teacher_student", { p_token: t, p_student: id, p_days: per.days, p_year: per.year });
     if (!r.ok){ closeFicha(); if (r.error === "session") expired(); return; }
     renderFicha(r, days);
   } catch(err){ $("ficha-body").innerHTML = `<div class="box empty">No se pudo cargar la ficha. Revisa tu internet. <button class="btn ghost sm" type="button" onclick="closeFicha()">Cerrar</button></div>`; }
@@ -529,7 +532,7 @@ function renderFicha(r, days){
   const strong = skills.filter(x => x.t >= 5 && x.p >= 75).sort((a, b) => b.p - a.p).slice(0, 6);
   const weak = skills.filter(x => x.t >= 5 && x.p < 50).sort((a, b) => a.p - b.p).slice(0, 6);
   const chip = (x, withGame) => `<span class="chipk ${lv(x.p)}" title="${esc(gname(x.g))}">${esc(sname(x.g, x.k))}${withGame ? " · " + esc(gshort(x.g)) : ""} ${x.p}% <small>(${x.ok}/${x.t})</small></span>`;
-  const period = days >= 400 ? "todo el año" : `últimos ${days} días`;
+  const period = r.year && r.year < new Date().getFullYear() ? `año ${r.year}` : days >= 400 ? `año ${r.year || ""}` : `últimos ${days} días`;
   $("ficha-body").innerHTML = `
     <header>
       <div><span class="cap">Ficha del alumno · ${esc(period)}</span><h1>${esc(s.name)}</h1><span class="cap">${esc(s.section)}${s.n ? " · N° " + s.n : ""} · ${new Date().toLocaleDateString("es-CL")}</span></div>

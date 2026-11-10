@@ -176,3 +176,14 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - El botón dice "Respaldo pendiente" (en amarillo) si en ese equipo no se ha descargado uno en 30 días. Conviene hacer uno al mes y otro antes de las vacaciones.
 - Para restaurar desde un respaldo, pídeselo a Claude con el archivo. Base de datos: función `eslt_teacher_backup` (entrega los datos por partes).
 - No cubre Ludo World Tour (proyecto `travel-tycoon-6basico`, datos temporales) ni las cuentas propias de Realms of Knowledge.
+
+## Novedades (10-11-2026): año escolar, privacidad y páginas del sitio
+- **Año escolar**: el panel muestra solo los datos del año en curso (pestañas Alumnos, Historial y Análisis). Desde 2027, en "Análisis de juegos" el selector de período tendrá además "Año 2026 (anterior)". En la vista de un año anterior los alumnos aparecen con su curso actual.
+- **Retención**: se conservan las respuestas y reportes del año en curso y del anterior. Lo más antiguo se borra solo cuando entras al panel (la primera vez será en enero de 2028, con los datos de 2026). Si quieres conservarlos, descarga un respaldo antes. Para cambiar la regla: función `eslt.purge_old`.
+- **Al empezar el año**: pídele a Claude que importe la nómina nueva; los alumnos conservan su clave y su historial.
+- **Página de privacidad** (`privacidad.html`, enlazada al pie de la portada y en el formulario de ingreso): explica a alumnos y apoderados qué se guarda, para qué, quién lo ve y por cuánto tiempo. **Revísala con el colegio**: es informativa, no reemplaza lo que el colegio deba cumplir por la ley de datos personales. Si cambias qué se guarda o la retención, actualízala.
+- **Página 404** propia (`404.html`), **`robots.txt`** (pide a los buscadores no indexar los paneles) y **`sitemap.xml`** (portada, privacidad y juegos). Al agregar un juego a `COURSES`, agrégalo también al `sitemap.xml`.
+- **Tiempo de respuesta en los juegos de un archivo** (Worlds, Let's Travel City, Chest Quest): `assets/js/eslt-log.js` mide desde que aparecen las alternativas hasta que el alumno responde. Los ejercicios sin alternativas (ordenar, deletrear, encontrar lugares) siguen sin tiempo.
+- **Identificadores de preguntas**: los juegos de un archivo y Ludo ya envían un id fijo por pregunta. En los juegos 3D el id se calcula a partir del texto: si corriges el texto de una pregunta, su historial en el panel empieza de nuevo.
+- **Realms of Knowledge** (revisado, sin cambios): cualquiera puede crear una cuenta de profesor ahí, pero cada cuenta solo ve y administra sus propias clases.
+- Base de datos: `eslt.year_start`, `eslt.purge_old`; `eslt_teacher_analysis` y `eslt_teacher_student` aceptan `p_year`.

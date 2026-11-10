@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /profe.html
+Disallow: /English%20Week%202026/english-week-2026-panel.html
+
+Sitemap: https://eslteacher.cl/sitemap.xml
