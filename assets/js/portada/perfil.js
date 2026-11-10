@@ -62,7 +62,8 @@ $("login").addEventListener("submit", async e => {
       pullProgress();
     } else {
       sfx("wrong"); shake($("login"));
-      msg.textContent = r.error === "locked" ? "Demasiados intentos. Espera 15 minutos o pide ayuda a tu profe."
+      msg.textContent = r.error === "locked_day" ? "Demasiados intentos hoy. Pídele a tu profe que te desbloquee o te dé una clave nueva."
+                      : r.error === "locked" ? "Demasiados intentos. Espera 15 minutos o pide ayuda a tu profe."
                                              : "Curso, RUT o clave incorrectos. Revisa e inténtalo otra vez.";
     }
   } catch (err){

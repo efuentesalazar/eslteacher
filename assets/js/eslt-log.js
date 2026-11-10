@@ -43,6 +43,8 @@
 
   import('/assets/js/eslt-track.js').then(m => {
     mod = m; pend.forEach(a => m.logAnswer(a[0], a[1])); pend = [];
-    if (document.body) banner(m.student()); else addEventListener('DOMContentLoaded', () => banner(m.student()));
+    // Con sesión, el aviso ("Jugando como…", "¿No eres tú?") lo muestra eslt-track.js; aquí solo el de "sin sesión"
+    const warn = () => { if (!m.student()) banner(null); };
+    if (document.body) warn(); else addEventListener('DOMContentLoaded', warn);
   }).catch(() => { });
 })();

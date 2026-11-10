@@ -58,6 +58,11 @@ tr:hover td{background:rgba(255,255,255,.04)}
 .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(255,255,255,.1)}
 .pill.new{background:var(--green);color:#fff}
 .pill.old{background:rgba(255,200,0,.2);color:var(--yellow)}
+.pill.red{background:var(--red);color:#fff}
+.btn.sm{min-height:34px;padding:4px 12px;font-size:13px;border-radius:10px}
+.acts{display:flex;gap:8px}
+.newpin{font-family:var(--mono);font-size:1.4em;color:var(--yellow);letter-spacing:.12em;margin-left:6px}
+#pinbox{margin-bottom:12px;border-color:var(--yellow)}
 .empty{padding:30px;text-align:center;color:var(--mut)}
 .foot{margin-top:14px;font-size:12px;color:var(--mut)}
 /* análisis de juegos */
@@ -125,7 +130,9 @@ td.q{white-space:normal;min-width:260px;max-width:460px;line-height:1.4}
     <button class="tab on" data-v="students" type="button">Alumnos (lo más reciente)</button>
     <button class="tab" data-v="history" type="button">Historial de reportes</button>
     <button class="tab" data-v="analysis" type="button">📊 Análisis de juegos</button>
+    <button class="tab" data-v="keys" type="button">🔑 Claves y bloqueos</button>
   </div>
+  <div class="box hidden" id="pinbox" aria-live="polite"></div>
   <div class="table"><table id="tbl"></table></div>
   <div class="an hidden" id="analysis"></div>
   <p class="foot" id="foot"></p>
@@ -170,7 +177,7 @@ async function load(){
     data = r; $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); render();
   } catch(err){ alert("No se pudieron cargar los datos. Revisa tu internet."); }
 }
-$("refresh").addEventListener("click", () => view === "analysis" ? loadAnalysis() : load());
+$("refresh").addEventListener("click", () => view === "analysis" ? loadAnalysis() : view === "keys" ? load().then(loadLocks) : load());
 
 /* Filtros y vistas */
 $("f-sec").innerHTML += SECTIONS.map(s => `<option>${s}</option>`).join("");
@@ -180,7 +187,11 @@ document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () =>
   view = b.dataset.v; sortKey = null; document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
   const isAn = view === "analysis";
   ["f-game","f-days","analysis"].forEach(id => $(id).classList.toggle("hidden", !isAn));
-  [$("tbl").parentElement, $("cards"), $("foot"), $("only-wrap")].forEach(el => el.classList.toggle("hidden", isAn));
+  const isKeys = view === "keys";
+  [$("tbl").parentElement, $("foot")].forEach(el => el.classList.toggle("hidden", isAn));
+  [$("cards"), $("only-wrap")].forEach(el => el.classList.toggle("hidden", isAn || isKeys));
+  $("export").classList.toggle("hidden", isKeys); $("pinbox").classList.add("hidden");
+  if (isKeys) return loadLocks();
   if (isAn) loadAnalysis(); else render();
 }));
 
@@ -337,6 +348,7 @@ function rows(){
 }
 function render(){
   if (!data) return;
+  if (view === "keys") return renderKeys();
   // Resumen
   const sec = $("f-sec").value;
   const st = data.students.filter(s => !sec || s.section === sec);
@@ -389,6 +401,56 @@ $("export").addEventListener("click", () => {
   a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
   a.download = `reportes-eslteacher-${view === "students" ? "alumnos" : "historial"}${$("f-sec").value ? "-" + $("f-sec").value.replace(/[°\s]/g, "") : ""}-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+/* =====================================================================
+   CLAVES Y BLOQUEOS: intentos fallidos de ingreso, desbloquear y clave nueva
+   (8 fallos en 15 min bloquean 15 min; 20 en un día bloquean hasta el día siguiente)
+   ===================================================================== */
+let locks = {};
+function expired(){ ss.set("eslt_teacher", null); $("gate").classList.remove("hidden"); $("app").classList.add("hidden"); $("gate-msg").textContent = "Tu sesión expiró. Ingresa otra vez."; }
+const lockState = l => !l ? 0 : l.f24 >= 20 ? 3 : l.f15 >= 8 ? 2 : 1;
+async function loadLocks(){
+  const t = ss.get("eslt_teacher"); if (!t) return;
+  try {
+    const r = await db("eslt_teacher_locks", { p_token: t }); if (!r.ok) return expired();
+    locks = {}; r.locks.forEach(l => locks[l.id] = l);
+  } catch(err){ alert("No se pudieron cargar los bloqueos. Revisa tu internet y presiona ↻ Actualizar."); }
+  renderKeys();
+}
+function renderKeys(){
+  if (!data) return;
+  const sec = $("f-sec").value, q = $("f-q").value.trim().toLowerCase();
+  const list = data.students.filter(s => (!sec || s.section === sec) && (!q || s.name.toLowerCase().includes(q)))
+    .map((s, i) => ({ s, i, l: locks[s.id], st: lockState(locks[s.id]) })).sort((a, b) => b.st - a.st || a.i - b.i);
+  const blocked = Object.values(locks).filter(l => lockState(l) >= 2).length;
+  const state = (st, l) => st === 3 ? `<span class="pill red">🔒 Bloqueado hasta mañana</span>` : st === 2 ? `<span class="pill red">🔒 Bloqueado 15 minutos</span>`
+    : st === 1 ? `<span class="pill old">${l.f24} intento${l.f24 > 1 ? "s" : ""} fallido${l.f24 > 1 ? "s" : ""}</span>` : "—";
+  $("tbl").innerHTML = `<thead><tr><th>Curso</th><th>N°</th><th>Nombre</th><th>Ingreso (últimas 24 h)</th><th>Último intento fallido</th><th>Acciones</th></tr></thead>
+    <tbody>${list.length ? list.map(({ s, l, st }) => `<tr><td>${esc(s.section)}</td><td class="num">${s.n ?? ""}</td><td>${esc(s.name)}</td>
+      <td>${state(st, l)}</td><td>${l ? fmtDate(l.last) : "—"}</td>
+      <td><div class="acts">${st ? `<button class="btn ghost sm" type="button" data-unlock="${esc(s.id)}">Desbloquear</button>` : ""}<button class="btn sm" type="button" data-pin="${esc(s.id)}">Nueva clave</button></div></td></tr>`).join("")
+      : `<tr><td class="empty" colspan="6">No hay alumnos con esos filtros.</td></tr>`}</tbody>`;
+  $("foot").textContent = `${blocked} alumno${blocked === 1 ? "" : "s"} bloqueado${blocked === 1 ? "" : "s"} ahora · Primero aparecen quienes tienen intentos fallidos. ` +
+    `8 fallos en 15 minutos bloquean 15 minutos; 20 en un día bloquean hasta el día siguiente.`;
+}
+$("tbl").addEventListener("click", async e => {
+  const b = e.target.closest("[data-unlock],[data-pin]"); if (!b || view !== "keys" || !data) return;
+  const t = ss.get("eslt_teacher"), isPin = !!b.dataset.pin, id = b.dataset.pin || b.dataset.unlock, s = data.students.find(x => x.id === id);
+  if (!t || !s) return;
+  if (isPin && !confirm(`¿Crear una clave nueva para ${s.name} (${s.section})?\n\nSu clave actual dejará de servir y se cerrarán sus sesiones abiertas.`)) return;
+  b.disabled = true;
+  try {
+    const r = await db(isPin ? "eslt_teacher_reset_pin" : "eslt_teacher_unlock", { p_token: t, p_student: id });
+    if (!r.ok){ if (r.error === "session") return expired(); throw new Error(r.error); }
+    delete locks[id];
+    const box = $("pinbox"); box.classList.remove("hidden");
+    box.innerHTML = isPin
+      ? `<h2>Nueva clave de ${esc(s.name)} (${esc(s.section)}):<span class="newpin">${esc(r.pin)}</span></h2>
+         <p class="sub" style="margin:0">Anótala y entrégasela ahora: no se volverá a mostrar. La clave anterior ya no sirve, así que tu lista impresa queda desactualizada para este alumno.</p>`
+      : `<p class="sub" style="margin:0">✅ ${esc(s.name)} (${esc(s.section)}) ya puede volver a ingresar con su clave.</p>`;
+    renderKeys(); box.scrollIntoView({ block: "nearest" });
+  } catch(err){ alert("No se pudo completar. Revisa tu internet e inténtalo otra vez."); b.disabled = false; }
 });
 
 if (ss.get("eslt_teacher")) load();

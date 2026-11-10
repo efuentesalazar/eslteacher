@@ -136,3 +136,13 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Cooperación**: en la lectura cada agente recibe partes distintas del texto; en gramática y vocabulario cada pregunta la "lee" un agente distinto; la respuesta se confirma solo cuando todo el equipo elige la misma opción. Para encender cada distrito, cada agente debe pararse en una almohadilla distinta.
 - Nivel B1: future will (predicciones, promesas, ofertas, decisiones), first conditional (if / unless) y vocabulario en contexto. Los contenidos se editan en `8° BASICO/Mission_2050/js/content.js`.
 - Los equipos usan canales en vivo de Supabase (sin tablas: no se guarda nada de quien juega sin sesión). Las respuestas de alumnos con sesión van al Panel del profe ("mission-2050-8b": READ, INF, VOC, WILL, COND). Captura en `assets/games/mission-2050.webp`.
+
+## Novedades (10-11-2026): seguridad e ingreso de alumnos
+- **Archivos internos ocultos**: `LEEME.md`, `README.md` y `netlify.toml` ya no se publican en el sitio (`.vercelignore`). `vercel.json` agrega cabeceras de seguridad.
+- **Base de datos siempre activa**: `.github/workflows/mantener-base-activa.yml` la llama lunes y jueves para que el plan gratuito de Supabase no la pause.
+- **Panel del profe**: el bloqueo por claves erróneas ahora es por dirección IP (10 en 15 min), no global.
+- **Ingreso de alumnos**: 8 intentos fallidos en 15 min bloquean 15 min; 20 en un día bloquean hasta el día siguiente. Las sesiones duran 30 días y se renuevan solas mientras el alumno use el sitio.
+- **Panel → pestaña "🔑 Claves y bloqueos"**: muestra quién tiene intentos fallidos o está bloqueado, con botones **Desbloquear** y **Nueva clave** (la clave nueva se muestra una sola vez y cierra las sesiones del alumno).
+- **Juegos**: al abrir, comprueban que la sesión siga válida. Muestran "Jugando como … ¿No eres tú?" (cierra la sesión, para computadores compartidos) o un aviso si la sesión venció.
+- **Un solo registro de respuestas**: el `js/track.js` de cada juego ahora solo reexporta `/assets/js/eslt-track.js`. En un juego nuevo, importa directo desde `/assets/js/eslt-track.js`.
+- Base de datos: funciones nuevas `eslt_session_check`, `eslt_teacher_locks`, `eslt_teacher_unlock` y `eslt_teacher_reset_pin`.
