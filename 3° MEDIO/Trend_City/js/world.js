@@ -35,10 +35,13 @@ const loader = new GLTFLoader();
 const cache = {};
 let loadTotal = 0, loadDone = 0, onProgress = () => { };
 export function setProgress(fn) { onProgress = fn; }
+// Total de modelos de la última carga (o un estimado la primera vez): así la barra avanza de verdad y no salta a 100% al inicio
+const LOAD_KEY = 'eslt_load_trend';
+let LOAD_EXPECT = 80; try { LOAD_EXPECT = Number(localStorage.getItem(LOAD_KEY)) || 80; } catch (e) { }
 function load(url) {
   if (!cache[url]) {
     loadTotal++;
-    cache[url] = new Promise(res => loader.load(url, g => { loadDone++; onProgress(loadDone / loadTotal); res(g); }, undefined, e => { loadDone++; console.warn('No se pudo cargar', url, e); res(null); }));
+    cache[url] = new Promise(res => loader.load(url, g => { loadDone++; onProgress(loadDone / Math.max(loadTotal, LOAD_EXPECT)); if (loadDone === loadTotal) { try { localStorage.setItem(LOAD_KEY, loadTotal); } catch (e) { } } res(g); }, undefined, e => { loadDone++; console.warn('No se pudo cargar', url, e); res(null); }));
   }
   return cache[url];
 }

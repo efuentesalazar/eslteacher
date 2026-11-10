@@ -187,7 +187,13 @@ addEventListener('click', e => {
 async function checkSession() {
   const s = student();
   if (!s) {
-    const d = note('⚠️ No has iniciado sesión: tu profe no verá tu avance. <button type="button" style="font:inherit;font-weight:700;color:#fff;background:#3f9a00;border:0;border-radius:8px;padding:3px 10px;margin-left:4px;cursor:pointer">🔑 Entrar aquí</button>', false, 20000);
+    // Si el menú del juego ya muestra su propio aviso (#esltStatus), no se repite arriba
+    if (document.getElementById('esltStatus')) return;
+    // En celular va en una sola línea corta, para no tapar el título ni el formulario del juego
+    const small = matchMedia('(max-width: 520px)').matches;
+    const btn = '<button type="button" style="font:inherit;font-weight:700;color:#fff;background:#3f9a00;border:0;border-radius:8px;padding:3px 10px;margin-left:4px;cursor:pointer">🔑 Entrar' + (small ? '' : ' aquí') + '</button>';
+    const d = note((small ? '⚠️ Sin sesión' : '⚠️ No has iniciado sesión: tu profe no verá tu avance.') + ' ' + btn, false, small ? 10000 : 20000);
+    if (d && small) { d.style.whiteSpace = 'nowrap'; d.style.top = 'calc(4px + env(safe-area-inset-top, 0px))'; d.style.padding = '4px 10px'; d.title = 'No has iniciado sesión: tu profe no verá tu avance.'; }
     if (d) d.querySelector('button').addEventListener('click', () => { d.remove(); openLogin(); });
     return;
   }

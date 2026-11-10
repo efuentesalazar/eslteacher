@@ -772,7 +772,8 @@ function frame(now) {
 }
 
 // ---------------- arranque ----------------
-setProgress(p => { $('lbar').style.width = Math.round(p * 100) + '%'; });
+let loadPct = 0;   // el total crece mientras se descubren modelos: el porcentaje nunca retrocede
+setProgress(p => { loadPct = Math.max(loadPct, Math.round(p * 100)); $('lbar').style.width = loadPct + '%'; const t = $('lpct'); if (t) t.textContent = loadPct + '%'; });
 (async () => {
   try { await buildWorld(); } catch (e) { console.error(e); }
   spawnCells();
