@@ -10,6 +10,18 @@
       ]
     },
     {
+      "source": "/(.*)\\.(glb|gltf|bin|mp3|ogg|wav|woff2|hdr)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=2592000" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(png|jpg|jpeg|webp|svg|ico)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
       "source": "/profe.html",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" },

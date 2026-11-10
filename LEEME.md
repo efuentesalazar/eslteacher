@@ -163,3 +163,8 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Mapa de calor al primer intento**: en "Análisis de juegos", el logro por alumno y habilidad se mide con el primer intento de cada pregunta (lo que sabían antes de reintentar). Un selector permite volver a "Todos los intentos". Las celdas con menos de 5 respuestas se ven atenuadas. Las sugerencias ("Qué hacer esta semana") y el Excel usan la misma medida.
 - **Ficha por alumno**: al hacer clic en un nombre (pestañas Alumnos, Análisis y Claves) se abre su ficha: respuestas, logro al primer intento, días con actividad, minutos respondiendo, fortalezas y habilidades que necesitan apoyo, detalle por juego, práctica en la portada, actividad por día y sus últimos 40 errores. El botón **🖨 Imprimir** saca una versión en blanco para apoderados o reuniones. Esc cierra.
 - Base de datos: `eslt_teacher_analysis` ahora devuelve `skills_first`; función nueva `eslt_teacher_student`; índice `answers_game_at`.
+
+## Novedades (10-11-2026): caché de archivos pesados
+- `vercel.json`: los modelos 3D, la música y los sonidos (`.glb`, `.mp3`, `.ogg`…) se guardan 7 días en el navegador del alumno; las imágenes, 1 día. Así la segunda vez los juegos cargan desde el equipo, sin volver a preguntar al servidor por cada archivo.
+- Ojo: si reemplazas una imagen **con el mismo nombre**, los alumnos pueden seguir viendo la anterior hasta 1 día (un modelo o una canción, hasta 7 días). Para que el cambio se vea al tiro, súbela con otro nombre.
+- El código (`.html`, `.js`, `.css`) no cambia: siempre se revisa si hay versión nueva.
