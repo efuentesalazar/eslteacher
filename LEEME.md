@@ -187,3 +187,10 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Identificadores de preguntas**: los juegos de un archivo y Ludo ya envían un id fijo por pregunta. En los juegos 3D el id se calcula a partir del texto: si corriges el texto de una pregunta, su historial en el panel empieza de nuevo.
 - **Realms of Knowledge** (revisado, sin cambios): cualquiera puede crear una cuenta de profesor ahí, pero cada cuenta solo ve y administra sus propias clases.
 - Base de datos: `eslt.year_start`, `eslt.purge_old`; `eslt_teacher_analysis` y `eslt_teacher_student` aceptan `p_year`.
+
+## Novedades (10-11-2026): "Mi avance" para alumnos y apoderados
+- **`eslteacher.cl/mi-avance.html`**: el alumno entra con su curso, RUT y clave y ve sus propios resultados (solo lectura): preguntas respondidas, porcentaje correcto al primer intento, días con práctica, lo que mejor le sale y lo que conviene practicar, detalle por juego y habilidad, práctica en la portada, días de práctica y sus últimos 15 errores con la respuesta correcta. Se puede imprimir.
+- **Apoderados**: no tienen cuenta propia; lo ven junto a su hijo o hija, o con la clave del alumno. Si un apoderado necesita la clave, se la entregas tú (pestaña "Claves y bloqueos" si hay que crear una nueva).
+- Se llega desde **Mi perfil → "📈 Mi avance · My progress"** en la portada, o directo con el enlace. Sin sesión, la página ofrece el formulario de ingreso.
+- Muestra solo el año en curso. Base de datos: función `eslt_my_progress` (devuelve únicamente los datos del alumno dueño de la sesión).
+- **Lista de juegos compartida**: `GAMES` (juegos y nombres de habilidades) se movió de `profe.html` a **`assets/js/eslt-games.js`**, que usan el panel y "Mi avance". **Para agregar un juego nuevo al panel, edita ese archivo** (ya no `profe.html`).

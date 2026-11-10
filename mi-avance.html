@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mi avance · ESL Teacher</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b16;--card:#141428;--line:rgba(255,255,255,.12);--txt:#fff;--mut:rgba(255,255,255,.68);
+  --accent:#5fd3ff;--green:#58cc02;--green-d:#3f9a00;--yellow:#ffc800;--red:#ff4b4b;--ink:#10101c;
+  --display:'Fredoka',system-ui,sans-serif;--body:'Lexend',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg) radial-gradient(ellipse at top,#1d1d3d,transparent 60%);background-attachment:fixed;color:var(--txt);font-family:var(--body);min-height:100vh;line-height:1.5}
+button,select{font:inherit;color:inherit}
+a{color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:22px 16px 70px;display:grid;gap:16px}
+.cap{font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(28px,6vw,40px);line-height:1.1}
+h2{font-family:var(--display);font-weight:600;font-size:21px;margin-bottom:4px}
+.sub{color:var(--mut);font-size:14px;margin-bottom:12px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border:0;border-radius:14px;cursor:pointer;text-decoration:none;
+  background:rgba(255,255,255,.08);color:#fff;font-weight:700;font-size:14px;box-shadow:inset 0 0 0 2px var(--line),0 4px 0 rgba(0,0,0,.4)}
+.btn:active{transform:translateY(4px);box-shadow:inset 0 0 0 2px var(--line)}
+.btn.green{background:var(--green);box-shadow:0 4px 0 var(--green-d)}
+select{min-height:44px;background:rgba(0,0,0,.3);border:2px solid var(--line);border-radius:12px;padding:8px 12px}
+select option{background:var(--card)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.card,.box{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px}
+.card b{display:block;font-family:var(--display);font-size:32px;color:var(--accent);line-height:1.1}
+.card span{font-size:13px;color:var(--mut)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.two h3{font-size:14px;margin-bottom:6px}
+.chip{display:inline-block;margin:3px 5px 3px 0;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:600}
+.lv0{background:#6a2130;color:#ffdbe0}.lv1{background:#5e4c10;color:#ffeaa6}.lv2{background:#22521c;color:#cff7bd}
+.game{padding:14px 0;border-top:1px solid var(--line)}
+.game:first-of-type{border-top:0;padding-top:4px}
+.game h3{font-size:16px;font-weight:600}
+.game .meta{font-size:13px;color:var(--mut);margin-bottom:8px}
+.sk{display:grid;grid-template-columns:minmax(120px,1.2fr) 2fr auto;gap:10px;align-items:center;font-size:14px;margin:7px 0}
+.sk .bar{height:12px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden}
+.sk .bar i{display:block;height:100%;border-radius:6px}
+.sk .bar i.lv0{background:#ff6b7f}.sk .bar i.lv1{background:var(--yellow)}.sk .bar i.lv2{background:var(--green)}
+.sk b{font-variant-numeric:tabular-nums;min-width:92px;text-align:right;font-weight:600}
+.sk small{color:var(--mut);font-weight:400}
+.sk.few{opacity:.6}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 16px;font-size:14px}
+.kv b{display:block;color:var(--mut);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.days{display:flex;align-items:flex-end;gap:6px;height:150px;overflow-x:auto;padding-top:6px}
+.days .d{flex:1 0 34px;max-width:52px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;font-size:11px;color:var(--mut)}
+.days .d i{width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:3px}
+.days .d b{color:#fff;font-size:11px}
+.miss{padding:12px 0;border-top:1px solid var(--line);font-size:14px}
+.miss:first-of-type{border-top:0}
+.miss .q{margin:2px 0 6px}
+.miss .a{display:flex;gap:6px 18px;flex-wrap:wrap}
+.miss .bad{color:#ff9aa8}.miss .good{color:#a5ec8d}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:rgba(95,211,255,.15);color:var(--accent)}
+.center{text-align:center;padding:34px 18px}
+.center p{color:var(--mut);margin:8px auto 18px;max-width:460px}
+.note{font-size:13px;color:var(--mut)}
+@media (max-width:560px){.sk{grid-template-columns:1fr auto}.sk .bar{grid-column:1/-1;order:3}}
+@media print{
+  body{background:#fff!important;color:#000;--card:#fff;--txt:#000;--mut:#444;--line:#bbb;--accent:#0a58ca}
+  .noprint{display:none!important}
+  .card,.box,.game,.miss{break-inside:avoid}
+  .card b{color:#000}.days .d b{color:#000}
+  .miss .bad{color:#a00}.miss .good{color:#060}
+  .lv0,.lv1,.lv2,.sk .bar,.sk .bar i,.days .d i{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="box center"><p>Cargando…</p></div></div>
+
+<script src="assets/js/eslt-games.js"></script>
+<script>
+/* MI AVANCE: el alumno (o su apoderado, con la clave del alumno) ve sus propios resultados. Solo lectura.
+   Datos: función eslt_my_progress de la base de datos. Nombres de juegos y habilidades: assets/js/eslt-games.js */
+const DB_URL = "https://tlihbmgokuhvppbchvrz.supabase.co";
+const DB_KEY = "sb_publishable_nGgOCuUUuXKK7gx957LYhg_Jf2V4TJC";
+window.ESLT_PORTADA = true;                       // esta página muestra la sesión por su cuenta (sin avisos flotantes)
+const track = import("/assets/js/eslt-track.js"); // trae el formulario de ingreso (openLogin)
+const GAMES = window.ESLT_GAMES || {};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const session = () => { try { const s = JSON.parse(localStorage.getItem("eslt_session") || "null"); return s && s.token ? s : null; } catch(e){ return null; } };
+const rpc = async (fn, args) => { const r = await fetch(`${DB_URL}/rest/v1/rpc/${fn}`, { method:"POST", headers:{ apikey: DB_KEY, "Content-Type":"application/json" }, body: JSON.stringify(args) }); if (!r.ok) throw new Error("http " + r.status); return r.json(); };
+const pct = (ok, t) => t ? Math.round(ok / t * 100) : null;
+const lv = p => p < 50 ? "lv0" : p < 75 ? "lv1" : "lv2";
+const LV = ["A practicar", "Vas bien", "¡Lo dominas!"];
+const gname = id => ((GAMES[id] || {}).name || id).replace(" (todos los cursos)", "");
+const gshort = id => gname(id).split(" · ")[0].split(":")[0];
+const sname = (id, k) => ((GAMES[id] || {}).skills || {})[k] || k || "Otras";
+const ago = d => { const days = Math.floor((Date.now() - new Date(d)) / 864e5); return days < 1 ? "hoy" : days < 2 ? "ayer" : `hace ${days} días`; };
+let days = 120;
+
+function showLogin(msg){
+  $("app").innerHTML = `<div class="box center">
+    <span class="cap">ESL Teacher</span><h1>📈 Mi avance</h1>
+    <p>${esc(msg || "Aquí ves cómo te va en los juegos y ejercicios: qué te sale mejor y qué conviene practicar.")} Entra con tu curso, tu RUT y tu clave.</p>
+    <div class="row" style="justify-content:center"><button class="btn green" id="go" type="button">🔑 Entrar · Log in</button><a class="btn" href="./">← Volver al inicio</a></div>
+    <p class="note" style="margin-top:18px">¿Eres apoderado? Entra con la clave de tu hijo o hija. <a href="privacidad.html">Privacidad</a></p></div>`;
+  $("go").addEventListener("click", async () => { try { (await track).openLogin(); } catch(e){ location.href = "./"; } });
+}
+
+async function load(){
+  const s = session(); if (!s) return showLogin();
+  if (!$("content")) $("app").innerHTML = `<div class="box center"><p>Cargando tu avance…</p></div>`;
+  try {
+    const r = await rpc("eslt_my_progress", { p_token: s.token, p_days: days });
+    if (!r.ok){
+      if (r.error === "session"){ try { localStorage.removeItem("eslt_session"); } catch(e){} return showLogin("Tu sesión venció."); }
+      throw new Error(r.error);
+    }
+    render(r);
+  } catch(err){
+    $("app").innerHTML = `<div class="box center"><h2>No se pudo cargar tu avance</h2><p>Revisa tu conexión a internet e inténtalo otra vez.</p>
+      <div class="row" style="justify-content:center"><button class="btn green" type="button" onclick="load()">↻ Reintentar</button><a class="btn" href="./">← Volver al inicio</a></div></div>`;
+  }
+}
+
+function render(r){
+  const st = r.student || {}, games = r.games || [], daily = (r.daily || []).slice(-30), wrong = r.wrong || [], rep = r.report;
+  const total = games.reduce((a, g) => a + g.total, 0), mins = Math.round(games.reduce((a, g) => a + (+g.ms || 0), 0) / 60000);
+  const skills = games.flatMap(g => Object.entries(g.skills_first || {}).map(([k, v]) => ({ g: g.game, k, ok: v[0], t: v[1], p: pct(v[0], v[1]) })));
+  const first = skills.reduce((a, x) => [a[0] + x.ok, a[1] + x.t], [0, 0]);
+  const strong = skills.filter(x => x.t >= 5 && x.p >= 75).sort((a, b) => b.p - a.p).slice(0, 5);
+  const weak = skills.filter(x => x.t >= 5 && x.p < 50).sort((a, b) => a.p - b.p).slice(0, 5);
+  const chip = x => `<span class="chip ${lv(x.p)}">${esc(sname(x.g, x.k))} · ${esc(gshort(x.g))} ${x.p}%</span>`;
+  const maxDay = Math.max(1, ...daily.map(d => d.total));
+  $("app").innerHTML = `
+    <header id="content">
+      <div><span class="cap">Mi avance · My progress · ${r.year}</span><h1>${esc(st.name || "")}</h1><span class="cap">${esc(st.section || "")}</span></div>
+      <div class="row noprint">
+        <select id="days" aria-label="Período"><option value="30">Últimos 30 días</option><option value="120">Últimos 4 meses</option><option value="400">Todo este año</option></select>
+        <button class="btn" type="button" onclick="print()">🖨 Imprimir</button>
+        <a class="btn" href="./">← Inicio</a>
+        <button class="btn" id="out" type="button">Salir</button>
+      </div>
+    </header>
+
+    <div class="cards">
+      <div class="card"><b>${total}</b><span>Preguntas respondidas</span></div>
+      <div class="card"><b>${first[1] ? pct(first[0], first[1]) + "%" : "—"}</b><span>Correctas al primer intento</span></div>
+      <div class="card"><b>${(r.daily || []).length}</b><span>Días con práctica</span></div>
+      <div class="card"><b>${mins}<span style="font-size:16px"> min</span></b><span>Respondiendo preguntas</span></div>
+    </div>
+
+    ${!total ? `<div class="box center"><h2>Todavía no hay respuestas guardadas</h2>
+        <p>Juega con tu sesión iniciada y aquí aparecerá tu avance. Si acabas de jugar, espera un momento y vuelve a cargar la página.</p>
+        <a class="btn green noprint" href="./#worlds">🎮 Ir a los juegos</a></div>` : `
+    <div class="box"><h2>Resumen</h2>
+      <p class="sub">Se mide con el primer intento de cada pregunta, en habilidades con 5 o más preguntas respondidas.</p>
+      <div class="two">
+        <div><h3>🌟 Lo que mejor te sale</h3>${strong.length ? strong.map(chip).join("") : `<span class="note">Sigue jugando: pronto aparecerán aquí tus fortalezas.</span>`}</div>
+        <div><h3>🎯 Para practicar más</h3>${weak.length ? weak.map(chip).join("") : `<span class="note">¡Bien! No tienes habilidades bajo 50%.</span>`}</div>
+      </div></div>
+
+    <div class="box"><h2>Por juego</h2>
+      <p class="sub">Porcentaje correcto al primer intento. <span class="chip lv0">A practicar: menos de 50%</span><span class="chip lv1">Vas bien: 50 a 74%</span><span class="chip lv2">¡Lo dominas!: 75% o más</span></p>
+      ${games.map(g => `<div class="game"><h3>${esc(gname(g.game))}</h3>
+        <div class="meta">${g.total} respuestas · ${g.days} ${g.days === 1 ? "día" : "días"} · última vez ${ago(g.last)}</div>
+        ${Object.entries(g.skills_first || {}).map(([k, v]) => { const p = pct(v[0], v[1]), few = v[1] < 5;
+          return `<div class="sk${few ? " few" : ""}"><span>${esc(sname(g.game, k))}</span><div class="bar" role="img" aria-label="${p}% · ${LV[p < 50 ? 0 : p < 75 ? 1 : 2]}"><i class="${lv(p)}" style="width:${Math.max(3, p)}%"></i></div>
+            <b>${p}% <small>(${v[0]} de ${v[1]})${few ? " · pocas" : ""}</small></b></div>`; }).join("")}</div>`).join("")}</div>`}
+
+    ${rep ? `<div class="box"><h2>Práctica diaria en la portada</h2><p class="sub">Palabra del día, desafío rápido y pronunciación.</p>
+      <div class="kv"><div><b>Puntos (XP)</b>${rep.xp ?? "—"}</div><div><b>Racha de días</b>${rep.streak ?? "—"}</div><div><b>Palabras del día completas</b>${rep.words ?? "—"}</div>
+        <div><b>Medallas</b>${rep.badges ?? "—"}</div><div><b>Pronunciación (promedio)</b>${rep.pron_avg || "—"}</div>
+        <div><b>Sonidos para practicar</b>${esc(rep.sound_issues || "—")}</div><div><b>Palabras difíciles</b>${esc(rep.hard_words || "—")}</div></div></div>` : ""}
+
+    ${daily.length ? `<div class="box"><h2>Días de práctica</h2><p class="sub">Preguntas respondidas cada día y porcentaje correcto.</p>
+      <div class="days">${daily.map(d => `<div class="d" title="${d.total} respuestas · ${pct(d.ok, d.total)}% correctas"><b>${d.total}</b><i style="height:${Math.max(4, Math.round(d.total / maxDay * 100))}%"></i><span>${d.day.slice(8, 10)}/${d.day.slice(5, 7)}</span><span>${pct(d.ok, d.total)}%</span></div>`).join("")}</div></div>` : ""}
+
+    ${wrong.length ? `<div class="box"><h2>Para repasar</h2><p class="sub">Tus últimas respuestas incorrectas. Mira la respuesta correcta y piensa por qué: equivocarse es parte de aprender.</p>
+      ${wrong.map(w => `<div class="miss"><span class="tag">${esc(gshort(w.game))} · ${esc(sname(w.game, w.skill))}</span>
+        <p class="q">${esc(w.question || "")}</p>
+        <div class="a"><span class="bad">✘ Respondiste: ${esc(w.chosen || "—")}</span><span class="good">✔ Correcta: ${esc(w.right_answer || "")}</span></div></div>`).join("")}</div>` : ""}
+
+    <p class="note">Solo se guardan las respuestas dadas con la sesión iniciada. Estos resultados los ven el alumno y su profesor. <a href="privacidad.html">Privacidad</a></p>`;
+  $("days").value = String(days);
+  $("days").addEventListener("input", e => { days = +e.target.value; load(); });
+  $("out").addEventListener("click", async () => {
+    if (!confirm("¿Cerrar la sesión en este dispositivo?")) return;
+    const s = session(); if (s) { try { await rpc("eslt_logout", { p_token: s.token }); } catch(e){} }
+    try { localStorage.removeItem("eslt_session"); } catch(e){}
+    showLogin();
+  });
+}
+
+load();
+</script>
+</body>
+</html>
