@@ -168,3 +168,11 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - `vercel.json`: los modelos 3D, la música y los sonidos (`.glb`, `.mp3`, `.ogg`…) se guardan 7 días en el navegador del alumno; las imágenes, 1 día. Así la segunda vez los juegos cargan desde el equipo, sin volver a preguntar al servidor por cada archivo.
 - Ojo: si reemplazas una imagen **con el mismo nombre**, los alumnos pueden seguir viendo la anterior hasta 1 día (un modelo o una canción, hasta 7 días). Para que el cambio se vea al tiro, súbela con otro nombre.
 - El código (`.html`, `.js`, `.css`) no cambia: siempre se revisa si hay versión nueva.
+
+## Novedades (10-11-2026): respaldo de datos desde el panel
+- **Botón "💾 Respaldo"** (arriba en el Panel del profe): descarga `respaldo-eslteacher-AAAA-MM-DD.json` con los alumnos (nombre, curso, N° de lista), su progreso de la portada, todos los reportes y todas las respuestas de los juegos.
+- **No incluye claves ni RUT** (ni cifrados): si alguien consiguiera el archivo no podría entrar como un alumno. Si hubiera que restaurar, las claves se regeneran desde `NÓMINAS DE CURSOS.xlsx` y las listas de `eslteacher-PRIVADO`.
+- **Guárdalo en `Documents\Salesianos\eslteacher-PRIVADO`**: tiene nombres de alumnos. No lo subas a GitHub.
+- El botón dice "Respaldo pendiente" (en amarillo) si en ese equipo no se ha descargado uno en 30 días. Conviene hacer uno al mes y otro antes de las vacaciones.
+- Para restaurar desde un respaldo, pídeselo a Claude con el archivo. Base de datos: función `eslt_teacher_backup` (entrega los datos por partes).
+- No cubre Ludo World Tour (proyecto `travel-tycoon-6basico`, datos temporales) ni las cuentas propias de Realms of Knowledge.

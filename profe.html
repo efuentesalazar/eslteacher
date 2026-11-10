@@ -59,6 +59,7 @@ tr:hover td{background:rgba(255,255,255,.04)}
 .pill.new{background:var(--green);color:#fff}
 .pill.old{background:rgba(255,200,0,.2);color:var(--yellow)}
 .pill.red{background:var(--red);color:#fff}
+.btn.due{box-shadow:inset 0 0 0 2px var(--yellow),0 4px 0 rgba(0,0,0,.4);color:var(--yellow)}
 .btn.sm{min-height:34px;padding:4px 12px;font-size:13px;border-radius:10px}
 .acts{display:flex;gap:8px}
 .newpin{font-family:var(--mono);font-size:1.4em;color:var(--yellow);letter-spacing:.12em;margin-left:6px}
@@ -137,6 +138,7 @@ td.q{white-space:normal;min-width:260px;max-width:460px;line-height:1.4}
     <div class="row">
       <button class="btn ghost" id="refresh" type="button">↻ Actualizar</button>
       <button class="btn green" id="export" type="button">⬇ Descargar Excel</button>
+      <button class="btn ghost" id="backup" type="button">💾 Respaldo</button>
       <button class="btn ghost" id="out" type="button">Salir</button>
     </div>
   </header>
@@ -559,6 +561,47 @@ function renderFicha(r, days){
       ${wrong.map(w => `<tr><td>${fmtDate(w.at)}</td><td style="white-space:normal;min-width:120px">${esc(gshort(w.game))}<br><span class="skill">${esc(sname(w.game, w.skill))}</span></td>
         <td class="q">${esc(w.question)}</td><td class="wrapcell">${esc(w.chosen || "—")}</td><td class="wrapcell" style="color:inherit">${esc(w.right_answer || "")}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
 }
+
+/* =====================================================================
+   RESPALDO: descarga todos los datos (alumnos, progreso, reportes y respuestas) en un archivo.
+   No incluye claves ni RUT: esos se regeneran desde la nómina. Guárdalo en tu carpeta privada.
+   ===================================================================== */
+const BK_KEY = "eslt_last_backup";
+function renderBackupBtn(){
+  let last = null; try { last = localStorage.getItem(BK_KEY); } catch(e){}
+  const days = last ? Math.floor((Date.now() - new Date(last)) / 864e5) : null, due = days == null || days >= 30;
+  const b = $("backup"); b.classList.toggle("due", due);
+  b.textContent = due ? "💾 Respaldo pendiente" : "💾 Respaldo";
+  b.title = last ? `Último respaldo desde este equipo: ${new Date(last).toLocaleDateString("es-CL")} (${days === 0 ? "hoy" : "hace " + days + " días"}). Conviene hacer uno al mes.`
+                 : "Aún no has descargado un respaldo desde este equipo. Conviene hacer uno al mes.";
+}
+$("backup").addEventListener("click", async () => {
+  const t = ss.get("eslt_teacher"); if (!t) return;
+  const b = $("backup"); b.disabled = true;
+  const say = txt => { b.textContent = "💾 " + txt; };
+  try {
+    const call = async (part, after) => { const r = await db("eslt_teacher_backup", { p_token: t, p_part: part, p_after: after || 0 }); if (!r.ok) throw new Error(r.error); return r; };
+    const all = async (part, label) => { let rows = [], after = 0;
+      for (;;){ const r = await call(part, after); rows = rows.concat(r.rows); say(`${label}: ${rows.length}`); if (r.next == null) return rows; after = r.next; } };
+    say("Preparando…");
+    const meta = await call("meta");
+    const out = { about: "Respaldo de eslteacher.cl (esquema eslt). No incluye claves ni RUT de los alumnos: se regeneran desde la nómina.",
+      version: 1, created: meta.created, counts: { students: meta.students, progress: meta.progress, reports: meta.reports, answers: meta.answers } };
+    out.students = (await call("students")).rows; say(`Alumnos: ${out.students.length}`);
+    out.progress = (await call("progress")).rows;
+    out.reports = await all("reports", "Reportes");
+    out.answers = await all("answers", "Respuestas");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: "application/json" }));
+    a.download = `respaldo-eslteacher-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    try { localStorage.setItem(BK_KEY, new Date().toISOString()); } catch(e){}
+    alert(`Respaldo descargado: ${out.students.length} alumnos, ${out.reports.length} reportes y ${out.answers.length} respuestas.\n\nGuárdalo en tu carpeta privada (eslteacher-PRIVADO): tiene nombres de alumnos. No lo subas a GitHub ni lo compartas.`);
+  } catch(err){
+    if (err.message === "session") expired(); else alert("No se pudo completar el respaldo. Revisa tu internet e inténtalo otra vez.");
+  } finally { b.disabled = false; renderBackupBtn(); }
+});
+renderBackupBtn();
 
 if (ss.get("eslt_teacher")) load();
 </script>
