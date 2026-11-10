@@ -79,6 +79,7 @@ select option{background:var(--card)}
 <div class="wrap" id="app"><div class="box center"><p>Cargando…</p></div></div>
 
 <script src="assets/js/eslt-games.js"></script>
+<script src="assets/js/eslt-curriculo.js"></script>
 <script>
 /* MI AVANCE: el alumno (o su apoderado, con la clave del alumno) ve sus propios resultados. Solo lectura.
    Datos: función eslt_my_progress de la base de datos. Nombres de juegos y habilidades: assets/js/eslt-games.js */
@@ -161,6 +162,10 @@ function render(r){
         <div><h3>🌟 Lo que mejor te sale</h3>${strong.length ? strong.map(chip).join("") : `<span class="note">Sigue jugando: pronto aparecerán aquí tus fortalezas.</span>`}</div>
         <div><h3>🎯 Para practicar más</h3>${weak.length ? weak.map(chip).join("") : `<span class="note">¡Bien! No tienes habilidades bajo 50%.</span>`}</div>
       </div></div>
+
+    ${window.ESLT_CURR ? `<div class="box"><h2>Mi perfil de aprendizaje</h2>
+      <p class="sub">Cómo te va en cada habilidad y en los objetivos del programa de inglés de tu curso, juntando todos los juegos.</p>
+      ${ESLT_CURR.perfilHTML(ESLT_CURR.perfil(ESLT_CURR.rowsFromGames(games), st.section), { gname: gshort })}</div>` : ""}
 
     <div class="box"><h2>Por juego</h2>
       <p class="sub">Porcentaje correcto al primer intento. <span class="chip lv0">A practicar: menos de 50%</span><span class="chip lv1">Vas bien: 50 a 74%</span><span class="chip lv2">¡Lo dominas!: 75% o más</span></p>

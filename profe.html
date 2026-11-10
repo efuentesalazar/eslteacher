@@ -158,6 +158,7 @@ td.q{white-space:normal;min-width:260px;max-width:460px;line-height:1.4}
     <button class="tab on" data-v="students" type="button">Alumnos (lo más reciente)</button>
     <button class="tab" data-v="history" type="button">Historial de reportes</button>
     <button class="tab" data-v="analysis" type="button">📊 Análisis de juegos</button>
+    <button class="tab" data-v="curr" type="button">🎯 Currículum</button>
     <button class="tab" data-v="keys" type="button">🔑 Claves y bloqueos</button>
   </div>
   <div class="box hidden" id="pinbox" aria-live="polite"></div>
@@ -170,6 +171,7 @@ td.q{white-space:normal;min-width:260px;max-width:460px;line-height:1.4}
 <div id="ficha" class="hidden" role="dialog" aria-modal="true" aria-label="Ficha del alumno"><div class="in" id="ficha-body"></div></div>
 
 <script src="assets/js/eslt-games.js"></script>
+<script src="assets/js/eslt-curriculo.js"></script>
 <script>
 const DB_URL = "https://tlihbmgokuhvppbchvrz.supabase.co";
 const DB_KEY = "sb_publishable_nGgOCuUUuXKK7gx957LYhg_Jf2V4TJC";
@@ -209,21 +211,23 @@ async function load(){
     data = r; if (r.year) addYears(r.year); $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); render();
   } catch(err){ alert("No se pudieron cargar los datos. Revisa tu internet."); }
 }
-$("refresh").addEventListener("click", () => view === "analysis" ? loadAnalysis() : view === "keys" ? load().then(loadLocks) : load());
+$("refresh").addEventListener("click", () => view === "analysis" ? loadAnalysis() : view === "curr" ? loadCurr() : view === "keys" ? load().then(loadLocks) : load());
 
 /* Filtros y vistas */
 $("f-sec").innerHTML += SECTIONS.map(s => `<option>${s}</option>`).join("");
-["f-q","f-only"].forEach(id => $(id).addEventListener("input", () => view === "analysis" ? renderAnalysis() : render()));
-["f-sec","f-game","f-days"].forEach(id => $(id).addEventListener("input", () => view === "analysis" ? loadAnalysis() : render()));
+["f-q","f-only"].forEach(id => $(id).addEventListener("input", () => view === "analysis" ? renderAnalysis() : view === "curr" ? renderCurr() : render()));
+["f-sec","f-game","f-days"].forEach(id => $(id).addEventListener("input", () => view === "analysis" ? loadAnalysis() : view === "curr" ? loadCurr() : render()));
 document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
   view = b.dataset.v; sortKey = null; document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
-  const isAn = view === "analysis";
-  ["f-game","f-days","analysis"].forEach(id => $(id).classList.toggle("hidden", !isAn));
+  const isAn = view === "analysis", isCurr = view === "curr";
+  $("f-game").classList.toggle("hidden", !isAn);
+  ["f-days","analysis"].forEach(id => $(id).classList.toggle("hidden", !(isAn || isCurr)));
   const isKeys = view === "keys";
-  [$("tbl").parentElement, $("foot")].forEach(el => el.classList.toggle("hidden", isAn));
-  [$("cards"), $("only-wrap")].forEach(el => el.classList.toggle("hidden", isAn || isKeys));
-  $("export").classList.toggle("hidden", isKeys); $("pinbox").classList.add("hidden");
+  [$("tbl").parentElement, $("foot")].forEach(el => el.classList.toggle("hidden", isAn || isCurr));
+  [$("cards"), $("only-wrap")].forEach(el => el.classList.toggle("hidden", isAn || isKeys || isCurr));
+  $("export").classList.toggle("hidden", isKeys || isCurr); $("pinbox").classList.add("hidden");
   if (isKeys) return loadLocks();
+  if (isCurr) return loadCurr();
   if (isAn) loadAnalysis(); else render();
 }));
 
@@ -518,6 +522,9 @@ function renderFicha(r, days){
         : `<p class="sub">Habilidades con al menos 5 preguntas respondidas, medidas al primer intento.</p>
            <div class="kv"><div><b>🌟 Fortalezas</b>${strong.length ? strong.map(x => chip(x, 1)).join("") : "Aún sin datos suficientes"}</div>
            <div><b>🔁 Necesita apoyo</b>${weak.length ? weak.map(x => chip(x, 1)).join("") : "Ninguna habilidad bajo 50%"}</div></div>`}</div>
+    ${total && window.ESLT_CURR ? `<div class="box"><h2>Perfil de aprendizaje según el programa de estudio</h2>
+      <p class="sub">Visión global: cómo le va en cada habilidad y en los Objetivos de Aprendizaje de su curso, con la evidencia de todos los juegos y de la portada.</p>
+      ${ESLT_CURR.perfilHTML(ESLT_CURR.perfil(ESLT_CURR.rowsFromGames(games), s.section), { gname: gshort })}</div>` : ""}
     ${games.length ? `<div class="box"><h2>Por juego</h2><p class="sub">Logro al primer intento por habilidad. Necesita apoyo: menos de 50% · En proceso: 50–74% · Logrado: 75% o más.</p>
       <div class="table"><table><thead><tr><th>Juego</th><th>Respuestas</th><th>Días</th><th>Última vez</th><th>Habilidades (primer intento)</th></tr></thead><tbody>
       ${games.map(g => `<tr><td style="white-space:normal;min-width:170px">${esc(gname(g.game))}</td><td class="num">${g.total}</td><td class="num">${g.days}</td><td>${ago(g.last)}</td>
@@ -574,6 +581,66 @@ $("backup").addEventListener("click", async () => {
   } finally { b.disabled = false; renderBackupBtn(); }
 });
 renderBackupBtn();
+
+/* =====================================================================
+   CURRÍCULUM: logro de los Objetivos de Aprendizaje del programa de estudio, por curso.
+   Junta la evidencia de todos los juegos y de la portada. La relación juego → OA está en assets/js/eslt-curriculo.js
+   ===================================================================== */
+let curr = null;
+async function loadCurr(){
+  const t = ss.get("eslt_teacher"); if (!t) return;
+  const sec = $("f-sec").value;
+  if (!sec){ curr = null; $("analysis").innerHTML = `<div class="box"><h2>Elige un curso</h2><p class="sub" style="margin:0">Selecciona un curso arriba para ver el logro de los Objetivos de Aprendizaje de su programa de estudio.</p></div>`; return; }
+  $("analysis").innerHTML = `<div class="box empty">Cargando currículum…</div>`;
+  const req = loadCurr.n = (loadCurr.n || 0) + 1;
+  try {
+    const r = await db("eslt_teacher_curriculum", { p_token: t, p_section: sec, p_days: period().days, p_year: period().year });
+    if (req !== loadCurr.n) return;
+    if (!r.ok) return expired();
+    curr = r; renderCurr();
+  } catch(err){ $("analysis").innerHTML = `<div class="box empty">No se pudo cargar. Revisa tu internet y presiona ↻ Actualizar.</div>`; }
+}
+function renderCurr(){
+  if (!curr || view !== "curr") return;
+  const C = window.ESLT_CURR, sec = curr.section, q = $("f-q").value.trim().toLowerCase();
+  const gshort = id => ((GAMES[id] || {}).name || id).split(" · ")[0].split(":")[0].split(" (")[0];
+  const all = curr.students.map(s => ({ s, p: C.perfil(s.rows || [], sec) }));
+  const withData = all.filter(x => (x.s.rows || []).length);
+  const G = C.perfil(curr.students.flatMap(s => s.rows || []), sec);          // el curso completo
+  const oasG = G.ejes.flatMap(e => e.oas), totG = oasG.length;
+  const dist = {};                                                             // cuántos alumnos en cada nivel, por OA
+  all.forEach(x => x.p.ejes.forEach(e => e.oas.forEach(o => { const d = dist[o.n] = dist[o.n] || { lv2: 0, lv1: 0, lv0: 0, few: 0, none: 0 }; d[o.estado]++; })));
+  const sumHab = G.habilidades.reduce((a, h) => [a[0] + h.ok, a[1] + h.t], [0, 0]);
+  if (!G.level){ $("analysis").innerHTML = `<div class="box empty">No hay un programa de estudio cargado para ${esc(sec)}.</div>`; return; }
+  const cols = oasG.filter(o => o.t > 0);                                      // en el mapa solo los OA con alguna evidencia
+  const P = x => { const t = x.p.habilidades.reduce((a, h) => [a[0] + h.ok, a[1] + h.t], [0, 0]); return pct(t[0], t[1]); };
+  const rowsH = all.filter(x => !q || x.s.name.toLowerCase().includes(q)).sort((a, b) => (P(a) ?? 999) - (P(b) ?? 999) || (a.s.n ?? 99) - (b.s.n ?? 99));
+  const cell = o => { const cls = o.estado === "few" ? lv(o.p) + " few" : o.estado === "none" ? "lvn" : o.estado;
+    return `<td class="c ${cls}" title="${o.t ? `${o.ok} de ${o.t} correctas · ${C.ESTADOS[o.estado]}` : "Sin evidencia"}">${o.t ? o.p + "%" : "—"}</td>`; };
+  $("analysis").innerHTML = `
+    <div class="cards" style="margin:0">
+      <div class="card"><b>${withData.length}<span style="font-size:16px;color:var(--mut)">/${all.length}</span></b><span>Alumnos de ${esc(sec)} con evidencia</span></div>
+      <div class="card"><b>${oasG.filter(o => o.t >= C.MIN).length}<span style="font-size:16px;color:var(--mut)">/${totG}</span></b><span>Objetivos de Aprendizaje con evidencia en los juegos</span></div>
+      <div class="card"><b>${pct(sumHab[0], sumHab[1]) ?? "—"}${sumHab[1] ? "%" : ""}</b><span>Logro del curso al primer intento (${sumHab[1]} preguntas)</span></div>
+      <div class="card"><b>${oasG.filter(o => o.estado === "lv0").length}</b><span>Objetivos por lograr a nivel de curso (menos de 50%)</span></div>
+    </div>
+    <div class="box"><h2>Habilidades del curso</h2><p class="sub">Todas las respuestas de ${esc(sec)} en los juegos y en la portada, al primer intento.</p>${C.habHTML(G)}</div>
+    <div class="box"><h2>Objetivos de Aprendizaje · ${esc(G.levelName)}</h2>
+      <p class="sub">Programa de estudio de inglés. Para cada objetivo: el logro del curso y cuántos alumnos están en cada nivel. Logrado: 75% o más · En proceso: 50–74% · Por lograr: menos de 50% (con al menos ${C.MIN} preguntas).</p>
+      <div class="table"><table><thead><tr><th>OA</th><th>Objetivo</th><th>Logro del curso</th><th>Logrado</th><th>En proceso</th><th>Por lograr</th><th>Sin evidencia suficiente</th></tr></thead><tbody>
+      ${G.ejes.map(e => `<tr><td colspan="7" style="background:rgba(255,255,255,.05);font-weight:600">${esc(e.name)}</td></tr>` + e.oas.map(o => { const d = dist[o.n] || {};
+        return `<tr class="${o.t ? "" : "none"}"><td><b>${o.code}</b></td><td class="q">${esc(o.text)}${o.t ? `<br><span style="color:var(--mut);font-size:12px">${o.juegos.map(g => esc(gshort(g))).join(", ")}</span>` : ""}</td>
+          <td>${o.t ? `<div class="meter"><b>${o.p}%</b><div class="bar"><i style="width:${o.p}%"></i></div></div>` : `<span style="color:var(--mut)">Sin evidencia en los juegos</span>`}</td>
+          <td class="num">${d.lv2 || 0}</td><td class="num">${d.lv1 || 0}</td><td class="num">${d.lv0 || 0}</td><td class="num">${(d.few || 0) + (d.none || 0)}</td></tr>`; }).join("")).join("")}</tbody></table></div></div>
+    <div class="box"><h2>Logro por alumno y objetivo</h2>
+      <p class="sub">Solo los objetivos con alguna evidencia. Primero aparecen quienes más apoyo necesitan; las celdas atenuadas tienen menos de ${C.MIN} preguntas. Haz clic en un nombre para ver su perfil completo.</p>
+      <div class="legend"><span style="--c:#6a2130">Por lograr</span><span style="--c:#5e4c10">En proceso</span><span style="--c:#22521c">Logrado</span></div>
+      ${cols.length ? `<div class="table"><table><thead><tr><th>N°</th><th>Alumno</th><th>Logro total</th>${cols.map(o => `<th title="${esc(o.text)}">${o.code}</th>`).join("")}</tr></thead><tbody>
+        ${rowsH.map(x => { const by = {}; x.p.ejes.forEach(e => e.oas.forEach(o => by[o.n] = o)); const p = P(x);
+          return `<tr class="${p == null ? "none" : ""}"><td class="num">${x.s.n ?? ""}</td><td>${stuLink(x.s)}</td><td class="c ${p == null ? "lvn" : lv(p)}">${p == null ? "—" : p + "%"}</td>${cols.map(o => cell(by[o.n])).join("")}</tr>`; }).join("")}</tbody></table></div>`
+        : `<div class="empty">Aún no hay respuestas de este curso en el período.</div>`}</div>
+    <div class="box"><p class="sub" style="margin:0">Esto es la evidencia que entregan los juegos y la portada: cubren solo una parte de cada objetivo y casi nada de expresión oral y escrita, que se evalúan en clases. La relación entre cada juego y los objetivos es una propuesta que puedes ajustar (archivo <code>assets/js/eslt-curriculo.js</code>).</p></div>`;
+}
 
 if (ss.get("eslt_teacher")) load();
 </script>

@@ -194,3 +194,14 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - Se llega desde **Mi perfil → "📈 Mi avance · My progress"** en la portada, o directo con el enlace. Sin sesión, la página ofrece el formulario de ingreso.
 - Muestra solo el año en curso. Base de datos: función `eslt_my_progress` (devuelve únicamente los datos del alumno dueño de la sesión).
 - **Lista de juegos compartida**: `GAMES` (juegos y nombres de habilidades) se movió de `profe.html` a **`assets/js/eslt-games.js`**, que usan el panel y "Mi avance". **Para agregar un juego nuevo al panel, edita ese archivo** (ya no `profe.html`).
+
+## Novedades (10-11-2026): programas de estudio y perfil de aprendizaje
+- Los **Objetivos de Aprendizaje (OA)** de los seis programas de estudio de inglés (5° y 6° básico, 7° y 8° básico, 1° medio y 3° medio) están en **`assets/js/eslt-curriculo.js`**, por eje y con un enunciado resumido. Los originales están en `Documents\Salesianos\Salesianos 2026\Programas de estudio`.
+- **Perfil de aprendizaje del alumno** (en su ficha del panel y en "Mi avance"): junta la evidencia de todos los juegos y de la portada y muestra
+  - seis **habilidades** generales (comprensión auditiva, comprensión de lectura, vocabulario, gramática y uso del lenguaje, escritura de palabras y oraciones, expresión oral);
+  - los **OA de su curso**, por eje, cada uno como Logrado (75% o más), En proceso (50–74%), Por lograr (menos de 50%), Evidencia insuficiente (menos de 5 preguntas) o Sin evidencia en los juegos.
+- **Panel → pestaña "🎯 Currículum"**: elige un curso y un período. Muestra las habilidades del curso, cada OA con el logro del curso y cuántos alumnos hay en cada nivel, y un mapa alumno × OA. Clic en un nombre abre su perfil.
+- **Cómo se relaciona cada juego con los OA**: cada habilidad de cada juego tiene un "tipo de evidencia" (`TIPOS` en el archivo) y cada tipo aporta a uno o más OA según el ciclo (`TIPO_A_OA`). **Esa relación es una propuesta, no viene en los programas: revísala y ajústala** editando esas dos listas. Se usa el curso del alumno, no el del juego.
+- **Límites**: los juegos entregan evidencia de una parte de cada OA (sobre todo lectura, vocabulario y gramática) y casi nada de expresión oral y escrita, ni de estrategias o actitudes. Esos objetivos aparecen "sin evidencia" y se evalúan en clases.
+- **Al agregar un juego**: suma sus habilidades en `TIPOS` (además de `eslt-games.js`).
+- Base de datos: función `eslt_teacher_curriculum`.
