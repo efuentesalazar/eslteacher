@@ -5,22 +5,26 @@
 const COURSES = [
   { id:"5basico", num:"5°", level:"Básico", folder:"5° BASICO", icon:"☀️",
     games:[
+      { title:"Runeward", desc:"Pixel-art action RPG! Fight monsters, gather wood and stone, craft better gear and build your keep. Open Rune Locks with English, read Lore Stones and defeat six Word Guardians.", icon:"🛡️", unit:"Adventure", file:"../8° BASICO/Runeward/index.html?g=5b", shot:"runeward", isNew:true },
       { title:"Weather Heroes", desc:"3D adventure! Fix the Weather Machine, wear the right clothes and play online with your class.", icon:"🌈", unit:"Unit 4", file:"Weather_Heroes/index.html", shot:"weather-heroes", isNew:true },
       { title:"Weather Worlds", desc:"Explore the worlds and learn weather words.", icon:"🌦️", unit:"Unit 4", file:"Game_Weather_Worlds_Unit4.html", shot:"weather-worlds", isNew:true }
     ]},
   { id:"6basico", num:"6°", level:"Básico", folder:"6° BASICO", icon:"✈️",
     games:[
+      { title:"Runeward", desc:"Pixel-art action RPG! Fight monsters, gather wood and stone, craft better gear and build your keep. Open Rune Locks with English, read Lore Stones and defeat six Word Guardians.", icon:"🛡️", unit:"Adventure", file:"../8° BASICO/Runeward/index.html?g=6b", shot:"runeward", isNew:true },
       { title:"Past Quest", desc:"3D adventure! Use the past simple to get the village's memories back. Story mode and online mode.", icon:"🧭", unit:"Past simple", file:"Past_Quest/index.html", shot:"past-quest", isNew:true },
       { title:"Let's Travel City", desc:"Travel around the city and describe places.", icon:"🏙️", unit:"Unit 4", file:"Lets_Travel_City.html", shot:"lets-travel-city", isNew:true },
       { title:"Ludo World Tour", desc:"3D Ludo online! Answer in English to roll the dice.", icon:"🎲", unit:"Unit 4", file:"Ludo_World_Tour/index.html", shot:"ludo-world-tour", isNew:true }
     ]},
   { id:"7basico", num:"7°", level:"Básico", folder:"7° BASICO", icon:"🌱",
     games:[
+      { title:"Runeward", desc:"Pixel-art action RPG! Fight monsters, gather wood and stone, craft better gear and build your keep. Open Rune Locks with English, read Lore Stones and defeat six Word Guardians.", icon:"🛡️", unit:"Adventure", file:"../8° BASICO/Runeward/index.html?g=7b", shot:"runeward", isNew:true },
       { title:"Green Quest", desc:"Open-world 3D adventure! Explore Eco Island, help 10 people on the roads and defeat Captain Smog: A2 readings, should / must / have to and the zero conditional. Story mode and online mode.", icon:"🌳", unit:"Unit 4", file:"Green_Quest/index.html", shot:"green-quest", isNew:true },
       { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }
     ]},
   { id:"8basico", num:"8°", level:"Básico", folder:"8° BASICO", icon:"🌍",
     games:[
+      { title:"Runeward", desc:"Pixel-art action RPG! Fight monsters, gather wood and stone, craft better gear and build your keep. Open Rune Locks with English, read Lore Stones and defeat six Word Guardians.", icon:"🛡️", unit:"Adventure", file:"Runeward/index.html?g=8b", shot:"runeward", isNew:true },
       { title:"Wordbound", desc:"3D open-world RPG! Explore five realms, meet elves, dwarves, orcs and friendly skeletons, and complete 40 missions: talk, listen, read and follow directions in English. Equip armour and weapons, fight monsters and bring back the Crown of Words.", icon:"⚔️", unit:"Adventure", file:"Wordbound/index.html", shot:"wordbound", isNew:true },
       { title:"Mission 2050", desc:"Cooperative 3D open world! Create a team with a code, explore Skyport 2050 together and defeat GLITCH: B1 readings, future will, first conditional and vocabulary in context. Team or solo.", icon:"🤖", unit:"Unit 4", file:"Mission_2050/index.html", shot:"mission-2050", isNew:true },
       { title:"Future Worlds", desc:"Explore Neo City, Green Valley and Fossil Valley!", icon:"🚀", file:"Future_Worlds.html", shot:"future-worlds", isNew:true },
@@ -28,6 +32,7 @@ const COURSES = [
     ]},
   { id:"1medio", num:"1°", level:"Medio", folder:"1° MEDIO", icon:"🎉",
     games:[
+      { title:"Runeward", desc:"Pixel-art action RPG! Fight monsters, gather wood and stone, craft better gear and build your keep. Open Rune Locks with English, read Lore Stones and defeat six Word Guardians.", icon:"🛡️", unit:"Adventure", file:"../8° BASICO/Runeward/index.html?g=1m", shot:"runeward", isNew:true },
       { title:"Festival Quest", desc:"3D open world! Bring back the 5 festival lanterns and help 10 festival friends on the roads: B1 readings, vocabulary, language in use and question tags. Story mode and online mode.", icon:"🏮", unit:"Unit 4", file:"Festival_Quest/index.html", shot:"festival-quest", isNew:true },
       { title:"Festival Worlds", desc:"Discover festivals around the world.", icon:"🎪", unit:"Unit 4", file:"Mundo_Unit4_Festival_Worlds.html", shot:"festival-worlds" },
       { title:"Festival Worlds 2", desc:"More festivals, more challenges!", icon:"🎆", unit:"Unit 4", file:"Festival_Worlds_2.html", shot:"festival-worlds-2", isNew:true },
@@ -36,6 +41,7 @@ const COURSES = [
     ]},
   { id:"3medio", num:"3°", level:"Medio", folder:"3° MEDIO", icon:"💬",
     games:[
+      { title:"Runeward", desc:"Pixel-art action RPG! Fight monsters, gather wood and stone, craft better gear and build your keep. Open Rune Locks with English, read Lore Stones and defeat six Word Guardians.", icon:"🛡️", unit:"Adventure", file:"../8° BASICO/Runeward/index.html?g=3m", shot:"runeward", isNew:true },
       { title:"Hype Horde", desc:"3D survivor! Survive HYPE's army of fake likes in the Atacama clothing desert. Answer Unit 4 vocabulary to level up, collect cube pets and evolve them.", icon:"🐣", unit:"Unit 4", file:"Hype_Horde/index.html", shot:"hype-horde", isNew:true },
       { title:"Trend City", desc:"3D open world! Investigate HYPE, the AI that controls the trends: social media, fast fashion, labour laws and the Atacama clothing mountains. B1 readings, FCE-style vocabulary, language in use and word formation, 12 side missions. Story mode and online mode.", icon:"📰", unit:"Unit 4", file:"Trend_City/index.html", shot:"trend-city", isNew:true },
       { title:"TikTok vs. Vine", desc:"Compare social media apps and share your opinions in English.", icon:"📱", unit:"Unit 4", file:"Mundo_Unit4_TikTok_vs_Vine.html", shot:"tiktok-vs-vine", isNew:true },

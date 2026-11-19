@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Runeward: The Silent Realm</title>
+<meta name="description" content="Pixel-art action RPG in English: fight, gather, craft and build your keep. Content from 5° básico to 3° medio.">
+<link rel="icon" href="assets/items/scroll.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family: Pixel; src: url(assets/ui/font.ttf); }
+:root { --wood: #3b2416; --wood2: #5a3720; --edge: #d9a55a; --parch: #f6e7c4; --ink: #3a2516; --ok: #58b030; --no: #d9483b; --gold: #ffd35a; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: #1a120c; overflow: hidden; font-family: Lexend, system-ui, sans-serif; color: var(--parch); user-select: none; -webkit-user-select: none; touch-action: none; }
+canvas#cv { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; image-rendering: pixelated; }
+.hidden { display: none !important; }
+.px { font-family: Pixel, monospace; letter-spacing: .5px; }
+button, .px, .toast, .panel h2, .panel h3, .qreason, .tag, .slot, #prompt, #mats, .nm, kbd, .passage h4, .logo, .sub, .bar span, #buff, #quest b { word-spacing: .4em; }
+button { font-family: Pixel, monospace; font-size: 15px; cursor: pointer; border: 3px solid var(--edge); background: var(--wood2); color: var(--parch); border-radius: 8px; padding: 8px 14px; box-shadow: 0 3px 0 #1c0f08; touch-action: manipulation; }
+button:hover:not(:disabled) { filter: brightness(1.15); }
+button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #1c0f08; }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: #2f6a2a; border-color: #9be36d; }
+button.small { font-size: 12px; padding: 4px 9px; border-width: 2px; }
+
+/* ---------- HUD ---------- */
+#hud { position: fixed; inset: 0; pointer-events: none; }
+#hud > * { pointer-events: auto; }
+.box { background: rgba(43, 26, 15, .86); border: 3px solid var(--edge); border-radius: 10px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+#hpbox { position: absolute; left: 10px; top: 10px; display: flex; gap: 8px; align-items: center; padding: 6px 10px 6px 6px; }
+#hpbox img { width: 48px; height: 48px; image-rendering: pixelated; border: 2px solid var(--edge); border-radius: 6px; background: #6e4a2c; }
+.bar { width: 170px; height: 14px; background: #241109; border: 2px solid #12080366; border-radius: 6px; overflow: hidden; position: relative; }
+.bar i { display: block; height: 100%; background: linear-gradient(#ff6a5c, #c62b2b); width: 50%; transition: width .2s; }
+.bar.xp i { background: linear-gradient(#8fd3ff, #3d8fd6); }
+.bar span { position: absolute; inset: 0; font: 11px Pixel, monospace; text-align: center; line-height: 12px; color: #fff; text-shadow: 1px 1px 0 #000; }
+#lvl { font-size: 13px; }
+#topc { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); padding: 5px 12px; text-align: center; }
+#zoneName { font-size: 14px; color: var(--gold); }
+#runes { display: flex; gap: 4px; justify-content: center; margin-top: 3px; }
+#runes b { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #8a6a3a; background: #2a1a0e; display: inline-block; }
+#runes b.on { background: radial-gradient(#fff6b0, #ffb62e); border-color: #fff1a8; box-shadow: 0 0 8px #ffcf4a; }
+#clock { font-size: 11px; opacity: .85; margin-top: 2px; }
+#right { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+#mini { width: 150px; height: 150px; image-rendering: pixelated; border: 3px solid var(--edge); border-radius: 8px; background: #000; cursor: pointer; }
+#goldbox { padding: 4px 10px; font-size: 14px; display: flex; gap: 6px; align-items: center; }
+#goldbox img, .ic { width: 20px; height: 20px; image-rendering: pixelated; vertical-align: middle; }
+#menuBtns { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; max-width: 260px; }
+#menuBtns button { font-size: 12px; padding: 5px 8px; }
+#quest { position: absolute; left: 10px; top: 86px; max-width: 290px; padding: 8px 10px; font-size: 13px; line-height: 1.35; }
+#quest b { font-family: Pixel; color: var(--gold); font-weight: normal; display: block; font-size: 12px; }
+#mats { position: absolute; left: 10px; bottom: 10px; padding: 6px 8px; display: flex; gap: 8px; flex-wrap: wrap; max-width: 360px; font: 13px Pixel, monospace; }
+#mats span { display: flex; align-items: center; gap: 3px; }
+#hot { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 8px; }
+.slot { position: relative; width: 56px; height: 56px; display: grid; place-items: center; }
+.slot img { width: 34px; height: 34px; image-rendering: pixelated; }
+.slot small { position: absolute; right: 4px; bottom: 2px; font: 12px Pixel; text-shadow: 1px 1px 0 #000; }
+.slot em { position: absolute; left: 4px; top: 1px; font: 10px Pixel; font-style: normal; opacity: .8; }
+.slot .cd { position: absolute; inset: 0; background: rgba(0,0,0,.6); border-radius: 7px; transform-origin: bottom; }
+#buff { position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%); font: 13px Pixel; color: #ffe27a; text-shadow: 0 0 6px #f90, 1px 1px 0 #000; }
+#prompt { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); padding: 6px 12px; font: 14px Pixel; }
+#bossbar { position: absolute; left: 50%; bottom: 122px; transform: translateX(-50%); width: min(520px, 70vw); padding: 6px 10px; text-align: center; }
+#bossbar .bar { width: 100%; height: 16px; margin-top: 4px; }
+#bossbar .bar i { background: linear-gradient(#c56cff, #6b2bb5); }
+#bossbar.shield .bar i { background: linear-gradient(#fff3a0, #e0a020); }
+#toasts { position: fixed; left: 50%; top: 30%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; z-index: 30; }
+.toast { background: rgba(30, 18, 10, .9); border: 2px solid var(--edge); border-radius: 8px; padding: 7px 14px; font: 15px Pixel; color: #fff; animation: tin .25s ease-out; text-align: center; max-width: 80vw; }
+.toast.big { font-size: 22px; color: var(--gold); padding: 12px 22px; }
+@keyframes tin { from { transform: translateY(10px); opacity: 0; } }
+
+/* ---------- Panels / modals ---------- */
+#modal { position: fixed; inset: 0; background: rgba(10, 6, 3, .62); display: grid; place-items: center; z-index: 20; padding: 12px; }
+.panel { background: var(--parch); color: var(--ink); border: 4px solid var(--edge); outline: 4px solid var(--wood); border-radius: 12px; width: min(760px, 96vw); max-height: 92vh; overflow: auto; padding: 18px 20px; box-shadow: 0 10px 40px #000a; touch-action: pan-y; }
+.panel h2 { font-family: Pixel; font-weight: normal; margin: 0 0 10px; font-size: 24px; color: #6a3a14; }
+.panel h3 { font-family: Pixel; font-weight: normal; margin: 14px 0 6px; color: #6a3a14; }
+.panel p { line-height: 1.5; margin: 6px 0; }
+.panel .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.panel .close { float: right; }
+.panel button { background: #6b4226; }
+.panel button.primary { background: #2f6a2a; }
+.tag { display: inline-block; font: 12px Pixel; background: #6b4226; color: var(--parch); border-radius: 6px; padding: 2px 8px; }
+.list { display: grid; gap: 8px; margin-top: 8px; }
+.item { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; background: #ead6aa; border: 2px solid #c79a55; border-radius: 9px; padding: 7px 10px; }
+.item img { width: 36px; height: 36px; image-rendering: pixelated; }
+.item .nm { font-weight: 600; }
+.item .ds { font-size: 13px; opacity: .85; }
+.cost { font-size: 13px; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 3px; }
+.cost span { display: inline-flex; gap: 3px; align-items: center; }
+.cost .lack { color: #b3261e; font-weight: 600; }
+/* quiz */
+.qhead { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 6px; }
+.qreason { font: 15px Pixel; color: #7a3b0c; }
+.passage { background: #fffaf0; border: 2px dashed #c79a55; border-radius: 10px; padding: 12px 14px; font-size: 16px; line-height: 1.6; margin: 8px 0; max-height: 34vh; overflow: auto; }
+.passage h4 { margin: 0 0 6px; font-family: Pixel; font-weight: normal; color: #6a3a14; font-size: 16px; }
+.qtext { font-size: 20px; font-weight: 600; margin: 10px 0 12px; line-height: 1.4; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.opts button, .words button { word-spacing: normal; }
+.opts button { font-family: Lexend, sans-serif; font-size: 17px; text-align: left; background: #fff4dc; color: var(--ink); border-color: #c79a55; padding: 12px 14px; box-shadow: 0 3px 0 #b88a48; }
+.opts button kbd { font: 12px Pixel; background: #6b4226; color: #fff; border-radius: 4px; padding: 1px 6px; margin-right: 8px; }
+.opts button.ok { background: #c9f2b4; border-color: var(--ok); }
+.opts button.no { background: #ffd0c9; border-color: var(--no); }
+.words { display: flex; flex-wrap: wrap; gap: 8px; min-height: 48px; padding: 8px; border-radius: 10px; }
+.words.built { background: #fffaf0; border: 2px solid #c79a55; }
+.words button { font-family: Lexend; font-size: 17px; background: #fff4dc; color: var(--ink); border-color: #c79a55; box-shadow: 0 3px 0 #b88a48; padding: 7px 12px; }
+.fb { margin-top: 12px; padding: 10px 12px; border-radius: 10px; font-size: 16px; line-height: 1.45; }
+.fb.ok { background: #d8f5c8; border: 2px solid var(--ok); }
+.fb.no { background: #ffe0da; border: 2px solid var(--no); }
+.listen { font-size: 18px; padding: 10px 16px; }
+.dots { display: flex; gap: 5px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; background: #d6bd8a; display: inline-block; }
+.dots i.ok { background: var(--ok); } .dots i.no { background: var(--no); } .dots i.cur { background: #6b4226; }
+/* dialog */
+#dialog { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(720px, 96vw); display: flex; gap: 12px; padding: 12px; z-index: 15; align-items: flex-start; }
+#dialog img { width: 76px; height: 76px; image-rendering: pixelated; border: 3px solid var(--edge); border-radius: 8px; background: #6e4a2c; flex: none; }
+#dialog .nm { font: 15px Pixel; color: var(--gold); }
+#dialog .tx { font-size: 17px; line-height: 1.45; margin-top: 4px; min-height: 50px; }
+#dialog .nx { text-align: right; margin-top: 6px; }
+/* title */
+#title { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; background: radial-gradient(ellipse at center, rgba(20,12,6,.35), rgba(10,6,3,.85)); padding: 12px; overflow: auto; }
+.logo { font-family: Pixel; font-size: clamp(42px, 9vw, 92px); color: var(--gold); text-shadow: 0 5px 0 #7a3b0c, 0 0 30px #ff9a2a88; text-align: center; line-height: 1; }
+.sub { font-family: Pixel; text-align: center; font-size: clamp(14px, 2.4vw, 20px); color: #f6e7c4; margin: 10px 0 22px; }
+.tbtns { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.tbtns button { min-width: 240px; font-size: 18px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.card { background: #ead6aa; border: 3px solid #c79a55; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; }
+.card.sel { border-color: #2f6a2a; background: #d5efc0; box-shadow: 0 0 0 3px #9be36d; }
+.card canvas { width: 64px; height: 64px; image-rendering: pixelated; }
+.card .nm { font: 17px Pixel; color: #6a3a14; }
+.card p { font-size: 13px; margin: 4px 0 0; }
+.skins { display: flex; gap: 6px; justify-content: center; margin-top: 6px; }
+.skins canvas { width: 36px; height: 36px; border: 2px solid transparent; border-radius: 6px; cursor: pointer; background: #f6e7c4; }
+.skins canvas.sel { border-color: #2f6a2a; }
+select { font: 16px Lexend; padding: 8px; border-radius: 8px; border: 2px solid #c79a55; background: #fff4dc; color: var(--ink); max-width: 100%; }
+.stat { display: grid; grid-template-columns: 170px 1fr 70px; gap: 8px; align-items: center; margin: 5px 0; font-size: 14px; }
+.stat .bar { width: 100%; background: #d6bd8a; border-color: #c79a55; }
+.stat .bar i { background: linear-gradient(#8fe36d, #3f9a2a); }
+.mapwrap { display: grid; place-items: center; }
+#bigmap { width: min(560px, 86vw, 62vh); height: auto; aspect-ratio: 1; image-rendering: pixelated; border: 3px solid #6b4226; border-radius: 8px; background: #000; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; justify-content: center; margin-top: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+/* touch */
+#touch { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+#stick { position: absolute; left: 24px; bottom: 24px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.12); border: 3px solid rgba(255,255,255,.3); pointer-events: auto; }
+#knob { position: absolute; left: 40px; top: 40px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,230,170,.55); border: 3px solid rgba(255,255,255,.6); }
+#tbtns { position: absolute; right: 18px; bottom: 18px; width: 200px; height: 170px; pointer-events: none; }
+#tbtns button { position: absolute; pointer-events: auto; border-radius: 50%; width: 66px; height: 66px; padding: 0; font-size: 12px; background: rgba(90,55,32,.8); }
+#tA { right: 0; bottom: 0; width: 84px !important; height: 84px !important; font-size: 15px !important; background: rgba(160,50,40,.85) !important; }
+#tS { right: 92px; bottom: 0; } #tE { right: 18px; bottom: 96px; } #tQ { right: 100px; bottom: 80px; }
+body.touch #mats { bottom: 168px; } body.touch #bossbar { bottom: 270px; } body.touch #hot { bottom: 168px; } body.touch #prompt { bottom: 236px; } body.touch #buff { bottom: 236px; }
+@media (max-width: 760px), (max-height: 520px) {
+  #mini { width: 104px; height: 104px; }
+  .bar { width: 120px; } #hpbox img { width: 38px; height: 38px; }
+  #quest { top: 72px; font-size: 12px; max-width: 220px; padding: 6px 8px; }
+  #menuBtns { max-width: 170px; } #menuBtns button { font-size: 10px; padding: 4px 6px; }
+  .opts { grid-template-columns: 1fr; } .qtext { font-size: 18px; } .cards { grid-template-columns: 1fr; }
+  .card { display: grid; grid-template-columns: 70px 1fr; text-align: left; align-items: center; gap: 6px; }
+  .card .skins { justify-content: flex-start; }
+  #mats { max-width: 60vw; font-size: 11px; } .slot { width: 46px; height: 46px; }
+}
+body.touch #hot { left: auto; right: 12px; transform: none; bottom: 196px; }
+body.touch .slot em { display: none; }
+@media (max-width: 560px) {
+  #topc { left: 10px; top: 66px; transform: none; padding: 4px 8px; }
+  #runes b { width: 14px; height: 14px; }
+  #quest { top: 132px; max-width: 50vw; }
+}
+@media (max-height: 520px) { #quest { display: none; } .passage { max-height: 26vh; } .panel { padding: 12px; } }
+</style>
+<script src="../../assets/js/eslt-fullscreen.js" defer></script>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="hpbox" class="box">
+    <img id="face" alt="">
+    <div>
+      <div class="px" id="lvl">Lv 1</div>
+      <div class="bar" id="hpbar"><i></i><span></span></div>
+      <div class="bar xp" id="xpbar" style="margin-top:4px;height:10px"><i></i></div>
+    </div>
+  </div>
+  <div id="topc" class="box"><div id="zoneName" class="px">Greenvale</div><div id="runes"></div><div id="clock" class="px"></div></div>
+  <div id="right">
+    <canvas id="mini" width="144" height="144" title="Map (M)"></canvas>
+    <div id="goldbox" class="box px"><img src="assets/items/coin.png" alt=""><span id="gold">0</span></div>
+    <div id="menuBtns">
+      <button id="bCraft" title="Craft (C)">Craft C</button>
+      <button id="bBuild" title="Build (B)">Build B</button>
+      <button id="bMap" title="Map (M)">Map M</button>
+      <button id="bLog" title="Journal (L)">Journal L</button>
+      <button id="bMenu" title="Menu (Esc)">☰</button>
+    </div>
+  </div>
+  <div id="quest" class="box"></div>
+  <div id="mats" class="box"></div>
+  <div id="hot">
+    <div class="slot box" id="slotQ"><em>Q</em><img src="assets/items/potion.png" alt=""><small id="potN">0</small></div>
+    <div class="slot box" id="slotK"><em>K</em><img id="specIc" src="assets/items/scrollfire.png" alt=""><div class="cd" id="specCd"></div></div>
+  </div>
+  <div id="buff" class="hidden"></div>
+  <div id="prompt" class="box hidden"></div>
+  <div id="bossbar" class="box hidden"><div class="px" id="bossName"></div><div class="bar"><i></i></div></div>
+</div>
+
+<div id="touch" class="hidden">
+  <div id="stick"><div id="knob"></div></div>
+  <div id="tbtns">
+    <button id="tA">ATTACK</button><button id="tS">SPECIAL</button><button id="tE">USE</button><button id="tQ">POTION</button>
+  </div>
+</div>
+
+<div id="dialog" class="box hidden"><img alt=""><div style="flex:1"><div class="nm"></div><div class="tx"></div><div class="nx"><button class="small">Next ▸</button></div></div></div>
+<div id="toasts"></div>
+<div id="modal" class="hidden"><div class="panel" id="panel"></div></div>
+
+<div id="title">
+  <div>
+    <div class="logo">RUNEWARD</div>
+    <div class="sub">The Silent Realm · An English adventure</div>
+    <div class="tbtns" id="tmain">
+      <button class="primary" id="tCont">▶ Continue</button>
+      <button id="tNew">New adventure</button>
+      <button id="tHow">How to play</button>
+      <button id="tCred">Credits</button>
+    </div>
+    <p class="px" style="text-align:center;opacity:.6;margin-top:22px;font-size:12px">Loading <span id="loadPct">0</span>%</p>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
