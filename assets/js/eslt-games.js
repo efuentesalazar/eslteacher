@@ -29,6 +29,8 @@
     "festival-worlds2-1m": { name: "Festival Worlds 2 · 1° medio", sections: ["1°A HC","1°B HC"], skills: LECTURA("Vocabulario (cofres)") },
     "traditions-1m": { name: "Traditions · 1° medio", sections: ["1°A HC","1°B HC"], skills: LECTURA("Vocabulario (cofres)") },
     "tiktok-vine-3m": { name: "TikTok vs. Vine · 3° medio", sections: ["3°B HC"], skills: LECTURA("Vocabulario (cofres)") },
+    "hype-horde-3m": { name: "Hype Horde · 3° medio", sections: ["3°B HC"],
+      skills: { DEF: "Vocabulario: significado", CTX: "Vocabulario en contexto", COL: "Colocaciones (go viral, peer pressure…)", SYN: "Sinónimos y antónimos" } },
     "trend-city-3m": { name: "Trend City · 3° medio", sections: ["3°B HC"],
       skills: { E: "Lectura explícita", I: "Lectura inferencial", V: "Vocabulario en contexto", L: "Uso del lenguaje (language in use)", W: "Formación de palabras" } },
     "portada": { name: "Portada: palabra del día, desafío y pronunciación (todos los cursos)", sections: SECTIONS,

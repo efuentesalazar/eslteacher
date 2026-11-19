@@ -36,6 +36,7 @@ const COURSES = [
     ]},
   { id:"3medio", num:"3°", level:"Medio", folder:"3° MEDIO", icon:"💬",
     games:[
+      { title:"Hype Horde", desc:"3D survivor! Survive HYPE's army of fake likes in the Atacama clothing desert. Answer Unit 4 vocabulary to level up, collect cube pets and evolve them.", icon:"🐣", unit:"Unit 4", file:"Hype_Horde/index.html", shot:"hype-horde", isNew:true },
       { title:"Trend City", desc:"3D open world! Investigate HYPE, the AI that controls the trends: social media, fast fashion, labour laws and the Atacama clothing mountains. B1 readings, FCE-style vocabulary, language in use and word formation, 12 side missions. Story mode and online mode.", icon:"📰", unit:"Unit 4", file:"Trend_City/index.html", shot:"trend-city", isNew:true },
       { title:"TikTok vs. Vine", desc:"Compare social media apps and share your opinions in English.", icon:"📱", unit:"Unit 4", file:"Mundo_Unit4_TikTok_vs_Vine.html", shot:"tiktok-vs-vine", isNew:true },
       { title:"Realms of Knowledge", desc:"Choose your race, read, fight and evolve in English! (B1)", icon:"🗡️", file:"Realms_of_Knowledge.html", shot:"realms-of-knowledge", isNew:true }

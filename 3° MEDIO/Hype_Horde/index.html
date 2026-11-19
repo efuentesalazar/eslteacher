@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Hype Horde — Survive the Trend Desert</title>
+<meta name="description" content="3D survivor game for 3° medio (Unit 4): survive HYPE's horde in the Atacama clothing desert, answer vocabulary questions to level up and evolve your cube pets.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#22163d;--paper:#fff9f0;--gold:#ffc23d;--pink:#ff3d8b;--violet:#7b5cff;--cyan:#35e6ff;--ok:#2ea64f;--bad:#d9433b;--sand:#f6c89a;--shadow:0 6px 0 rgba(34,22,61,.35)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#2a1a3e;font-family:Nunito,system-ui,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hidden{display:none!important}
+h1,h2,h3,.btn,.chip{font-family:'Baloo 2',Nunito,sans-serif}
+.btn{border:0;border-radius:14px;padding:12px 20px;font-size:18px;font-weight:800;cursor:pointer;background:var(--gold);color:var(--ink);box-shadow:var(--shadow);transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(34,22,61,.35)}
+.btn.alt{background:#fff}.btn.pink{background:var(--pink);color:#fff}.btn.violet{background:var(--violet);color:#fff}
+.panel{background:var(--paper);border-radius:22px;padding:22px 24px;box-shadow:0 10px 0 rgba(0,0,0,.25);max-width:520px;width:100%}
+.screen{position:fixed;inset:0;display:grid;place-items:center;padding:16px;z-index:20;overflow:auto}
+#loading{background:radial-gradient(circle at 50% 40%,#5b2f7a,#1d1030);color:#fff;z-index:60;text-align:center}
+#loading .bar{width:min(320px,70vw);height:14px;border-radius:9px;background:#ffffff22;overflow:hidden;margin:14px auto 0}
+#loading .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink));transition:width .2s}
+#menu{background:linear-gradient(180deg,rgba(29,16,48,.55),rgba(29,16,48,.85))}
+#menu h1{margin:0;font-size:clamp(40px,7vw,64px);line-height:.95;color:#fff;text-shadow:0 4px 0 var(--pink),0 8px 0 rgba(0,0,0,.3);text-align:center}
+#menu .sub{color:var(--gold);font-weight:800;text-align:center;margin:8px 0 16px}
+.heroes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 14px}
+.heroes button{border:3px solid transparent;border-radius:12px;background:#f1e6ff;padding:10px 4px;font-weight:800;font-family:inherit;cursor:pointer;font-size:15px;color:var(--ink)}
+.heroes button.on{border-color:var(--pink);background:#ffd9e8}
+.small{font-size:13px;opacity:.8}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+ul.how{margin:8px 0 12px;padding-left:20px;font-weight:600;line-height:1.45}
+/* HUD */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+#xpbar{position:absolute;left:0;right:0;top:0;height:14px;background:rgba(34,22,61,.7)}
+#xpbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),#7dffb2);transition:width .15s}
+#lvl{position:absolute;left:50%;top:2px;transform:translateX(-50%);color:#fff;font:800 11px Nunito;text-shadow:0 1px 2px #000}
+#topL{position:absolute;left:12px;top:22px;display:flex;flex-direction:column;gap:6px}
+.chip{background:rgba(255,249,240,.95);border-radius:12px;padding:5px 11px;font-weight:800;box-shadow:var(--shadow);font-size:17px;display:inline-flex;align-items:center;gap:6px}
+#hpbar{width:min(240px,40vw);height:18px;border-radius:9px;background:rgba(34,22,61,.7);overflow:hidden;border:2px solid #fff}
+#hpbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff5a5a,#ff9a6a);transition:width .15s}
+#timer{position:absolute;left:50%;top:22px;transform:translateX(-50%);font:800 30px 'Baloo 2';color:#fff;text-shadow:0 3px 0 var(--violet),0 5px 8px rgba(0,0,0,.4)}
+#topR{position:absolute;right:12px;top:22px;display:flex;gap:6px;pointer-events:auto}
+#topR .btn{padding:6px 12px;font-size:16px}
+#pets{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;flex-wrap:wrap;max-width:60vw}
+#pets .chip{font-size:14px;padding:4px 9px}
+#pets .chip b{color:var(--violet)}
+#ult{position:absolute;right:16px;bottom:16px;width:92px;height:92px;border-radius:50%;border:4px solid #fff;background:conic-gradient(var(--pink) calc(var(--p,0)*1%),rgba(34,22,61,.75) 0);color:#fff;font:800 14px 'Baloo 2';display:grid;place-items:center;text-align:center;line-height:1;pointer-events:auto;cursor:pointer;box-shadow:var(--shadow)}
+#ult.ready{animation:pulse 1s infinite;background:var(--pink)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#boss{position:absolute;left:50%;top:64px;transform:translateX(-50%);width:min(520px,80vw);text-align:center;color:#fff;font:800 16px 'Baloo 2';text-shadow:0 2px 3px #000}
+#boss .b{height:14px;border-radius:8px;background:rgba(34,22,61,.75);border:2px solid #fff;overflow:hidden;margin-top:3px}
+#boss .b i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--violet));width:100%}
+#toast{position:absolute;left:50%;top:26%;transform:translateX(-50%);font:800 clamp(26px,5vw,44px) 'Baloo 2';color:#fff;text-shadow:0 3px 0 var(--pink),0 6px 10px rgba(0,0,0,.4);text-align:center;opacity:0;transition:opacity .3s;white-space:nowrap}
+#hurt{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 120px 30px rgba(255,40,40,.0);transition:box-shadow .25s;z-index:4}
+#flash{position:fixed;inset:0;pointer-events:none;background:#fff;opacity:0;transition:opacity .4s;z-index:4}
+.dmg{position:fixed;left:0;top:0;font:800 16px 'Baloo 2';color:#fff;text-shadow:0 2px 0 #000,0 0 4px #000;pointer-events:none;will-change:transform;z-index:4}
+.dmg.big{color:var(--gold);font-size:22px}
+/* joystick */
+#joy{position:fixed;left:0;top:0;bottom:0;width:55%;z-index:3;touch-action:none}
+#stick{position:fixed;width:120px;height:120px;border-radius:50%;border:3px solid rgba(255,255,255,.6);background:rgba(34,22,61,.25);pointer-events:none;z-index:6}
+#stick i{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.85)}
+/* level up */
+#lvlup{background:rgba(20,10,40,.7);z-index:30}
+#lvlup .panel{max-width:620px}
+#lvlup h2{margin:0;color:var(--violet);font-size:30px;line-height:1}
+.tag{display:inline-block;background:#efe6ff;color:var(--violet);border-radius:8px;padding:2px 8px;font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+#q{font-size:20px;font-weight:800;margin:12px 0}
+#opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#opts button{border:3px solid #d9cdf2;border-radius:12px;background:#fff;padding:12px 10px;font:800 17px Nunito;cursor:pointer;color:var(--ink);text-align:center}
+#opts button:hover{border-color:var(--violet)}
+#opts button.ok{background:#d6f5dd;border-color:var(--ok)}
+#opts button.no{background:#ffdcd9;border-color:var(--bad)}
+#opts button:disabled{cursor:default}
+#fb{margin:12px 0 0;font-weight:700;padding:10px 12px;border-radius:12px}
+#fb.ok{background:#e3f8e8}#fb.no{background:#fff0ee}
+#choices{display:grid;gap:10px;margin-top:12px}
+#choices button{display:flex;gap:12px;align-items:center;text-align:left;border:3px solid #ffd77a;border-radius:14px;background:#fffaf0;padding:10px 12px;cursor:pointer;font-family:inherit;color:var(--ink)}
+#choices button:hover{border-color:var(--pink);background:#fff1f6}
+#choices .ic{font-size:30px;width:42px;text-align:center}
+#choices b{font-family:'Baloo 2';font-size:18px;display:block}
+#choices span{font-size:14px;font-weight:600}
+#choices .evo{border-color:var(--pink);background:linear-gradient(90deg,#fff1f6,#f3ecff)}
+/* end */
+#end h2{margin:0 0 4px;font-size:36px;text-align:center}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+.stats div{background:#f1e6ff;border-radius:12px;padding:8px 10px;font-weight:800}
+.stats div small{display:block;font-weight:600;opacity:.75}
+.skillrow{display:flex;justify-content:space-between;font-weight:700;border-bottom:1px dashed #d9cdf2;padding:4px 0}
+@media (max-height:520px){.panel{padding:14px 16px}#q{font-size:17px;margin:8px 0}#opts button{padding:8px;font-size:15px}#menu h1{font-size:40px}#ult{width:74px;height:74px}#choices button{padding:6px 10px}}
+@media (max-width:560px){#opts{grid-template-columns:1fr}.heroes{grid-template-columns:repeat(2,1fr)}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script src="../../assets/js/eslt-fullscreen.js" defer></script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hurt"></div><div id="flash"></div>
+
+<div id="loading" class="screen"><div><h1 style="font-family:'Baloo 2';margin:0;font-size:44px">Hype Horde</h1><div>Loading the desert…</div><div class="bar"><i id="loadBar"></i></div></div></div>
+
+<div id="menu" class="screen hidden">
+  <div>
+    <h1>HYPE<br>HORDE</h1>
+    <div class="sub">Survive the Trend Desert · 3° medio · Unit 4</div>
+    <div class="panel">
+      <b>Choose your hero</b>
+      <div class="heroes" id="heroes"></div>
+      <ul class="how">
+        <li>HYPE sent an army of <b>fake likes, doomscroll phones and clothing piles</b> to the Atacama desert. Survive 7 minutes and defeat HYPE!</li>
+        <li><b>Move</b> with WASD / arrows (or drag on the left side of the screen). Your pets attack on their own.</li>
+        <li>Collect blue cubes to <b>level up</b>. Answer the vocabulary question: if you are right, you choose from <b>3 power-ups</b> and charge your <b>Truth Blast</b> (Space).</li>
+      </ul>
+      <div class="row"><button class="btn pink" id="play">▶ PLAY</button><button class="btn alt" id="creditsBtn">Credits</button><a class="btn alt" href="../../" style="text-decoration:none">eslteacher.cl</a></div>
+      <p class="small" id="best" style="text-align:center;margin:10px 0 0"></p>
+    </div>
+  </div>
+</div>
+
+<div id="credits" class="screen hidden" style="background:rgba(20,10,40,.7)">
+  <div class="panel">
+    <h2 style="margin-top:0">Credits</h2>
+    <p class="small" style="font-size:14px;opacity:1">Original game made for eslteacher.cl.<br>
+    3D models: <b>Kenney</b> — Blocky Characters, Cube Pets, Nature Kit (CC0).<br>
+    Models from Poly Pizza (poly.pizza): <b>NotchPhone</b> by Sal Blrm; <b>T-Shirts</b> by sirkitree; <b>Billboard</b> by Poly by Google (CC-BY 3.0).<br>
+    Music: <b>Magic Spark</b> — A Bit of ChipTune 3 (CC0). Sound effects: <b>Kronbits</b> (CC0). Voices: <b>Kenney</b> Voiceover Pack (CC0).<br>
+    Engine: three.js (MIT).</p>
+    <button class="btn" id="closeCredits">Close</button>
+  </div>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="xpbar"><i id="xpFill"></i></div><div id="lvl">LV 1</div>
+  <div id="topL"><div id="hpbar"><i id="hpFill"></i></div><div class="chip">💀 <span id="kills">0</span> &nbsp;🔥 <span id="streak">0</span></div></div>
+  <div id="timer">7:00</div>
+  <div id="topR"><button class="btn alt" id="muteBtn">🔊</button><button class="btn alt" id="pauseBtn">⏸</button></div>
+  <div id="boss" class="hidden"><span id="bossName">HYPE</span><div class="b"><i id="bossFill"></i></div></div>
+  <div id="toast"></div>
+  <div id="pets"></div>
+  <div id="ult">TRUTH<br>BLAST<br><small id="ultP">0%</small></div>
+</div>
+<div id="joy" class="hidden"></div>
+<div id="stick" class="hidden"><i></i></div>
+
+<div id="lvlup" class="screen hidden">
+  <div class="panel">
+    <h2>LEVEL UP!</h2>
+    <span class="tag" id="qTag">Vocabulary</span>
+    <div id="q"></div>
+    <div id="opts"></div>
+    <div id="fb" class="hidden"></div>
+    <div id="choices"></div>
+  </div>
+</div>
+
+<div id="pause" class="screen hidden" style="background:rgba(20,10,40,.6)">
+  <div class="panel" style="text-align:center"><h2 style="margin-top:0">Paused</h2>
+  <div class="row"><button class="btn pink" id="resume">▶ Resume</button><button class="btn alt" id="quit">Quit</button></div></div>
+</div>
+
+<div id="end" class="screen hidden" style="background:rgba(20,10,40,.7)">
+  <div class="panel">
+    <h2 id="endT">You survived!</h2>
+    <p id="endS" style="text-align:center;margin:0;font-weight:700"></p>
+    <div class="stats" id="endStats"></div>
+    <div id="endSkills"></div>
+    <div class="row" style="margin-top:14px"><button class="btn pink" id="again">↻ Play again</button><a class="btn alt" href="../../" style="text-decoration:none">eslteacher.cl</a></div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js?v=4"></script>
+</body>
+</html>

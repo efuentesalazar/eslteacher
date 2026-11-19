@@ -205,3 +205,9 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Límites**: los juegos entregan evidencia de una parte de cada OA (sobre todo lectura, vocabulario y gramática) y casi nada de expresión oral y escrita, ni de estrategias o actitudes. Esos objetivos aparecen "sin evidencia" y se evalúan en clases.
 - **Al agregar un juego**: suma sus habilidades en `TIPOS` (además de `eslt-games.js`).
 - Base de datos: función `eslt_teacher_curriculum`.
+
+## Novedades (18-11-2026): Hype Horde
+- **Hype Horde** (3° medio, Unit 4): survivor 3D original en `3° MEDIO/Hype_Horde/` (id del panel `hype-horde-3m`). El alumno sobrevive 7 minutos a las hordas de HYPE (fake likes, celulares y pilas de ropa) en el desierto de Atacama y al final vence a HYPE. Sus mascotas cúbicas atacan solas y evolucionan al nivel 5 (pollito → loro, gato → tigre, conejo → ciervo, pingüino → oso polar, perro → zorro).
+- Al subir de nivel responde una pregunta de vocabulario de la unidad: si acierta elige entre 3 mejoras y carga el "Truth Blast" (barra espaciadora); si falla recibe 1 mejora y la palabra vuelve a salir más tarde.
+- Habilidades en el panel: DEF significado, CTX vocabulario en contexto, COL colocaciones, SYN sinónimos y antónimos.
+- Las 48 preguntas se editan en `3° MEDIO/Hype_Horde/js/content.js`. Captura en `assets/games/hype-horde.webp`. Créditos en el botón Credits del juego y en `CREDITOS.md` de la carpeta. Para probar sin jugar 7 minutos: agrega `?debug` a la dirección (solo expone funciones de prueba en la consola).
