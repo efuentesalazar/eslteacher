@@ -38,18 +38,21 @@ function equipoModesto() {
   return tactil || (ram && ram <= 4) || (nucleos && nucleos <= 4);
 }
 
-export function crearFluido({ renderer, juego, sol, maxPixelRatio = 2 }) {
+export function crearFluido({ renderer, juego, sol, maxPixelRatio = renderer.getPixelRatio() }) {
   const clave = 'eslt-fluido:' + juego;
   const guardado = parseInt(leer(clave), 10);
   let nivel = guardado >= 0 && guardado < NIVELES.length ? guardado : (equipoModesto() ? 2 : 0);
-  let piso = 0, techo = 0, aplicadoSol = null, aplicadoSombra = -1;
+  let piso = 0, techo = 0, aplicadoSol = null, aplicadoSombra = -1, usaSombras = false, sombraBase = 0;
   let ultimo = 0, inicioV = 0, cuadros = 0, lentas = 0, estable = 0, ignorarHasta = 0, subidoEn = 0, fps = 0;
 
   function aplicarSol() {
     const s = sol && sol();
     if (!s) return;
-    const quiere = NIVELES[nivel].sombra;
-    if (s === aplicadoSol && quiere === aplicadoSombra) return;
+    // Respeta lo que trae cada juego: nunca activa sombras ni las hace más grandes
+    if (s !== aplicadoSol) { aplicadoSol = s; usaSombras = s.castShadow; sombraBase = s.shadow.mapSize.x; aplicadoSombra = -1; }
+    if (!usaSombras) return;
+    const quiere = Math.min(NIVELES[nivel].sombra, sombraBase);
+    if (quiere === aplicadoSombra) return;
     if (quiere) {
       if (s.shadow.mapSize.x !== quiere) {
         s.shadow.mapSize.set(quiere, quiere);
@@ -57,7 +60,7 @@ export function crearFluido({ renderer, juego, sol, maxPixelRatio = 2 }) {
       }
     }
     s.castShadow = quiere > 0;
-    aplicadoSol = s; aplicadoSombra = quiere;
+    aplicadoSombra = quiere;
   }
 
   function aplicar() {
@@ -102,7 +105,7 @@ export function crearFluido({ renderer, juego, sol, maxPixelRatio = 2 }) {
     panel.style.cssText = 'position:fixed;left:6px;bottom:6px;z-index:99999;padding:3px 7px;border-radius:5px;background:#000b;color:#7dff9a;font:12px monospace;pointer-events:none';
     document.body.appendChild(panel);
   }
-  const pintar = () => { if (panel) panel.textContent = `${Math.round(fps)} FPS · nivel ${nivel} · ${renderer.getPixelRatio().toFixed(2)}x · sombras ${NIVELES[nivel].sombra || 'no'}`; };
+  const pintar = () => { if (panel) panel.textContent = `${Math.round(fps)} FPS · nivel ${nivel} · ${renderer.getPixelRatio().toFixed(2)}x · sombras ${aplicadoSombra > 0 ? aplicadoSombra : 'no'}`; };
 
   document.addEventListener('visibilitychange', reiniciar);
   aplicar();

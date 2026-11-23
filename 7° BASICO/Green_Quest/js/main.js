@@ -3,6 +3,7 @@ import { scene, buildWorld, makeChar, setProgress, colliders, animated, zoneInfo
 import { ZONES, BOSS, ONLINE_EXTRA, SKILLS, GRAMMAR, SIDE } from './content.js';
 import * as net from './net.js';
 import { logAnswer, student } from './track.js';
+import { crearFluido } from '/assets/js/eslt-fluido.js';
 const GAME = 'green-quest-7b'; // id del juego en el Panel del profe
 
 const $ = id => document.getElementById(id);
@@ -30,6 +31,7 @@ function playMusic(n) { const src = `assets/audio/${n}.mp3`; if (music.dataset.n
 // ---------------- renderer / camera ----------------
 const renderer = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+const fluido = crearFluido({ renderer, juego: 'green-quest', sol: () => scene.userData.sun });
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
@@ -682,6 +684,7 @@ function step() {
   findNear(); updateHUD();
   if (mode !== 'menu' && (frame++ & 1)) drawMini(t);
   renderer.render(scene, camera);
+  fluido.cuadro();
 }
 
 // ---------------- menu ----------------

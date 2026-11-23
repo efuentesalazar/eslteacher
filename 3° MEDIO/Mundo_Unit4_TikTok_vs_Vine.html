@@ -750,6 +750,7 @@ const HORIZON=lin(0xcfe6f2);scene.fog=new THREE.Fog(HORIZON,45,125);scene.backgr
 const camera=new THREE.PerspectiveCamera(58,1,.1,320);
 scene.add(new THREE.HemisphereLight(lin(0xd6ecff),lin(0x6b5a3a),.62));
 scene.add(new THREE.AmbientLight(0xffffff,.12));
+let fluido;import('/assets/js/eslt-fluido.js').then(m=>{fluido=m.crearFluido({renderer,juego:'tiktok-vine',sol:()=>sunL})}).catch(()=>{});
 const sunL=new THREE.DirectionalLight(lin(0xfff1d8),1.25);sunL.position.set(4,62,58);sunL.target.position.set(28,0,28);scene.add(sunL,sunL.target);
 if(HIQ){sunL.castShadow=true;sunL.shadow.mapSize.set(2048,2048);const sc=sunL.shadow.camera;sc.left=-42;sc.right=42;sc.top=42;sc.bottom=-42;sc.near=10;sc.far=140;sunL.shadow.bias=-.0008;sunL.shadow.normalBias=.03}
 // cielo
@@ -1612,7 +1613,7 @@ function loop(now){requestAnimationFrame(loop);let dt=Math.min(.05,(now-last)/10
  {const sx=Math.round(P.x/4)*4,sz=Math.round(P.z/4)*4;sunL.target.position.set(sx,0,sz);sunL.position.set(sx-24,62,sz+30);sunL.target.updateMatrixWorld()}
  if(frame%15===0)ambTick();
  window._sky.position.copy(camera.position);window._sun.position.copy(camera.position).addScaledVector(sunDir,200);
- renderer.render(scene,camera)}
+ renderer.render(scene,camera);if(fluido)fluido.cuadro()}
 requestAnimationFrame(loop);
 </script>
 

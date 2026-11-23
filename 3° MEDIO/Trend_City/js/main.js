@@ -3,6 +3,7 @@ import { scene, buildWorld, buildTraffic, updateTraffic, makeChar, phoneFor, set
 import { CH, BOSS, SIDE, SKILLS, ONLINE_EXTRA } from './content.js';
 import * as net from './net.js';
 import { logAnswer, student } from './track.js';
+import { crearFluido } from '/assets/js/eslt-fluido.js';
 const GAME = 'trend-city-3m'; // id del juego en el Panel del profe
 
 const $ = id => document.getElementById(id);
@@ -31,6 +32,7 @@ function playMusic(n) { if (music.dataset.n === n) return; music.dataset.n = n; 
 // ---------------- renderer / camera ----------------
 const renderer = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
+const fluido = crearFluido({ renderer, juego: 'trend-city', sol: () => scene.userData.sun });
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 600);
@@ -714,6 +716,7 @@ function step() {
   findNear(); updateHUD();
   if (mode !== 'menu' && (frame++ & 1)) drawMini(t);
   renderer.render(scene, camera);
+  fluido.cuadro();
 }
 
 // ---------------- menu ----------------

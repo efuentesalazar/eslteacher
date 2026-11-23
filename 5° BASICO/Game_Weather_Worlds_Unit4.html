@@ -951,6 +951,7 @@ const HORIZON=lin(0xcfe6f2);scene.fog=new THREE.Fog(HORIZON,45,125);scene.backgr
 const camera=new THREE.PerspectiveCamera(58,1,.1,340);
 const hemiL=new THREE.HemisphereLight(lin(0xd6ecff),lin(0x6b5a3a),.62);scene.add(hemiL);
 const ambL=new THREE.AmbientLight(0xffffff,.12);scene.add(ambL);
+let fluido;import('/assets/js/eslt-fluido.js').then(m=>{fluido=m.crearFluido({renderer,juego:'weather-worlds',sol:()=>sunL})}).catch(()=>{});
 const sunL=new THREE.DirectionalLight(lin(0xfff1d8),1.25);sunL.position.set(4,62,58);sunL.target.position.set(28,0,28);scene.add(sunL,sunL.target);
 if(HIQ){sunL.castShadow=true;sunL.shadow.mapSize.set(2048,2048);const sc=sunL.shadow.camera;sc.left=-44;sc.right=44;sc.top=44;sc.bottom=-44;sc.near=10;sc.far=150;sunL.shadow.bias=-.0008;sunL.shadow.normalBias=.03}
 /* cielo: se recolorea según el mundo */
@@ -2136,11 +2137,11 @@ function loop(now){requestAnimationFrame(loop);const raw=(now-last)/1000;let dt=
  {const qx=Math.round(P.x/4)*4,qz=Math.round(P.z/4)*4;sunL.target.position.set(qx,0,qz);sunL.position.set(qx-11,62,qz+38);sunL.target.updateMatrixWorld()}
  if(frame%15===0)ambTick();
  skyM.position.copy(camera.position);starsP.position.copy(camera.position);sunS.position.copy(camera.position).addScaledVector(sunDir,210);
- if(lvlEl.hidden||frame%30===0)renderer.render(scene,camera);
+ if(lvlEl.hidden||frame%30===0)renderer.render(scene,camera);if(lvlEl.hidden&&fluido)fluido.cuadro();
  /* si el equipo va lento: bajar la resolución sola y, si no alcanza, avisar una vez */
  if(state==='play'&&T>6&&lvlEl.hidden&&raw<.5&&!document.hidden){slowT+=raw;slowN++;if(slowT>5){const fps=slowN/slowT;slowT=0;slowN=0;
-  if(fps<24&&pxr>.62){pxr=Math.max(.6,pxr*.78);renderer.setPixelRatio(pxr);resize()}
-  else if(fps<15&&HIQ&&!slowTold){slowTold=true;note('El juego va lento en este equipo. Abre <b>⚙ Opciones</b> y elige gráficos <b>Liviana</b>.',7000)}}}}
+  if(!fluido&&fps<24&&pxr>.62){pxr=Math.max(.6,pxr*.78);renderer.setPixelRatio(pxr);resize()}
+  else if(fps<15&&HIQ&&!slowTold&&(!fluido||fluido.nivel>=6)){slowTold=true;note('El juego va lento en este equipo. Abre <b>⚙ Opciones</b> y elige gráficos <b>Liviana</b>.',7000)}}}}
 requestAnimationFrame(loop);
 
 })();

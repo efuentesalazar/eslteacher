@@ -1421,6 +1421,7 @@ const hemi = new T.HemisphereLight('#ffffff', '#557744', 1.25); scene.add(hemi);
 const sun = new T.DirectionalLight('#ffffff', 2.9); scene.add(sun); scene.add(sun.target);
 sun.castShadow = renderer.shadowMap.enabled;
 const SH = QUALITY === 'high' ? 2048 : 1024; sun.shadow.mapSize.set(SH, SH);
+let fluido; import('/assets/js/eslt-fluido.js').then(m => { fluido = m.crearFluido({ renderer, juego: 'english-week', sol: () => sun }); }).catch(() => { });
 Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 300 }); sun.shadow.bias = -.0006; sun.shadow.normalBias = .02;
 const skyU = { top: { value: new T.Color('#4aa3ff') }, bot: { value: new T.Color('#cfeaff') } };
 const sky = new T.Mesh(new T.SphereGeometry(700, 24, 12), new T.ShaderMaterial({
@@ -2212,6 +2213,7 @@ function loop(now) {
   updateOthers(dt); if (typeof shopTick === 'function') shopTick(dt); updateParts(dt);
   miniT -= dt; if (miniT <= 0) { miniT = .12; drawMini(); updateTimer(); }
   renderer.render(scene, camera);
+  if (fluido) fluido.cuadro();
 }
 
 

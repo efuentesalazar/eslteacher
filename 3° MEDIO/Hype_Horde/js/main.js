@@ -5,6 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { VOCAB, SKILLS } from './content.js';
 import { logAnswer } from '/assets/js/eslt-track.js';
+import { crearFluido } from '/assets/js/eslt-fluido.js';
 
 const GAME = 'hype-horde-3m';
 const RUN = 420;            // segundos hasta que aparece HYPE (7:00)
@@ -29,6 +30,7 @@ const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
 scene.add(new THREE.HemisphereLight('#fff4e0', '#a8714a', 1.35));
 const sun = new THREE.DirectionalLight('#fff0d4', 1.9);
 sun.position.set(10, 22, 8); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+const fluido = crearFluido({ renderer, juego: 'hype-horde', sol: () => sun });
 Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 70 });
 scene.add(sun, sun.target);
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 72 : 50; camera.updateProjectionMatrix(); }
@@ -680,6 +682,7 @@ function frame() {
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
   if (S && (hudAcc += dt) > .1) { hudAcc = 0; updHud(); }
   renderer.render(scene, camera);
+  fluido.cuadro();
 }
 
 // ---------------------------------------------------------------- menu

@@ -7,6 +7,7 @@ import { scene, buildWorld, makeChar, makeRobot, setProgress, circles, boxes, an
 import { DISTRICTS, BOSS, CITIZENS, SKILLS, PHRASES } from './content.js';
 import * as net from './net.js';
 import { logAnswer, student } from './track.js';
+import { crearFluido } from '/assets/js/eslt-fluido.js';
 const GAME = 'mission-2050-8b'; // id del juego en el Panel del profe
 
 const $ = id => document.getElementById(id);
@@ -48,6 +49,7 @@ const cam = { yaw: 0, pitch: 0.36, dist: 9 };
 scene.add(new THREE.HemisphereLight('#e4f4ff', '#5c8f4c', 1.15));
 const sun = new THREE.DirectionalLight('#fff1d6', 2.1);
 sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+const fluido = crearFluido({ renderer, juego: 'mission-2050', sol: () => sun });
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 5, far: 300 }); sun.shadow.bias = -0.0006;
 scene.add(sun, sun.target);
 
@@ -769,6 +771,7 @@ function frame(now) {
     slowT -= dt; if (slowT <= 0) { slowT = 0.5; teamPanel(); }
   }
   renderer.render(scene, camera);
+  fluido.cuadro();
 }
 
 // ---------------- arranque ----------------

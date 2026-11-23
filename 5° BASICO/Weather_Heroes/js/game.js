@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CLOTHES, SLOTS, ZONES, STORY, LESSONS, NPCS, NPC_HELLO, QUICK, CALLS, PHRASES } from './content.js';
 import { logAnswer, student } from './track.js';
+import { crearFluido } from '/assets/js/eslt-fluido.js';
 
 /* ===== Registro para el Panel del profe (eslteacher.cl → Análisis de juegos) =====
    Se guarda cada intento. Habilidad: V vocabulario · A audición · R lectura · G gramática · O ordenar · C completar */
@@ -110,6 +111,7 @@ const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, .1, 900
 const hemi = new THREE.HemisphereLight(0xdff1ff, 0x6d8a4a, 1.4); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2d6, 2.6);
 sun.castShadow = true; sun.shadow.mapSize.set(PHONE ? 1024 : 1536, PHONE ? 1024 : 1536);
+const fluido = crearFluido({ renderer, juego: 'weather-heroes', sol: () => sun });
 Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 200 });
 sun.shadow.bias = -.0005; sun.shadow.normalBias = .03;
 scene.add(sun, sun.target);
@@ -1403,6 +1405,7 @@ function loop() {
   for (const a of animated) a.update(dt, t);
   if (rainbow) rainbow.lookAt(camera.position.x, 0, camera.position.z);
   renderer.render(scene, camera);
+  fluido.cuadro();
 }
 
 /* debug helper for teachers/devs: WH.tp('snow') */

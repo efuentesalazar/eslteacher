@@ -166,7 +166,7 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 
 ## Novedades (23-11-2026): calidad automática en juegos 3D
 - `assets/js/eslt-fluido.js` mide la fluidez mientras se juega. Si baja, reduce primero las sombras y luego la resolución; recuerda el nivel en ese navegador.
-- Por ahora está en **Past Quest** y **Wordbound** (piloto). Para ver FPS y nivel en pantalla, abre el juego con `?fps=1`.
+- Está en todos los juegos 3D (no en Runeward ni Let's Travel City, que son 2D). Para ver FPS y nivel en pantalla, abre el juego con `?fps=1`.
 
 ## Novedades (10-11-2026): caché de archivos pesados
 - `vercel.json`: los modelos 3D, la música y los sonidos (`.glb`, `.mp3`, `.ogg`…) se guardan 7 días en el navegador del alumno; las imágenes, 1 día. Así la segunda vez los juegos cargan desde el equipo, sin volver a preguntar al servidor por cada archivo.

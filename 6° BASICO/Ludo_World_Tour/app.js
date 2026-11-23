@@ -146,6 +146,7 @@ function makePawn(s) {
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.userData.pawn = g; } });
   g.userData = { s, ring, m }; return g;
 }
+let fluido;
 function init3D() {
   R = new THREE.WebGLRenderer({ canvas: $("#c3d"), antialias: true }); R.setPixelRatio(Math.min(2, devicePixelRatio || 1));
   R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.outputEncoding = THREE.sRGBEncoding;
@@ -153,6 +154,7 @@ function init3D() {
   cam = new THREE.PerspectiveCamera(42, 1, 0.1, 300);
   scene.add(new THREE.HemisphereLight(0xe8f6ff, 0x4f7f34, 0.8));
   sun = new THREE.DirectionalLight(0xfff4e0, 0.95); sun.position.set(10, 20, 8); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  import('/assets/js/eslt-fluido.js').then(m => { fluido = m.crearFluido({ renderer: R, juego: 'ludo', sol: () => sun }); }).catch(() => { });
   Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16 }); sun.shadow.bias = -0.0006; scene.add(sun);
   const water = new THREE.Mesh(new THREE.CircleGeometry(160, 40), mat(0x3aa3f0, { roughness: 0.4 })); water.rotation.x = -Math.PI / 2; water.position.y = -2.6; scene.add(water);
   const island = new THREE.Mesh(new THREE.CylinderGeometry(25, 21, 2.4, 40), mat(0x78c84e)); island.position.y = -1.6; island.receiveShadow = true; scene.add(island);
@@ -196,6 +198,7 @@ function loop(t) {
   else { cam.position.set(Math.sin(sec * 0.15) * 0.6, camBase.y, camBase.z); }
   cam.lookAt(0, 0, 1);
   R.render(scene, cam);
+  if (fluido) fluido.cuadro();
 }
 function worldOf(s, p, t) { const [cx, cz] = cellXZ(s, p, t); return [cx - 7.5, cz - 7.5]; }
 function place(pw, s, p, t) { const [x, z] = worldOf(s, p, t); pw.position.set(x, 0.16, z); pw.userData.y = 0.16; pw.userData.p = p; }
