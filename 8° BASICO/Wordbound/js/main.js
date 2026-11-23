@@ -9,6 +9,7 @@ import { GLOSS } from './data/gloss.js';
 import { logAnswer, student } from './track.js';
 import * as net from './net.js';
 import { CLASSES } from './data/classes.js';
+import { crearFluido } from '/assets/js/eslt-fluido.js';
 const GAME = 'wordbound'; // id del juego en el Panel del profe
 
 const $ = id => document.getElementById(id);
@@ -66,6 +67,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 600);
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
+const fluido = crearFluido({ renderer, juego: 'wordbound', sol: () => scene.userData.sun, maxPixelRatio: 1.6 });
 const cam = { yaw: 0, pitch: 0.36, dist: 9 };
 
 // ======================= STATE =======================
@@ -1769,6 +1771,7 @@ function step() {
   renderPreview(dt);
   frame++;
   renderer.render(scene, camera);
+  fluido.cuadro();
 }
 
 // ======================= MENU =======================

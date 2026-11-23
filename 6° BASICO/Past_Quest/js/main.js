@@ -6,6 +6,7 @@ import { CHAPTERS, NPCS, READINGS, LESSONS, SCROLLS, VERB_ES, makeSet, makeQuest
 import { UI, modal, closeModal, toast, banner, dialog, dialogVisible, runQuiz, showLesson, showReading, lessonHTML, el, esc } from './ui.js';
 import { initAudio, sfx, voice, music, toggleSound, soundOn } from './audio.js';
 import { Online } from './online.js';
+import { crearFluido, NIVEL_BAJO } from '/assets/js/eslt-fluido.js';
 
 const $ = s => document.querySelector(s);
 const show = (s, on = true) => $(s).classList.toggle('hidden', !on);
@@ -38,7 +39,8 @@ let SAVE = { name: '', look: { ...DEFAULT_LOOK }, ch: 1, guide: {}, done: {}, re
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) SAVE = { ...SAVE, ...s }; } catch (e) {}
 UI.spanish = SAVE.spanish !== false;
 if (SAVE.low === undefined) SAVE.low = TOUCH;
-function applyQuality() { sun.castShadow = !SAVE.low; renderer.setPixelRatio(SAVE.low ? 1 : Math.min(devicePixelRatio, 2)); resize(); }
+const fluido = crearFluido({ renderer, juego: 'past-quest', sol: () => sun, maxPixelRatio: TOUCH ? 1.5 : 2 });
+function applyQuality() { fluido.fijarPiso(SAVE.low ? NIVEL_BAJO : 0); }
 applyQuality();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(SAVE)); } catch (e) {} };
 function stat(topic, ok) { const s = SAVE.stats[topic] || (SAVE.stats[topic] = [0, 0]); s[1]++; if (ok) s[0]++; }
@@ -637,7 +639,7 @@ function openPause() {
   const box = modal(`<h2>☰ Menu</h2><div class="maplist">
     <button id="p-res">▶ Resume / Continuar</button>
     <button id="p-es">🇨🇱 Spanish help: <b>${UI.spanish ? 'ON' : 'OFF'}</b></button>
-    <button id="p-gq">⚙️ Graphics: <b>${SAVE.low ? 'LOW (fast)' : 'HIGH'}</b></button>
+    <button id="p-gq">⚙️ Graphics: <b>${SAVE.low ? 'LOW (fast)' : 'AUTO'}</b></button>
     <button id="p-av">🧑 Change my explorer</button>
     <button id="p-ti">🏠 Title screen</button>
     <button id="p-rs" style="color:#c03030">🗑️ Reset my progress</button></div>`);
@@ -698,4 +700,5 @@ function loop() {
   }
   updateLabels();
   renderer.render(scene, camera);
+  fluido.cuadro();
 }
