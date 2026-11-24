@@ -67,7 +67,7 @@ async function gpuProblem() {
   if (!("gpu" in navigator)) return "WebGPU no está disponible en este navegador.";
   try {
     const ad = await navigator.gpu.requestAdapter();
-    if (!ad) return "El navegador tiene WebGPU, pero no encontró una tarjeta gráfica compatible.";
+    if (!ad) return "El navegador no encontró una tarjeta gráfica disponible. Si Talk Buddy funcionaba antes en este equipo, cierra TODAS las ventanas del navegador y vuelve a abrirlo (después de un error de la tarjeta gráfica, el navegador la bloquea hasta reiniciarse).";
     f16 = ad.features.has("shader-f16");
     return "";
   } catch (e) { return "Error al revisar WebGPU: " + e.message; }
@@ -209,7 +209,7 @@ async function botTurn() {
 
 function gpuLost(el) {
   el.remove(); busy = true; lockUI(true); engine = null; loadedModel = null;
-  sys("😵 La tarjeta gráfica de este computador se reinició (se quedó sin memoria o tardó demasiado). Recarga la página y vuelve a intentar. Si se repite, elige 🪶 Tiny.", true);
+  sys("😵 La tarjeta gráfica de este computador se reinició (se quedó sin memoria o tardó demasiado). Recarga la página y vuelve a intentar. Si se repite, elige 🪶 Tiny. Si al recargar dice que no hay tarjeta gráfica, cierra todas las ventanas del navegador y ábrelo de nuevo.", true);
   const b = document.createElement("button"); b.className = "btn small green"; b.style.alignSelf = "center"; b.textContent = "↻ Reload · Recargar"; b.onclick = () => location.reload();
   $("log").appendChild(b); scrollDown();
 }
