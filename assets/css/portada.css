@@ -190,6 +190,7 @@ section{position:relative;min-height:100vh;min-height:100svh;padding:120px var(-
 #challenge{--accent:#ff5fd2;--accent-d:#b8288f}
 #zone{--accent:#b98cff;--accent-d:#7a4fd0}
 #speak{--accent:#3dffb0;--accent-d:#12a874}
+#talk{--accent:#ffb347;--accent-d:#d07a12}
 #how{--accent:#a6e85b;--accent-d:#5f9e1c}
 .title{font-family:var(--display);font-size:clamp(54px,9vw,128px);line-height:.92;font-weight:600;letter-spacing:-.01em;text-shadow:0 4px 30px rgba(0,0,0,.45)}
 .title span{display:block;position:relative;padding-bottom:.1em;margin-bottom:.04em;width:max-content;max-width:100%}
@@ -435,7 +436,7 @@ section{position:relative;min-height:100vh;min-height:100svh;padding:120px var(-
 .tabbar{display:none}
 @media (max-width:900px){
   :root{--tabbar:68px}
-  .tabbar{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;
+  .tabbar{display:grid;grid-template-columns:repeat(7,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;
     height:calc(var(--tabbar) + env(safe-area-inset-bottom));padding:6px 6px env(safe-area-inset-bottom);
     background:rgba(10,10,24,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(255,255,255,.12)}
   .tabbar a,.tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;
@@ -506,3 +507,11 @@ body.projecting nav,body.projecting .tabbar,body.projecting #hud{display:none}
   html{scroll-behavior:auto}
   .reveal{opacity:1;transform:none}
 }
+
+/* Talk Buddy (sección 05b): el chat vive en Talk_Buddy/ y se carga aquí en un iframe al presionar Start */
+.talkbuddy{max-width:900px}
+.tb-feats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.tb-feats span{background:rgba(255,255,255,.1);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600}
+#tb-frame{display:block;width:100%;height:min(74vh,700px);border:0;border-radius:16px;background:transparent}
+#tb-frame.hidden{display:none}
+@media (max-width:900px){ .tabbar a,.tabbar button{font-size:10px} }

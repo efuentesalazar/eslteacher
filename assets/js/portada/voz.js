@@ -417,3 +417,17 @@ function align(tw, hw){
   return out;
 }
 
+
+/* =====================================================================
+   TALK BUDDY — el chat (Talk_Buddy/?embed=1) se carga solo cuando el alumno presiona Start,
+   así la portada no descarga nada de la IA si nadie lo usa.
+   ===================================================================== */
+(() => {
+  const btn = document.getElementById("tb-open"), fr = document.getElementById("tb-frame");
+  if (!btn || !fr) return;
+  btn.addEventListener("click", () => {
+    if (!fr.src) fr.src = "Talk_Buddy/index.html?embed=1";
+    fr.classList.remove("hidden");
+    document.getElementById("tb-intro").classList.add("hidden");
+  });
+})();

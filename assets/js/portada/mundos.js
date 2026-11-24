@@ -99,6 +99,13 @@ const SCENES = {
       <g fill="#1f5a33">${[90,210,1400,1520].map((x,i) => `<path d="M${x} ${560+i*20} L${x+70} 860 L${x-70} 860Z"/>`).join("")}</g>
       <g class="drift" fill="none" stroke="#3a2a2a" stroke-width="3"><path d="M600 300 q12 -10 24 0 q12 -10 24 0"/><path d="M680 260 q10 -8 20 0 q10 -8 20 0"/><path d="M560 250 q8 -6 16 0 q8 -6 16 0"/></g>`)}`,
 
+  // Respaldo dibujado de Talk Buddy (si la imagen no carga): atardecer cálido con bloques y globos de diálogo
+  talk: () => `<defs>${lg("tb-sky",[[0,"#2b1a5e"],[.55,"#c2547a"],[1,"#ffb347"]])}</defs>
+    <rect width="1600" height="900" fill="url(#tb-sky)"/>${stars(31,50,300)}
+    ${L(.3, `<g fill="#3a1f55">${[[80,560,180,340],[300,620,140,280],[1180,520,200,380],[1420,600,180,300]].map(([x,y,w,h]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}"/>`).join("")}</g>`)}
+    ${L(.6, `<rect x="0" y="760" width="1600" height="140" fill="#24123d"/>
+      <g fill="#fff" opacity=".85">${[[980,300,150,70],[1220,220,120,60],[860,420,110,55]].map(([x,y,w,h]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="22"/><path d="M${x+30} ${y+h} l-14 26 l34 -26z"/>`).join("")}</g>`)}`,
+
   // Respaldo dibujado de la Challenge Zone (si la imagen no carga): arena neón con plataformas
   zone: () => `<defs>${lg("zn-sky",[[0,"#0b0526"],[.6,"#2a0f5c"],[1,"#5b1f8f"]])}</defs>
     <rect width="1600" height="900" fill="url(#zn-sky)"/>${stars(17,80,420)}
@@ -125,7 +132,8 @@ const FX = {
   neon:   () => specks(9, 70, { color:["#ff5fd2","#5ff4ff","#fff"], rmax:2, cls:"rise", dur:[7,14] }),
   aurora: () => specks(13, 120, { color:"#fff", rmax:1.8, ymax:480, dur:[2,5] }),
   forest: () => specks(5, 45, { color:"#ffe58a", rmin:1.5, rmax:3.5, cls:"firefly", ymin:350, ymax:880, dur:[3,7] }),
-  zone:   () => zoneFX()
+  zone:   () => zoneFX(),
+  talk:   () => specks(37, 60, { color:["#ffe2a8","#fff","#ffb3d9"], rmax:2.2, cls:"rise", dur:[8,15] })
 };
 /* Disparos láser de la Challenge Zone: cada rayo cruza de un jugador a otro y deja una chispa al impactar.
    [x1, y1, x2, y2, color, retraso en segundos, duración] */
@@ -353,7 +361,7 @@ document.addEventListener("click", e => {
 addEventListener("popstate", () => goTo(location.hash.slice(1) || ids[0], { push: false, origin: { x: innerWidth / 2, y: innerHeight / 2 } }));
 
 // Botón "siguiente mundo" al final de cada sección
-const NAMES = { hero: "Home · Inicio", worlds: "Worlds", word: "Word of the day", challenge: "Quick challenge", zone: "Challenge Zone", speak: "Speak", how: "How to play" };
+const NAMES = { hero: "Home · Inicio", worlds: "Worlds", word: "Word of the day", challenge: "Quick challenge", zone: "Challenge Zone", speak: "Speak", talk: "Talk Buddy", how: "How to play" };
 sections.forEach((s, k) => {
   if (k === 0 || k === sections.length - 1) return;
   const n = sections[k + 1], a = document.createElement("a");

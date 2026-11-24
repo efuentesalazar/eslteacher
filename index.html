@@ -39,6 +39,7 @@
     <a href="#challenge">Quick challenge</a>
     <a href="#zone">Challenge Zone</a>
     <a href="#speak">Speak</a>
+    <a href="#talk">Talk Buddy</a>
   </div>
   <div class="tools">
     <button class="icon-btn" id="mute" type="button" aria-label="Silenciar sonidos" title="Sonidos">🔊</button>
@@ -62,6 +63,7 @@
   <a href="#challenge"><span>⚡</span>Challenge</a>
   <a href="#zone"><span>🧠</span>Zone</a>
   <a href="#speak"><span>🎙</span>Speak</a>
+  <a href="#talk"><span>🤖</span>Talk</a>
   <button type="button" id="tab-me"><span id="tab-av">🙂</span>Me</button>
 </div>
 
@@ -341,6 +343,26 @@
       <p class="note" id="sr-note"></p>
       <div class="fb hidden" id="fb"></div>
       <p class="history" id="history"></p>
+    </div>
+  </section>
+
+  <!-- 05b TALK BUDDY: conversación con IA, gratis (la IA corre en el computador del alumno; código en Talk_Buddy/) -->
+  <section id="talk" data-scene="talk" data-name="Buddy Plaza">
+    <p class="cap reveal">New · AI conversation · Conversa con una IA</p>
+    <h2 class="title"><span>Talk</span><span>Buddy</span></h2>
+    <p class="lead reveal d1">Conversa en inglés sobre cualquier tema: escribe o habla, y Buddy te responde en voz alta. Gratis y privado: la IA funciona en tu propio computador.</p>
+    <div class="panel talkbuddy reveal d2">
+      <div id="tb-intro">
+        <div class="tb-feats">
+          <span>🎤 Speak or ✍️ write</span><span>🔊 Natural voice</span><span>💡 Ideas to answer</span><span>🇨🇱 Translate</span>
+        </div>
+        <p class="hint">Necesita Chrome o Edge en un computador o Android reciente. La primera vez descarga la IA (~0,4 a 2 GB, usa Wi-Fi); después parte en segundos.</p>
+        <div class="row" style="margin-top:14px">
+          <button class="btn play" id="tb-open" type="button">▶ Start talking</button>
+          <a class="btn ghost" href="Talk_Buddy/" target="_blank" rel="noopener">⛶ Full screen</a>
+        </div>
+      </div>
+      <iframe id="tb-frame" class="hidden" title="Talk Buddy" allow="microphone; autoplay"></iframe>
     </div>
   </section>
 

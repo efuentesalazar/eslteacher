@@ -6,6 +6,10 @@
 <title>Talk Buddy · ESL Teacher</title>
 <meta name="description" content="Practice short English conversations about any topic. Write or speak, and Talk Buddy answers out loud. Free: the AI runs on your own computer.">
 <link rel="icon" href="../favicon.ico" sizes="any">
+<script>
+  // ?embed=1: dentro de la portada (sección Talk Buddy). La portada ya muestra la sesión del alumno.
+  if (/[?&]embed=1/.test(location.search)) { document.documentElement.classList.add("embed"); window.ESLT_PORTADA = true; }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -85,6 +89,12 @@ select option{background:var(--card)}
 .end b{font-family:var(--display);font-size:22px}
 footer{text-align:center;color:var(--mut);font-size:12px}
 @media (max-width:560px){.msg{max-width:92%}#chat{height:calc(100vh - 100px)}}
+/* Dentro de la portada */
+.embed body{background:transparent}
+.embed .wrap{padding:0;max-width:none;gap:10px}
+.embed header,.embed footer{display:none}
+.embed .box{background:rgba(10,10,28,.55)}
+.embed #chat{height:calc(100vh - 4px);min-height:0}
 </style>
 </head>
 <body>
@@ -130,6 +140,19 @@ footer{text-align:center;color:var(--mut);font-size:12px}
       <h2>3. Buddy's brain <span class="es">· se descarga una sola vez</span></h2>
       <div class="models" id="models"></div>
       <p class="es">La IA funciona dentro de tu computador: es gratis y tu conversación no se envía a ninguna parte. La primera vez descarga el modelo (usa Wi-Fi); después queda guardado y parte en segundos.</p>
+    </div>
+    <div class="opt" style="margin-top:18px">
+      <h2>4. Buddy's voice <span class="es">· voz de Buddy</span></h2>
+      <div class="row">
+        <select id="tts" aria-label="Buddy's voice">
+          <option value="af_heart">👩 Heart · natural voice (US)</option>
+          <option value="am_michael">👨 Michael · natural voice (US)</option>
+          <option value="bf_emma">👩 Emma · natural voice (UK)</option>
+          <option value="bm_george">👨 George · natural voice (UK)</option>
+          <option value="basic">🤖 Basic · browser voice (no download)</option>
+        </select>
+      </div>
+      <p class="es">Las voces naturales también funcionan en tu computador (gratis). Se descargan una vez (~90 MB) mientras conversas; hasta entonces Buddy usa la voz básica.</p>
     </div>
     <div class="row" style="margin-top:18px">
       <button class="btn green" id="start">▶ Start talking</button>

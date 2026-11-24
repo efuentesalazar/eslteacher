@@ -117,6 +117,7 @@ async function start() {
   if (isBad(topic)) { alert("Elige otro tema, por favor. · Please choose another topic."); return; }
   localStorage.setItem("tb_level", level);
   $("setup").hidden = true;
+  unlockAudio();
 
   const id = modelId(modelKey);
   if (!engine || loadedModel !== id) {
@@ -144,6 +145,7 @@ async function start() {
     $("loading").hidden = true;
   }
   openChat();
+  loadNaturalVoice();
 }
 
 /* ================= Conversación ================= */
@@ -371,25 +373,98 @@ $("mic").onclick = () => {
   try { rec.start(); } catch (e) { }
 };
 
-/* ---------- Voz: escuchar a Buddy (lectura en voz alta) ---------- */
-let voice = null;
+/* ---------- Voz: escuchar a Buddy ----------
+   Voz natural: Kokoro (tts-worker.js) corre en el equipo, gratis; se descarga una vez (~90 MB).
+   Mientras se descarga, o si el equipo no puede, se usa la voz del navegador (en Edge, las voces "Natural" son muy buenas). */
+const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu;
+let voice = null, ttsChoice = localStorage.getItem("tb_tts") || "af_heart";
+let ttsWorker = null, ttsReady = false, ttsFailed = false, ttsSlow = false, actx = null, playing = null, speakId = 0, lastSpoken = "";
 function pickVoice() {
   const vs = speechSynthesis.getVoices().filter(v => /^en[-_]/i.test(v.lang));
-  const pref = [/Google US English/i, /Natural/i, /(Aria|Jenny|Guy|Samantha|Ava)/i, /^en[-_]US/i, /^en[-_]GB/i];
+  const pref = [/Natural/i, /Google US English/i, /(Aria|Jenny|Guy|Samantha|Ava)/i, /^en[-_]US/i, /^en[-_]GB/i];
   for (const p of pref) { const v = vs.find(v => p.test(v.name) || p.test(v.lang)); if (v) return v; }
   return vs[0] || null;
 }
 if ("speechSynthesis" in window) { voice = pickVoice(); speechSynthesis.onvoiceschanged = () => { voice = pickVoice(); }; }
+
+function unlockAudio() {   // se llama al presionar "Start" (los navegadores exigen un clic antes de reproducir audio)
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch (e) { }
+}
+function loadNaturalVoice() {
+  if (ttsChoice === "basic" || ttsWorker || ttsFailed) return;
+  try { ttsWorker = new Worker(new URL("./tts-worker.js", import.meta.url), { type: "module" }); }
+  catch (e) { ttsFailed = true; return; }
+  ttsWorker.onmessage = ({ data }) => {
+    if (data.type === "progress") $("hint").textContent = `🔊 Downloading natural voice… ${Math.round(data.p)}% (basic voice meanwhile)`;
+    else if (data.type === "ready") {
+      // Prueba de velocidad en silencio: la 1ª frase calienta el modelo, la 2ª mide si este equipo alcanza
+      $("hint").textContent = "🔊 Testing the natural voice on this computer…";
+      ttsWorker.postMessage({ type: "speak", id: -1, idx: 0, text: "Hello!", voice: ttsChoice, speed: 1 });
+      ttsWorker.postMessage({ type: "speak", id: -2, idx: 0, text: "Nice to meet you. Let's talk!", voice: ttsChoice, speed: 1 });
+    }
+    else if (data.type === "audio") playPcm(data);
+    else if (data.type === "error") {
+      console.warn("TTS", data.msg);
+      if (!ttsReady) { ttsFailed = true; $("hint").textContent = "La voz natural no funciona en este equipo; se usa la voz básica."; }
+      else if (data.id === speakId) basicSpeak(lastSpoken);
+    }
+  };
+  ttsWorker.onerror = e => { console.warn(e); ttsFailed = true; };
+  ttsWorker.postMessage({ type: "load" });
+}
+// Las frases llegan de a una: se reproducen en orden apenas está lista la siguiente.
+let queue = { id: 0, next: 0, bufs: {} }, slowScore = [];
+function playPcm({ id, idx, audio, rate, ms }) {
+  const ratio = ms / 1000 / (audio.length / rate);   // segundos de cálculo por segundo de audio
+  if (id === -1) return;                              // calentamiento
+  if (id === -2) {                                    // prueba: con más de 1,5 el alumno esperaría demasiado
+    if (ratio > 1.5) { ttsSlow = true; $("hint").textContent = "Este computador es lento para la voz natural: Buddy usa la voz básica."; }
+    else { ttsReady = true; $("hint").textContent = "🔊 Natural voice ready!"; setTimeout(() => { if ($("hint").textContent.startsWith("🔊 Natural")) $("hint").textContent = ""; }, 3000); }
+    return;
+  }
+  if (id !== speakId || !actx) return;                // llegó tarde: ya se pidió otra cosa
+  slowScore.push(ratio); if (slowScore.length > 3) slowScore.shift();
+  if (slowScore.length >= 3 && slowScore.every(x => x > 2) && !ttsSlow) {
+    ttsSlow = true; $("hint").textContent = "Este computador es lento para la voz natural: Buddy usa la voz básica.";
+  }
+  const buf = actx.createBuffer(1, audio.length, rate); buf.copyToChannel(audio, 0);
+  queue.bufs[idx] = buf; playNext();
+}
+function playNext() {
+  if (playing || !queue.bufs[queue.next]) return;
+  const src = actx.createBufferSource(); src.buffer = queue.bufs[queue.next]; src.connect(actx.destination);
+  delete queue.bufs[queue.next]; queue.next++;
+  src.onended = () => { if (playing === src) { playing = null; playNext(); } };
+  playing = src; src.start();
+}
 function speak(text, force) {
-  if (!("speechSynthesis" in window) || (!voiceOn && !force)) return;
+  if (!voiceOn && !force) return;
+  stopSpeaking();
+  text = text.replace(EMOJI, "").trim(); lastSpoken = text;
+  if (ttsReady && !ttsSlow && ttsChoice !== "basic" && actx) {
+    queue = { id: speakId, next: 0, bufs: {} };
+    const parts = text.match(/[^.!?]+[.!?]+["')]*\s*|[^.!?]+$/g) || [text];
+    parts.map(t => t.trim()).filter(Boolean).forEach((t, idx) =>
+      ttsWorker.postMessage({ type: "speak", id: speakId, idx, text: t, voice: ttsChoice, speed: Math.max(.8, LEVELS[level].rate) }));
+  } else basicSpeak(text);
+}
+function basicSpeak(text) {
+  if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "").trim());
+  const u = new SpeechSynthesisUtterance(text);
   u.lang = "en-US"; if (voice) u.voice = voice; u.rate = LEVELS[level].rate;
   speechSynthesis.speak(u);
 }
-function stopSpeaking() { if ("speechSynthesis" in window) speechSynthesis.cancel(); }
+function stopSpeaking() {
+  if (ttsWorker) ttsWorker.postMessage({ type: "cancel", id: speakId });
+  speakId++;
+  if (playing) { try { playing.stop(); } catch (e) { } playing = null; }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+}
 function setVoiceBtn() { $("voice").textContent = voiceOn ? "🔊 Voice on" : "🔇 Voice off"; $("voice").setAttribute("aria-pressed", voiceOn ? "true" : "false"); }
 $("voice").onclick = () => { voiceOn = !voiceOn; localStorage.setItem("tb_voice", voiceOn ? "1" : "0"); setVoiceBtn(); if (!voiceOn) stopSpeaking(); };
+$("tts").value = ttsChoice;
+$("tts").onchange = () => { ttsChoice = $("tts").value; localStorage.setItem("tb_tts", ttsChoice); if (ttsChoice !== "basic") loadNaturalVoice(); };
 
 /* ---------- Botones ---------- */
 $("send").onclick = () => send($("say").value, "text");
