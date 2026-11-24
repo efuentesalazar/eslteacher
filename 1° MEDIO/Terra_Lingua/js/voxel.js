@@ -542,3 +542,11 @@ export class VoxelWorld {
   }
   topY(x, z) { for (let y = HEIGHT - 1; y >= 0; y--) if (isSolid(this.get(Math.floor(x), y, Math.floor(z)))) return y + 1; return SEA + 1; }
 }
+// ¿Se puede recolectar este bloque? Solo vegetación y rocas naturales (sobre el suelo) y la arena de playa; nunca pueblos, misiones, lugares ni islas
+export function canHarvest(x, y, z, id) {
+  const u = unitOf(x, z); if (!u || SAFE(x, z) || LM_U[u].some(L => Math.hypot(x - L.x, z - L.z) < L.clear + (L.coast ? 16 : 5))) return false;
+  for (const k in ISLAND) { const c = ISLAND[k]; if (Math.hypot(x - c.x, z - c.z) < c.r + 6) return false; }
+  const g = groundHeight(x, z);
+  if (y > g) return y < g + 20;
+  return y === g && id === B.SAND && g > SEA;
+}

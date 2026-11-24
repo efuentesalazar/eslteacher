@@ -42,7 +42,26 @@ export const ITEMS = [
   { id: 'pw_thunder', slot: 'power', name: 'Thunder Word', icon: '⚡', cost: 650, need: 4, world: 4, dmg: 32, cd: 3, range: 32, color: '#b9a8ff', splash: 1.6, chain: 3, desc: 'Jumps to 3 enemies.' }
 ];
 export const itemById = id => ITEMS.find(i => i.id === id);
-export const SLOTS = [['all', 'All'], ['weapon', 'Weapons'], ['power', 'Powers'], ['hat', 'Hats'], ['cape', 'Capes'], ['pet', 'Pets'], ['tool', 'Tools']];
+
+/* ---------- Materiales de construcción: se recolectan en el mundo y se gastan en el modo creativo ---------- */
+export const MATS = {
+  wood: { icon: '🪵', name: 'Wood', where: 'Trees in every land' },
+  leaf: { icon: '🌿', name: 'Leaves', where: 'Tree tops, bees, caterpillars' },
+  stone: { icon: '🪨', name: 'Stone', where: 'Rocks, orcs, skeletons' },
+  sand: { icon: '🏖️', name: 'Sand', where: 'Fiesta Coast beaches, crabs' },
+  clay: { icon: '🧱', name: 'Clay', where: 'Canvas Canyon rocks, tigers' },
+  paint: { icon: '🎨', name: 'Paint', where: 'Flowers, cactus, mushrooms, coral, slimes' },
+  crystal: { icon: '💎', name: 'Crystal', where: 'Crystals in Scholar Woods, ghosts, bosses' },
+  gold: { icon: '🏅', name: 'Gold', where: 'Purple chests, art thieves, bosses' }
+};
+// Bloque del modo creativo → material que gasta (números = id de bloque de voxel.js)
+export const BLOCK_MAT = { 8: 'wood', 6: 'wood', 7: 'leaf', 29: 'leaf', 1: 'leaf', 9: 'clay', 23: 'clay', 30: 'clay', 3: 'stone', 20: 'sand', 4: 'sand', 21: 'gold', 26: 'crystal', 25: 'crystal', 11: 'paint', 12: 'paint', 13: 'paint', 14: 'paint', 31: 'paint', 15: 'paint', 16: 'paint', 17: 'paint', 18: 'paint', 19: 'paint' };
+// Bloque natural del mundo → material que da al recolectarlo
+export const HARVEST = { 6: 'wood', 8: 'wood', 7: 'leaf', 28: 'leaf', 29: 'leaf', 3: 'stone', 27: 'stone', 4: 'sand', 23: 'clay', 26: 'crystal', 21: 'gold', 11: 'paint', 12: 'paint', 13: 'paint', 14: 'paint', 15: 'paint', 16: 'paint', 17: 'paint', 18: 'paint', 19: 'paint', 31: 'paint' };
+// Lo que suelta cada criatura al ser derrotada
+export const DROPS = { bee: { leaf: 2 }, orc: { stone: 3, wood: 2 }, hog: { wood: 2, leaf: 1 }, worm: { leaf: 3 }, skel: { stone: 3 }, ghost: { crystal: 1, stone: 1 }, keeper: { crystal: 1, wood: 2 }, slime: { paint: 3 }, thief: { paint: 2, gold: 1 }, tiger: { clay: 3 }, crab: { sand: 3 }, zombie: { sand: 2, wood: 2 }, parrot: { paint: 2 } };
+export const STARTER_KIT = { wood: 30, leaf: 15, stone: 30, sand: 15, clay: 20, paint: 30, crystal: 4, gold: 3 };
+export const SLOTS = [['all', 'All'], ['weapon', 'Weapons'], ['power', 'Powers'], ['mat', 'Materials'], ['hat', 'Hats'], ['cape', 'Capes'], ['pet', 'Pets'], ['tool', 'Tools']];
 export const slotGroup = s => s.startsWith('tool') ? 'tool' : s;
 export const LEVELS = pts => Math.floor(Math.sqrt(pts / 40)) + 1;
 export const levelFloor = l => (l - 1) * (l - 1) * 40;

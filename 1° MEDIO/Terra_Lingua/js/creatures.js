@@ -12,9 +12,32 @@ export const MOB_TYPES = {
   slime: { name: 'Paint Slime', proc: 'slime', h: 1, hp: 28, dmg: 4, sp: 3.4, coins: 3, aggro: 12, r: .65 },
   thief: { name: 'Art Thief', url: G + 'character-vampire.glb', h: 1.8, hp: 50, dmg: 6, sp: 3.7, coins: 5, anim: K, aggro: 14, r: .6 },
   crab: { name: 'Giant Crab', url: 'assets/pets/animal-crab.glb', h: .95, hp: 32, dmg: 4, sp: 3, coins: 3, anim: PET, aggro: 11, r: .7, beach: true },
-  zombie: { name: 'Pirate Zombie', url: G + 'character-zombie.glb', h: 1.75, hp: 48, dmg: 6, sp: 2.9, coins: 4, anim: K, aggro: 13, r: .6 }
+  zombie: { name: 'Pirate Zombie', url: G + 'character-zombie.glb', h: 1.75, hp: 48, dmg: 6, sp: 2.9, coins: 4, anim: K, aggro: 13, r: .6 },
+  hog: { name: 'Wild Hog', url: 'assets/pets/animal-hog.glb', h: 1.05, hp: 34, dmg: 5, sp: 4.2, coins: 3, anim: PET, aggro: 11, r: .65 },
+  worm: { name: 'Giant Caterpillar', url: 'assets/pets/animal-caterpillar.glb', h: .9, hp: 24, dmg: 3, sp: 2.4, coins: 2, anim: PET, aggro: 8, r: .65 },
+  keeper: { name: 'Night Keeper', url: G + 'character-keeper.glb', h: 1.8, hp: 44, dmg: 6, sp: 3.2, coins: 5, anim: K, aggro: 13, r: .6, ranged: { dmg: 4, cd: 3.2, range: 12, color: '#b9a8ff' } },
+  tiger: { name: 'Canyon Tiger', url: 'assets/pets/animal-tiger.glb', h: 1.15, hp: 40, dmg: 6, sp: 4.6, coins: 4, anim: PET, aggro: 12, r: .7 },
+  parrot: { name: 'Pirate Parrot', url: 'assets/pets/animal-parrot.glb', h: .8, hp: 16, dmg: 3, sp: 4.8, fly: 1.8, coins: 2, anim: PET, aggro: 11, r: .5 },
+  // animales pacíficos: pasean y dan vida al paisaje (no se pueden atacar)
+  cow: { name: 'Cow', url: 'assets/pets/animal-cow.glb', h: 1.2, passive: true, sp: 1.2, anim: PET, r: .7 },
+  chick: { name: 'Chick', url: 'assets/pets/animal-chick.glb', h: .55, passive: true, sp: 1.6, anim: PET, r: .4 },
+  pig: { name: 'Pig', url: 'assets/pets/animal-pig.glb', h: .9, passive: true, sp: 1.4, anim: PET, r: .6 },
+  deer: { name: 'Deer', url: 'assets/pets/animal-deer.glb', h: 1.4, passive: true, sp: 1.8, anim: PET, r: .6 },
+  bunny: { name: 'Bunny', url: 'assets/pets/animal-bunny.glb', h: .6, passive: true, sp: 2, anim: PET, r: .4 },
+  beaver: { name: 'Beaver', url: 'assets/pets/animal-beaver.glb', h: .7, passive: true, sp: 1.3, anim: PET, r: .5 },
+  elephant: { name: 'Elephant', url: 'assets/pets/animal-elephant.glb', h: 1.9, passive: true, sp: 1.1, anim: PET, r: .9 },
+  giraffe: { name: 'Giraffe', url: 'assets/pets/animal-giraffe.glb', h: 2.4, passive: true, sp: 1.3, anim: PET, r: .7 },
+  monkey: { name: 'Monkey', url: 'assets/pets/animal-monkey.glb', h: .9, passive: true, sp: 1.8, anim: PET, r: .5 }
 };
-export const UNIT_MOBS = { 1: ['bee', 'bee', 'orc'], 2: ['skel', 'ghost', 'skel'], 3: ['slime', 'slime', 'thief'], 4: ['crab', 'zombie', 'crab'] };
+// [tipo, peso, tamaño del grupo]
+export const UNIT_MOBS = {
+  1: [['bee', 3, 3], ['orc', 2, 1], ['hog', 2, 2], ['worm', 2, 1]],
+  2: [['skel', 3, 2], ['ghost', 2, 1], ['keeper', 2, 1], ['bee', 1, 2]],
+  3: [['slime', 3, 3], ['thief', 2, 1], ['tiger', 2, 1], ['worm', 1, 2]],
+  4: [['crab', 3, 2], ['zombie', 2, 2], ['parrot', 2, 2], ['hog', 1, 1]]
+};
+export const UNIT_ANIMALS = { 1: ['cow', 'chick', 'pig'], 2: ['deer', 'bunny', 'beaver'], 3: ['elephant', 'giraffe', 'bunny'], 4: ['monkey', 'chick', 'pig'] };
+const pickW = arr => { let s = arr.reduce((a, b) => a + b[1], 0) * Math.random(); for (const e of arr) { s -= e[1]; if (s <= 0) return e; } return arr[0]; };
 export const BOSSES = {
   1: { type: 'orc', name: 'Orc Foreman', scale: 2, hp: 320, dmg: 9 },
   2: { type: 'ghost', name: 'Headmaster Ghost', scale: 2, hp: 300, dmg: 9 },
@@ -95,16 +118,18 @@ export function createCreatures(ctx) {
   function spawn(type, x, z, boss) {
     const y = world.topY(x, z) + (MOB_TYPES[type].fly || 0) + .05; const m = new Mob(type, x + .5, y, z + .5, boss); list.push(m); return m;
   }
-  function trySpawn(u) {
-    for (let k = 0; k < 7; k++) {
-      const a = Math.random() * Math.PI * 2, r = 22 + Math.random() * 22, x = Math.floor(P.pos.x + Math.cos(a) * r), z = Math.floor(P.pos.z + Math.sin(a) * r);
-      if (unitOf(x, z) !== u || SAFE(x, z) || x < 14 || z < 14 || x > 497 || z > 497) continue;
+  // Aparece un grupo (enjambre de abejas, pareja de slimes…) o un animal pacífico
+  function trySpawn(u, animal) {
+    for (let k = 0; k < 8; k++) {
+      const a = Math.random() * Math.PI * 2, r = 18 + Math.random() * 24, x = Math.floor(P.pos.x + Math.cos(a) * r), z = Math.floor(P.pos.z + Math.sin(a) * r);
+      if (unitOf(x, z) !== u || (!animal && SAFE(x, z)) || x < 14 || z < 14 || x > 497 || z > 497) continue;
       const top = world.topY(x, z); if (Math.abs(top - P.pos.y) > 14) continue;
-      let type = UNIT_MOBS[u][Math.floor(Math.random() * 3)];
-      const T = MOB_TYPES[type], wet = world.waterAt(x, top, z) || top <= SEA + 1;
-      if (T.beach && top > SEA + 4) type = UNIT_MOBS[u].find(t => !MOB_TYPES[t].beach);
-      if (wet && !MOB_TYPES[type].beach) continue;
-      spawn(type, x, z); return;
+      let [type, , n] = animal ? [UNIT_ANIMALS[u][Math.floor(Math.random() * 3)], 1, 1 + (Math.random() < .5 ? 1 : 0)] : pickW(UNIT_MOBS[u]);
+      const wet = world.waterAt(x, top, z) || top <= SEA + 1;
+      if (MOB_TYPES[type].beach && top > SEA + 4) { type = 'zombie'; n = 1; }
+      if (wet && !MOB_TYPES[type].beach && !MOB_TYPES[type].fly) continue;
+      for (let i = 0; i < n; i++) { const ox = x + Math.round((Math.random() - .5) * 5), oz = z + Math.round((Math.random() - .5) * 5); if (unitOf(ox, oz) === u && (animal || !SAFE(ox, oz))) spawn(type, ox, oz); }
+      return;
     }
   }
   function clear() { while (list.length) list.pop().dispose(); bossAlive = {}; }
@@ -116,7 +141,7 @@ export function createCreatures(ctx) {
     // jefe del mundo en su lugar especial
     for (const L of LANDMARKS) if (L.boss && L.u === u && unitOpen(u) && !bossAlive[u] && ctx.bossReady(u) && Math.hypot(P.pos.x - L.x, P.pos.z - L.z) < 46) { const b = BOSSES[u]; bossAlive[u] = spawn(b.type, L.bossAt.x, L.bossAt.z, { ...b, u }); bossAlive[u].home.set(L.bossAt.x + .5, L.bossAt.y, L.bossAt.z + .5); }
     spawnT -= dt;
-    if (spawnT <= 0) { spawnT = 2.2 + Math.random() * 1.5; const cap = (isTouch ? 3 : 5) + (night ? 2 : 0); if (u && unitOpen(u) && list.filter(m => !m.boss && !m.dead).length < cap && !ctx.busy()) trySpawn(u); }
+    if (spawnT <= 0) { spawnT = 1.4 + Math.random() * 1.2; const cap = (isTouch ? 7 : 11) + (night ? 4 : 0), foes = list.filter(m => !m.boss && !m.dead && !m.T.passive).length, pets = list.filter(m => m.T.passive).length; if (u && unitOpen(u) && !ctx.busy()) { if (foes < cap) trySpawn(u); else if (pets < (isTouch ? 3 : 6)) trySpawn(u, true); if (pets < 2 && Math.random() < .4) trySpawn(u, true); } }
     const canHit = !P.dead && !ctx.busy() && !SAFE(P.pos.x, P.pos.z);
     for (let i = list.length - 1; i >= 0; i--) {
       const m = list[i];
@@ -129,7 +154,7 @@ export function createCreatures(ctx) {
       if (m.barT > 0 && !m.boss) { m.barT -= dt; if (m.barT <= 0) m.bar.visible = false; }
       m.cd -= dt; m.rcd -= dt; m.angryT -= dt;
       const homeD = Math.hypot(m.pos.x - m.home.x, m.pos.z - m.home.z), leash = m.boss ? 16 : 34;
-      const chase = canHit && homeD < leash && (d < m.aggro || (m.angryT > 0 && d < m.aggro * 2.2)) && Math.abs(P.pos.y - m.pos.y) < 9;
+      const chase = !m.T.passive && canHit && homeD < leash && (d < m.aggro || (m.angryT > 0 && d < m.aggro * 2.2)) && Math.abs(P.pos.y - m.pos.y) < 9;
       let gx = 0, gz = 0, sp = 0;
       if (chase) { const stop = m.boss ? 2.2 : 1.4; if (d > stop) { gx = dx / d; gz = dz / d; sp = m.sp * (d > 6 ? 1.15 : 1); } }
       else if (homeD > (m.boss ? 4 : 12)) { gx = (m.home.x - m.pos.x) / homeD; gz = (m.home.z - m.pos.z) / homeD; sp = m.sp * .8; }
@@ -165,6 +190,6 @@ export function createCreatures(ctx) {
       }
     }
   }
-  const nearestDist = () => { let b = 1e9; for (const m of list) if (!m.dead) b = Math.min(b, Math.hypot(m.pos.x - P.pos.x, m.pos.z - P.pos.z)); return b; };
+  const nearestDist = () => { let b = 1e9; for (const m of list) if (!m.dead && !m.T.passive) b = Math.min(b, Math.hypot(m.pos.x - P.pos.x, m.pos.z - P.pos.z)); return b; };
   return { list, update, damage, clear, nearestDist, spawn };
 }

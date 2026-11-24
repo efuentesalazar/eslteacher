@@ -4,10 +4,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { logAnswer, student, flush, openLogin } from '/assets/js/eslt-track.js';
 import { crearFluido } from '/assets/js/eslt-fluido.js';
-import { VoxelWorld, makeAtlas, tileCss, buildStructures, groundHeight, unitOf, B, PALETTE, BLOCK_NAMES, WORLD, TOWNS, GATES, SITES, ISLAND, CENTER, SEA, LANDMARKS, SAFE } from './voxel.js';
+import { VoxelWorld, makeAtlas, tileCss, buildStructures, groundHeight, unitOf, B, PALETTE, BLOCK_NAMES, WORLD, TOWNS, GATES, SITES, ISLAND, CENTER, SEA, LANDMARKS, SAFE, canHarvest } from './voxel.js';
 import { createCreatures, BOSSES } from './creatures.js';
 import { UNITS, ALL_QUESTS, quickPool } from './content.js';
-import { ITEMS, itemById, SLOTS, slotGroup, LEVELS, levelFloor, QUICK_CHAT } from './items.js';
+import { ITEMS, itemById, SLOTS, slotGroup, LEVELS, levelFloor, QUICK_CHAT, MATS, BLOCK_MAT, HARVEST, DROPS, STARTER_KIT } from './items.js';
 import { NET, on as netOn, join, joinWorld, leave as netLeave, send, updateMe, MAX_PARTY, MAX_ARENA } from './net.js';
 import { runQuest, quickQuestion, partyQuizUI, shuffle, speak } from './quiz.js';
 
@@ -22,9 +22,9 @@ const MAX_CREATIVE = 600, PER_UNIT = 150, MIN_TASKS = 4, TASKS_PER_UNIT = 8;
 /* ========== Guardado ========== */
 const me = student();
 const SAVE_KEY = 'tl1m_save_' + (me ? me.sid : 'guest');
-const fresh = () => ({ v: 1, name: '', char: 0, pts: 0, coins: 0, done: {}, owned: ['w_wood', 'pw_spark'], eq: { weapon: 'w_wood', power: 'pw_spark' }, gems: [], cr: { d: '', used: 0 }, build: [], time: 0, kos: 0, koDay: { d: '', n: 0 }, pos: null, seen: false, firstT: 0, mobs: 0, mobDay: { d: '', n: 0 }, bosses: {}, bossT: {} });
+const fresh = () => ({ v: 1, name: '', char: 0, pts: 0, coins: 0, done: {}, owned: ['w_wood', 'pw_spark'], eq: { weapon: 'w_wood', power: 'pw_spark' }, gems: [], cr: { d: '', used: 0 }, build: [], time: 0, kos: 0, koDay: { d: '', n: 0 }, pos: null, seen: false, firstT: 0, mobs: 0, mobDay: { d: '', n: 0 }, bosses: {}, bossT: {}, mat: {}, kit: false, harvDay: { d: '', n: 0 } });
 let S = fresh();
-const fixSave = () => { for (const k of ['mobDay', 'bosses', 'bossT']) if (!S[k]) S[k] = fresh()[k]; if (!S.owned.includes('pw_spark')) S.owned.push('pw_spark'); if (!S.eq.power) S.eq.power = 'pw_spark'; };
+const fixSave = () => { for (const k of ['mobDay', 'bosses', 'bossT', 'mat', 'harvDay']) if (!S[k]) S[k] = fresh()[k]; if (!S.owned.includes('pw_spark')) S.owned.push('pw_spark'); if (!S.eq.power) S.eq.power = 'pw_spark'; };
 try { const l = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (l && l.v) S = { ...fresh(), ...l }; } catch (e) { }
 fixSave();
 let dirty = false, lastCloud = 0;
@@ -426,7 +426,7 @@ function confetti() { const box = $('fx'); for (let i = 0; i < 46; i++) { const 
 async function openGem(g) {
   const pool = quickPool(highestOpen()), it = pool[Math.floor(Math.random() * pool.length)]; activeQuiz = true;
   const ok = await quickQuestion(it, '🎁 Treasure chest', (x, v, o, ms) => log({ title: 'Treasure chest', unit: x.unit, k: x.k }, x, v, o, ms, `U${x.unit} Treasure chest`)); activeQuiz = false;
-  if (ok) { sfx('coin'); gain(g.big ? 40 : 20, g.big ? 'treasure' : 'chest'); if (g.big) { S.coins += 40; toast('💜 Explorer treasure! +40 coins', 'gold'); } S.gems.push(g.id); scene.remove(g.g); GEMS.splice(GEMS.indexOf(g), 1); touch(); } else { sfx('bad', .35); toast('The chest stays locked. Try again later!', 'warn'); }
+  if (ok) { sfx('coin'); gain(g.big ? 40 : 20, g.big ? 'treasure' : 'chest'); if (g.big) { S.coins += 40; S.mat.gold = (S.mat.gold || 0) + 4; S.mat.crystal = (S.mat.crystal || 0) + 3; toast('💜 Explorer treasure! +40 coins, +4 🏅, +3 💎', 'gold'); } else { const ks = ['wood', 'stone', 'paint', 'clay', 'sand'], k = ks[Math.floor(Math.random() * ks.length)]; S.mat[k] = (S.mat[k] || 0) + 6; toast(`+6 ${MATS[k].icon} ${MATS[k].name}`); } S.gems.push(g.id); scene.remove(g.g); GEMS.splice(GEMS.indexOf(g), 1); touch(); } else { sfx('bad', .35); toast('The chest stays locked. Try again later!', 'warn'); }
 }
 
 /* ========== Tienda / mochila ========== */
@@ -435,6 +435,7 @@ function openBag(atShop) {
   openUI(); $('bag').classList.remove('hidden'); $('bagTabs').innerHTML = SLOTS.map(([k, l]) => `<button type="button" class="tab ${k === bagTab ? 'on' : ''}" data-k="${k}">${l}</button>`).join('');
   $('bagTabs').querySelectorAll('button').forEach(b => b.onclick = () => { bagTab = b.dataset.k; openBag(); });
   $('bagCoins').textContent = S.coins;
+  if (bagTab === 'mat') { $('bagGrid').innerHTML = Object.entries(MATS).map(([k, m]) => `<div class="item ${(S.mat[k] || 0) ? 'has' : ''}"><span class="ic">${m.icon}</span><b>${esc(m.name)}: ${S.mat[k] || 0}</b><small>${esc(m.where)}</small></div>`).join('') + `<p class="small" style="grid-column:1/-1">Hit trees, rocks, flowers, cactus, crystals and beach sand to collect them. Creatures drop them too. Use them to build in Creative Mode.</p>`; return; }
   $('bagGrid').innerHTML = ITEMS.filter(i => bagTab === 'all' || slotGroup(i.slot) === bagTab).map(i => {
     const has = S.owned.includes(i.id), eq = S.eq[i.slot] === i.id, locked = i.need && !unitDone(i.need), auto = i.slot.startsWith('tool');
     const btn = has ? (auto ? '<span class="own">Active</span>' : eq && (i.slot === 'weapon' || i.slot === 'power') ? '<span class="own">✔ Equipped</span>' : `<button type="button" class="btn small ${eq ? 'ghost' : 'green'}" data-eq="${i.id}">${eq ? 'Take off' : 'Equip'}</button>`) : locked ? `<span class="own">🔒 Unit ${i.need}</span>` : `<button type="button" class="btn small gold" data-buy="${i.id}" ${S.coins < i.cost ? 'disabled' : ''}>🪙 ${i.cost}</button>`;
@@ -488,19 +489,21 @@ document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { sfx('
 /* ========== Modo creativo ========== */
 const HOT = PALETTE; let hotSel = 0, crTick = 0;
 function buildHotbar() {
-  $('hotbar').innerHTML = HOT.map((id, i) => `<button type="button" data-i="${i}" title="${BLOCK_NAMES[id]}" aria-label="${BLOCK_NAMES[id]}"><img alt="" src="${tileCss(id, atlas.canvas)}"></button>`).join('');
+  $('hotbar').innerHTML = HOT.map((id, i) => `<button type="button" data-i="${i}" title="${BLOCK_NAMES[id]}" aria-label="${BLOCK_NAMES[id]}"><img alt="" src="${tileCss(id, atlas.canvas)}"><i class="cnt"></i></button>`).join('');
   $('hotbar').querySelectorAll('button').forEach(b => b.onclick = () => selectHot(+b.dataset.i)); selectHot(0);
 }
-function selectHot(i) { hotSel = i; if (isTouch) { document.body.classList.remove('pal'); $('bBlock').innerHTML = `<img alt="" src="${tileCss(HOT[i], atlas.canvas)}">`; } $('hotbar').querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i)); $('hotbar').children[i]?.scrollIntoView({ inline: 'center', block: 'nearest' }); $('blockName').textContent = BLOCK_NAMES[HOT[i]]; }
+function hotCounts() { $('hotbar').querySelectorAll('button').forEach((b, k) => { const n = S.mat[BLOCK_MAT[HOT[k]]] || 0; b.querySelector('.cnt').textContent = n > 999 ? '999+' : n; b.classList.toggle('empty', n < 1); }); const m = BLOCK_MAT[HOT[hotSel]]; $('blockName').textContent = `${BLOCK_NAMES[HOT[hotSel]]} · ${MATS[m].icon} ${S.mat[m] || 0}`; }
+function selectHot(i) { hotSel = i; if (isTouch) { document.body.classList.remove('pal'); $('bBlock').innerHTML = `<img alt="" src="${tileCss(HOT[i], atlas.canvas)}">`; } $('hotbar').querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i)); $('hotbar').children[i]?.scrollIntoView({ inline: 'center', block: 'nearest' }); hotCounts(); }
 function talkCreative() {
   const n = solvedTotal(), left = creativeLeft(), bud = creativeBudget();
   if (n < MIN_TASKS) return dialog('🧱 Creative Island', 'Portal', `<p>Complete <b>${MIN_TASKS} missions</b> to unlock Creative Mode. You have <b>${n}</b>.</p>`, [{ t: 'OK' }]);
   const rows = UNITS.map(u => `<li>Unit ${u.id}: ${solvedIn(u.id)}/${TASKS_PER_UNIT} missions → <b>${fmt(solvedIn(u.id) / TASKS_PER_UNIT * PER_UNIT)}</b></li>`).join('');
-  dialog('🧱 Creative Island', 'Portal', `<p>Time earned: <b>${fmt(bud)}</b> of 10:00. Left today: <b>${fmt(left)}</b>.</p><ul class="small">${rows}</ul><p class="small">Each unit gives up to 2:30. Solve every mission to reach 10 minutes. Time refills every day.</p>`,
+  dialog('🧱 Creative Island', 'Portal', `<p>Time earned: <b>${fmt(bud)}</b> of 10:00. Left today: <b>${fmt(left)}</b>.</p><ul class="small">${rows}</ul><p class="small">Each unit gives up to 2:30. Solve every mission to reach 10 minutes. Time refills every day.</p><p class="small">🧱 Every block uses materials: ${Object.keys(MATS).map(k => `${MATS[k].icon} ${S.mat[k] || 0}`).join(' · ')}. Collect more in the four lands: hit trees, rocks, flowers and crystals, and defeat creatures.</p>`,
     [{ t: left > 0 ? 'Enter and build' : 'No time left today', off: left <= 0, f: enterCreative }, { t: 'Later', c: 'ghost' }]);
 }
 function enterCreative() {
-  P.zone = 'creative'; P.fly = false; $('bFly').classList.remove('on'); document.body.classList.remove('flying'); const c = ISLAND.creative; teleport(c.x + .5, c.y + 2, c.z + 6); document.body.classList.add('creative');
+  if (!S.kit) { S.kit = true; for (const k in STARTER_KIT) S.mat[k] = (S.mat[k] || 0) + STARTER_KIT[k]; setTimeout(() => toast('🎁 Starter kit: materials to start building!', 'gold'), 1500); touch(); }
+  hotCounts(); P.zone = 'creative'; P.fly = false; $('bFly').classList.remove('on'); document.body.classList.remove('flying'); const c = ISLAND.creative; teleport(c.x + .5, c.y + 2, c.z + 6); document.body.classList.add('creative');
   toast(isTouch ? 'Aim with the dot. ➕ places, ✖ removes.' : 'Left click: remove · Right click: place · F: fly', 'gold'); playMusic('Music_SweetTalk');
 }
 function exitCreative(msg) { document.body.classList.remove('creative', 'pal', 'flying'); P.zone = 'world'; P.fly = false; teleport(CENTER + .5, 23, CENTER + 18); if (msg) toast(msg, 'warn'); touch(); saveCloud(true); }
@@ -513,12 +516,14 @@ const inPlot = (x, y, z) => { const c = ISLAND.creative; return Math.hypot(x - c
 function placeBlock() {
   const h = rayFromView(); if (!h || !inPlot(h.px, h.py, h.pz)) return;
   if (S.build.length >= 1500) return toast('Block limit reached (1500).', 'warn');
+  const need = BLOCK_MAT[HOT[hotSel]]; if (need && (S.mat[need] || 0) < 1) { sfx('bad', .3); return toast(`${MATS[need].icon} You need ${MATS[need].name}! Collect it in the four lands.`, 'warn'); }
   const bx = h.px, by = h.py, bz = h.pz; if (Math.abs(bx + .5 - P.pos.x) < .85 && Math.abs(bz + .5 - P.pos.z) < .85 && by >= Math.floor(P.pos.y) && by <= Math.floor(P.pos.y + 1.8)) return;
-  world.set(bx, by, bz, HOT[hotSel]); S.build.push([bx, by, bz, HOT[hotSel]]); buildSet.set(buildKey(bx, by, bz), HOT[hotSel]); sfx('block', .4); dirty = true; avatar?.oneShot('interact-right', 350);
+  world.set(bx, by, bz, HOT[hotSel]); if (need) S.mat[need]--; hotCounts(); S.build.push([bx, by, bz, HOT[hotSel]]); buildSet.set(buildKey(bx, by, bz), HOT[hotSel]); sfx('block', .4); dirty = true; avatar?.oneShot('interact-right', 350);
 }
 function breakBlock() {
   const h = rayFromView(); if (!h || !buildSet.has(buildKey(h.x, h.y, h.z))) return;
-  world.set(h.x, h.y, h.z, B.AIR); buildSet.delete(buildKey(h.x, h.y, h.z)); S.build = S.build.filter(b => !(b[0] === h.x && b[1] === h.y && b[2] === h.z)); sfx('block', .3); dirty = true; avatar?.oneShot('interact-right', 350);
+  const back = BLOCK_MAT[buildSet.get(buildKey(h.x, h.y, h.z))]; if (back) S.mat[back] = (S.mat[back] || 0) + 1;
+  world.set(h.x, h.y, h.z, B.AIR); buildSet.delete(buildKey(h.x, h.y, h.z)); hotCounts(); S.build = S.build.filter(b => !(b[0] === h.x && b[1] === h.y && b[2] === h.z)); sfx('block', .3); dirty = true; avatar?.oneShot('interact-right', 350);
 }
 
 /* ========== Arena PvP ========== */
@@ -553,7 +558,7 @@ const curPower = () => itemById(S.eq.power) || itemById('pw_spark');
 function combatTargets() {
   const out = [];
   if (P.zone === 'arena') { for (const b of bots) if (b.dead <= 0) out.push({ kind: 'bot', ref: b, pos: b.pos, r: .7, cy: .9 }); for (const p of peers.values()) if (!p.dead && p.a.root.visible) out.push({ kind: 'peer', ref: p, pos: p.pos, r: .7, cy: .9 }); }
-  else if (P.zone === 'world') for (const m of CR.list) if (!m.dead && m.ready) out.push({ kind: 'mob', ref: m, pos: m.pos, r: m.r, cy: m.cy });
+  else if (P.zone === 'world') for (const m of CR.list) if (!m.dead && m.ready && !m.T.passive) out.push({ kind: 'mob', ref: m, pos: m.pos, r: m.r, cy: m.cy });
   return out;
 }
 const alive = t => t.kind === 'bot' ? t.ref.dead <= 0 : t.kind === 'peer' ? !t.ref.dead && peers.has(t.ref.id) : !t.ref.dead && !t.ref.gone;
@@ -573,8 +578,27 @@ function hitTarget(t, dmg, o = {}) {
   else if (t.kind === 'peer') send('hit', { to: t.ref.id, dmg, by: profileName(), byId: NET.id });
   else CR.damage(t.ref, dmg, o.dir, o.slow);
 }
+/* Recolectar materiales: golpea árboles, rocas, flores, cristales y arena */
+let harv = null; const harvBox = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.03, 1.03, 1.03)), new THREE.LineBasicMaterial({ color: '#ffffff' })); harvBox.visible = false; scene.add(harvBox);
+function findHarvest() {
+  harv = null; if (P.zone !== 'world' || P.dead || anyUI() || !started) { harvBox.visible = false; return; }
+  const h = rayFromView(); if (h) { const id = world.get(h.x, h.y, h.z), m = HARVEST[id], d = Math.hypot(h.x + .5 - P.pos.x, h.y + .5 - P.pos.y - 1, h.z + .5 - P.pos.z); if (m && d < 5.5 && unitOpen(unitOf(h.x, h.z)) && canHarvest(h.x, h.y, h.z, id)) harv = { x: h.x, y: h.y, z: h.z, id, m }; }
+  harvBox.visible = !!harv; if (harv) harvBox.position.set(harv.x + .5, harv.y + .5, harv.z + .5);
+  document.body.classList.toggle('harvest', !!harv);
+}
+function harvest() {
+  const h = harv; if (!h) return; P.cd = .32; avatar?.oneShot('attack-melee-right', 320); sfx('block', .45);
+  const day = today(); if (S.harvDay.d !== day) S.harvDay = { d: day, n: 0 };
+  world.set(h.x, h.y, h.z, B.AIR); burst(new THREE.Vector3(h.x + .5, h.y + .5, h.z + .5), new THREE.Color().setHSL(0, 0, .9), 6);
+  if (S.harvDay.n < 600) { S.harvDay.n++; S.mat[h.m] = (S.mat[h.m] || 0) + 1; matFloat(new THREE.Vector3(h.x + .5, h.y + 1, h.z + .5), `+1 ${MATS[h.m].icon}`); dirty = true; }
+  else if (S.harvDay.n++ === 600) toast('Your bag is full for today! Come back tomorrow.', 'warn');
+  findHarvest();
+}
+function matFloat(pos, txt) { const v = pos.clone().project(camera); if (v.z > 1) return; const d = document.createElement('div'); d.className = 'dnum mat'; d.style.left = ((v.x + 1) / 2 * innerWidth) + 'px'; d.style.top = ((1 - v.y) / 2 * innerHeight) + 'px'; d.textContent = txt; $('fx').appendChild(d); setTimeout(() => d.remove(), 900); }
 function attack() {
-  if (P.dead || P.cd > 0 || anyUI() || P.zone === 'creative') return; const w = curWeapon(); P.cd = w.cd; sfx('swing', .4); avatar?.oneShot(w.ranged ? 'holding-right-shoot' : 'attack-melee-right', 380);
+  if (P.dead || P.cd > 0 || anyUI() || P.zone === 'creative') return; const w = curWeapon();
+  if (P.zone === 'world' && harv) { const near = pickTarget(aimDir(), 6, isTouch ? .1 : .45); if (!near) return harvest(); }
+  P.cd = w.cd; sfx('swing', .4); avatar?.oneShot(w.ranged ? 'holding-right-shoot' : 'attack-melee-right', 380);
   const dir = aimDir(), dmg = Math.round(w.dmg * (dmgBuff > 0 ? 2 : 1));
   const tg = pickTarget(dir, w.ranged ? w.range : w.range + .5, w.ranged ? (isTouch ? .75 : .9) : (isTouch ? .1 : .45)); faceTarget(tg);
   if (w.ranged) { const o = handPos(), d = tg ? centerOf(tg).sub(o).normalize() : dir; fire({ pos: o, dir: d, speed: 38, life: w.range / 38 + .15, dmg, color: w.color, size: .24, splash: w.splash || 0, home: tg ? 6 : 0, target: tg, from: 'me', rainbow: w.rainbow }); send('shot', { o: [o.x, o.y, o.z], d: [d.x, d.y, d.z], c: w.color, s: .24 }); return; }
@@ -645,15 +669,16 @@ const CR = createCreatures({
     sfx('coin', .4); burst(new THREE.Vector3(m.pos.x, m.pos.y + m.cy, m.pos.z), '#ffd93b', 10);
     S.mobs = (S.mobs || 0) + 1; const d = today(); if (S.mobDay.d !== d) S.mobDay = { d, n: 0 };
     if (m.boss) { setTimeout(() => bossReward(m.boss.u, m.boss.name), 1300); return; }
+    const dr = DROPS[m.type]; if (dr) { const txt = []; for (const k in dr) { S.mat[k] = (S.mat[k] || 0) + dr[k]; txt.push(`+${dr[k]} ${MATS[k].icon}`); } matFloat(new THREE.Vector3(m.pos.x, m.pos.y + m.cy + .6, m.pos.z), txt.join(' ')); }
     const c = m.T.coins; if (S.mobDay.n + c <= 160) { S.mobDay.n += c; S.coins += c; float(`+${c} 🪙`); hud(); touch(); }
   }
 });
 async function bossReward(u, name) {
-  S.bossT[u] = Date.now(); S.bosses[u] = (S.bosses[u] || 0) + 1; touch();
+  S.bossT[u] = Date.now(); S.bosses[u] = (S.bosses[u] || 0) + 1; S.mat.gold = (S.mat.gold || 0) + 5; S.mat.crystal = (S.mat.crystal || 0) + 5; touch();
   if (P.zone !== 'world' || P.dead) return; toast(`🏆 You defeated the ${name}!`, 'gold'); confetti(); sfx('win');
   const pool = quickPool(highestOpen()), it = pool[Math.floor(Math.random() * pool.length)]; activeQuiz = true; openUI();
   const ok = await quickQuestion(it, `👑 ${name}'s treasure`, (x, v, o, ms) => log({ title: 'Boss treasure', unit: x.unit, k: x.k }, x, v, o, ms, `U${u} Boss: ${name}`)); activeQuiz = false;
-  const coins = ok ? 80 : 30; S.coins += coins; if (ok) gain(20, 'boss'); else hud(); toast(ok ? `👑 +${coins} coins and +20 points!` : `👑 +${coins} coins. Answer right next time for more!`, 'gold'); touch(); saveCloud(true);
+  const coins = ok ? 80 : 30; S.coins += coins; if (ok) gain(20, 'boss'); else hud(); toast(ok ? `👑 +${coins} coins, +20 points, +5 🏅 +5 💎!` : `👑 +${coins} coins. Answer right next time for more!`, 'gold'); touch(); saveCloud(true);
 }
 function koSelf(by, byId) { if (P.dead) return; P.dead = true; avatar._os = false; avatar.play('die', true); avatar._busy = true; send('ko', { by: byId || '', st: 1 }); toast(by ? `Knocked out by ${by}` : 'Knocked out!', 'warn'); setTimeout(() => { if (P.zone !== 'arena') return; P.dead = false; P.hp = 100; P.inv = 2; avatar._busy = false; avatar.curN = ''; arenaSpawn(); hud(); send('ko', { st: 0 }); }, 3000); }
 function gotKo(isBot) { S.kos += isBot ? 0 : 1; arenaScore++; const d = today(); if (S.koDay.d !== d) S.koDay = { d, n: 0 }; if (S.koDay.n < (isBot ? 8 : 20)) { S.koDay.n++; gain(isBot ? 3 : 8, 'KO'); } hud(); }
@@ -789,7 +814,7 @@ function updateSky(dt) {
 }
 
 /* ========== Bucle ========== */
-const clock = new THREE.Clock(); let fpsA = 0, fpsN = 0, lowT = 0, secT = 0, miniT = 0, regenT = 0, combatT = 0;
+const clock = new THREE.Clock(); let fpsA = 0, fpsN = 0, lowT = 0, secT = 0, miniT = 0, regenT = 0, combatT = 0, harvT = 0;
 function loop() {
   requestAnimationFrame(loop); const dt = Math.min(clock.getDelta(), .1); if (!started) { renderer.render(scene, camera); return; }
   updatePlayer(dt); updateCamera(); world.update(P.pos.x, P.pos.z, viewR, 2); updateSky(dt);
@@ -801,8 +826,9 @@ function loop() {
   P.cd = Math.max(0, P.cd - dt); P.inv = Math.max(0, P.inv - dt); if (P.pcd > 0) { P.pcd = Math.max(0, P.pcd - dt); if (P.pcd === 0) powHud(); }
   CR.update(dt, Math.sin(dayT * Math.PI * 2) < -.05); updateProjs(dt);
   if (P.zone === 'world' && !P.dead && P.hp < 100 && performance.now() - P.lastHurt > 4000) { P.hp = Math.min(100, P.hp + 10 * dt); regenT += dt; if (regenT > .25 || P.hp >= 100) { regenT = 0; hpHud(); } }
-  combatT -= dt; if (combatT <= 0) { combatT = .3; const near = P.zone === 'world' && CR.nearestDist() < 18; document.body.classList.toggle('combat', P.zone === 'world' && (near || P.hp < 100)); tHit.textContent = P.zone === 'creative' ? '✖' : '⚔'; }
+  combatT -= dt; if (combatT <= 0) { combatT = .3; const near = P.zone === 'world' && CR.nearestDist() < 18; document.body.classList.toggle('combat', P.zone === 'world' && (near || P.hp < 100)); $('tHit').textContent = P.zone === 'creative' ? '✖' : (harv && CR.nearestDist() > 6 ? '⛏' : '⚔'); }
   if (P.zone === 'creative') { crTick += dt; if (crTick >= 1) { crTick -= 1; S.cr.used++; const l = creativeLeft(); $('crTime').textContent = fmt(l); $('crTime').classList.toggle('low', l <= 30); if (l === 60) toast('1 minute left!', 'warn'); if (l <= 0) exitCreative('⏰ Creative time is over. Solve more missions to earn more!'); } }
+  harvT -= dt; if (harvT <= 0) { harvT = .15; findHarvest(); }
   findNearest(); sendPos(); if (P.zone === 'world') { beam.material.opacity = .28 + Math.sin(performance.now() / 400) * .1; }
   miniT += dt; if (miniT > .12 && mapReady) { miniT = 0; drawMap($('mini').getContext('2d'), 150, false); }
   secT += dt; if (secT > 1) { secT = 0; if (document.visibilityState === 'visible' && !isIdle()) S.time++; saveCloud(); if (S.time % 15 === 0) saveLocal(); idleCheck(); updateBeam(); if (P.pcd > 0) powHud(); }
