@@ -110,6 +110,7 @@
     "trend-city-3m": { E: "READ_EXP", I: "READ_INF", V: "VOCAB", L: "GRAM", W: "GRAM" },
     "chest-quest-ew": { V: "VOCAB", G: "GRAM", R: "READ_EXP" },
     "runeward": { VOC: "VOCAB", GRAM: "GRAM", READ: "READ_EXP", INF: "READ_INF", LIST: "LISTEN", ORD: "WRITE" },
+    "talk-buddy": { TXT: "CONV", SPK: "CONV" },
     "portada": { MEAN: "VOCAB", REV: "VOCAB", GAP: "VOCAB", WRIT: "WRITE", PRON: "PRON" },
     "challenge-zone": { SCR: "WRITE", USE: "GRAM", VOC: "VOCAB", MIS: "GRAM", WF: "VOCAB", DICT: "DICT", READ: "READ_EXP" }
   };

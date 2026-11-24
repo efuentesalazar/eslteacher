@@ -41,6 +41,8 @@
       skills: { SCR: "Ordenar oraciones", USE: "Uso del lenguaje", VOC: "Vocabulario en contexto", MIS: "Encontrar el error", WF: "Formación de palabras", DICT: "Dictado", READ: "Lectura" } },
     "runeward": { name: "Runeward · RPG (todos los cursos, 5° básico a 3° medio)", sections: SECTIONS,
       skills: { VOC: "Vocabulario", GRAM: "Gramática", READ: "Lectura: información explícita", INF: "Lectura: inferencia", LIST: "Comprensión auditiva", ORD: "Ordenar oraciones" } },
+    "talk-buddy": { name: "Talk Buddy · conversación con IA (todos los cursos)", sections: SECTIONS,
+      skills: { TXT: "Conversación escrita (responde en inglés, 3+ palabras)", SPK: "Conversación hablada (responde en inglés, 3+ palabras)" } },
     "chest-quest-ew": { name: "Chest Quest · English Week (todos los cursos)", sections: SECTIONS,
       skills: { V: "Vocabulario", G: "Gramática", R: "Lectura" } }
   };

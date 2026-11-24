@@ -232,3 +232,12 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Panel docente**: `1° MEDIO/Terra_Lingua/panel.html` (misma clave de `profe.html`, con enlace en sus pestañas). Muestra 1°A HC y 1°B HC, avance por unidad, habilidades al primer intento, ficha por alumno y CSV.
 - Base de datos: tabla `eslt.tl_progress` y funciones `eslt_tl_load`, `eslt_tl_save`, `eslt_tl_teacher`. Solo guarda alumnos con sesión. El botón "Respaldo" del panel general incluye este avance (`terra_lingua` en el archivo), también lo construido en el modo creativo.
 - Los ejercicios se editan en `1° MEDIO/Terra_Lingua/js/content.js` y la tienda en `js/items.js`. Para probar: `?debug`.
+
+## Novedades (24-11-2026): Talk Buddy, conversación con IA gratis
+- **Talk Buddy** (`Talk_Buddy/`, id del panel `talk-buddy`): conversaciones cortas en inglés sobre cualquier tema. El alumno escribe o habla (🎤) y Buddy responde y lee su respuesta en voz alta. Aparece en la portada de los seis cursos; cada enlace abre con el nivel de ese curso (`?g=5b`, `6b`, `7b`, `8b`, `1m`, `3m`). Si el alumno inició sesión, el nivel se toma de su curso.
+- **Gratis y privado**: la IA (Llama 3.2 o Qwen 2.5 con WebLLM) corre dentro del computador del alumno. El modelo se descarga una vez (🪶 Tiny ~0,4 GB para equipos lentos, ⚡ Fast ~0,9 GB o 🧠 Smarter ~2,3 GB) y queda guardado en el navegador. No usa ninguna API de pago y la conversación no sale del equipo.
+- **Requisitos**: Chrome o Edge actualizados con WebGPU (computador o Android reciente). Si el equipo no puede, la página lo explica. El micrófono funciona en Chrome y Edge.
+- Ayudas: 💡 *Ideas to answer* (3 respuestas posibles), 🇨🇱 *Español* (traduce la respuesta de Buddy) y 🔊 *Listen*. Una conversación se completa en 8 turnos (se puede seguir).
+- Filtros antes de enviar: groserías, datos personales (teléfonos y correos) y mensajes de autolesión (muestra ayuda: adulto de confianza y la línea *4141).
+- Al panel llega, por turno y solo con sesión: tema, si escribió (TXT) o habló (SPK), cuántas palabras y si respondió en inglés con 3+ palabras. **No se guarda el texto.**
+- Para cambiar temas, niveles o las reglas de Buddy: `Talk_Buddy/app.js` (`TOPICS`, `LEVELS`, `systemPrompt`). La versión de WebLLM está fijada en `app.js` y `worker.js`.
