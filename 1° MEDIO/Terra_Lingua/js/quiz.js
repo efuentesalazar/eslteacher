@@ -123,13 +123,13 @@ export function runQuest(cfg) {
     cfg.onWrong && cfg.onWrong();
     if (btn) { btn.classList.add('wrong'); btn.disabled = true; }
     cur.fails++;
-    if (cur.fails < 3) { fb.className = 'fb warn'; fb.textContent = cur.fails === 1 ? '✖ Not quite. Try again! (attempt 2 of 3)' : '✖ One more try! (attempt 3 of 3)'; return; }
+    if (cur.fails < 3) { fb.className = 'fb warn'; fb.textContent = cur.fails === 1 ? '✖ Not quite. Try again! (attempt 2 of 3)' : '✖ One more try! (attempt 3 of 3)'; fb.scrollIntoView({ block: 'nearest' }); return; }
     // Tercer error: retroalimentación y la pregunta vuelve al final de la misión
     locked = true;
     const right = cur.it.t === 'type' ? cur.it.a[0] : cur.it.t === 'order' ? cur.it.s : (cur.it.t === 'speak' && !body.querySelector('.opt')) ? cur.it.say : cur.it.o[0];
     body.querySelectorAll('.opt').forEach(b => { b.disabled = true; if (b.dataset.v === right) b.classList.add('right'); });
     fb.className = 'fb teach'; fb.innerHTML = `<b>💡 Feedback</b> ${esc(cur.it.x)}<br><span>Answer: <b>${esc(right)}</b>. This question will come back at the end.</span>`;
-    nextBtn.classList.remove('hidden'); nextBtn.onclick = () => { const c = queue.shift(); queue.push({ it: c.it, i: c.i, fails: 0, again: true }); next(); };
+    nextBtn.classList.remove('hidden'); nextBtn.scrollIntoView({ block: 'nearest' }); nextBtn.onclick = () => { const c = queue.shift(); queue.push({ it: c.it, i: c.i, fails: 0, again: true }); next(); };
   }
   bar(); next();
 }

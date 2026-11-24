@@ -10,10 +10,11 @@ import { ITEMS, itemById, SLOTS, slotGroup, LEVELS, levelFloor, QUICK_CHAT } fro
 import { NET, on as netOn, join, joinWorld, leave as netLeave, send, updateMe, MAX_PARTY, MAX_ARENA } from './net.js';
 import { runQuest, quickQuestion, partyQuizUI, shuffle, speak } from './quiz.js';
 
+if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); }; // celulares antiguos
 const GAME = 'terra-lingua-1m', DB = 'https://tlihbmgokuhvppbchvrz.supabase.co', DBK = 'sb_publishable_nGgOCuUUuXKK7gx957LYhg_Jf2V4TJC';
 const $ = id => document.getElementById(id), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const CHARS = 'abcdefghijklmnopqr'.split(''), DEBUG = new URLSearchParams(location.search).has('debug');
-const isTouch = matchMedia('(pointer: coarse)').matches;
+const isTouch = matchMedia('(pointer: coarse)').matches || (DEBUG && new URLSearchParams(location.search).has('touch'));
 const today = () => new Date().toLocaleDateString('en-CA');
 const MAX_CREATIVE = 600, PER_UNIT = 150, MIN_TASKS = 4, TASKS_PER_UNIT = 8;
 
@@ -78,6 +79,7 @@ const fluido = crearFluido({ renderer, juego: 'terra-lingua', sol: () => null, m
 const atlas = makeAtlas(); buildStructures();
 const world = new VoxelWorld(scene, atlas.tex);
 let viewR = isTouch ? 4 : 6;
+if (isTouch) { scene.fog.far = 18 + viewR * 16; scene.fog.near = scene.fog.far * .45; }
 // sol y nubes
 const sun = new THREE.Mesh(new THREE.BoxGeometry(14, 14, 14), new THREE.MeshBasicMaterial({ color: '#fff3b0', fog: false })); scene.add(sun);
 const clouds = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .85, fog: false }), 46);
@@ -199,23 +201,36 @@ canvas.addEventListener('mousedown', e => { if (!started || anyUI() || document.
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 addEventListener('wheel', e => { if (P.zone === 'creative' && !anyUI()) selectHot((hotSel + (e.deltaY > 0 ? 1 : -1) + HOT.length) % HOT.length); }, { passive: true });
 
-/* Controles táctiles */
+/* Controles táctiles: joystick flotante (aparece donde pones el pulgar izquierdo) y mirada con el lado derecho */
+let hitHeld = false;
 if (isTouch) {
   document.body.classList.add('touch');
   const stick = $('stick'), knob = $('knob'); let sid = null, sx = 0, sy = 0, lookId = null, lx = 0, ly = 0;
-  stick.addEventListener('touchstart', e => { e.preventDefault(); const t = e.changedTouches[0]; sid = t.identifier; const r = stick.getBoundingClientRect(); sx = r.left + r.width / 2; sy = r.top + r.height / 2; }, { passive: false });
+  const closeMenu = () => document.body.classList.remove('menuopen', 'pal');
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault(); closeMenu();
+    for (const t of e.changedTouches) {
+      if (t.clientX < innerWidth * .45 && sid === null) { sid = t.identifier; sx = t.clientX; sy = t.clientY; stick.style.left = sx + 'px'; stick.style.top = sy + 'px'; knob.style.transform = ''; stick.classList.add('on'); }
+      else if (lookId === null) { lookId = t.identifier; lx = t.clientX; ly = t.clientY; }
+    }
+  }, { passive: false });
   addEventListener('touchmove', e => {
     for (const t of e.changedTouches) {
-      if (t.identifier === sid) { let dx = t.clientX - sx, dy = t.clientY - sy; const l = Math.hypot(dx, dy), m = 46; if (l > m) { dx *= m / l; dy *= m / l; } knob.style.transform = `translate(${dx}px,${dy}px)`; mv.x = dx / m; mv.z = dy / m; }
+      if (t.identifier === sid) { let dx = t.clientX - sx, dy = t.clientY - sy; const l = Math.hypot(dx, dy), m = 44; if (l > m) { dx *= m / l; dy *= m / l; } knob.style.transform = `translate(${dx}px,${dy}px)`; const dead = l < 5 ? 0 : 1; mv.x = dead * dx / m; mv.z = dead * dy / m; }
       if (t.identifier === lookId) { P.yaw -= (t.clientX - lx) * .0058; P.pitch = Math.max(-1.45, Math.min(1.2, P.pitch - (t.clientY - ly) * .0048)); lx = t.clientX; ly = t.clientY; }
     }
   }, { passive: true });
-  const end = e => { for (const t of e.changedTouches) { if (t.identifier === sid) { sid = null; mv.x = mv.z = 0; knob.style.transform = ''; } if (t.identifier === lookId) lookId = null; } };
+  const end = e => { for (const t of e.changedTouches) { if (t.identifier === sid) { sid = null; mv.x = mv.z = 0; stick.classList.remove('on'); } if (t.identifier === lookId) lookId = null; } };
   addEventListener('touchend', end); addEventListener('touchcancel', end);
-  canvas.addEventListener('touchstart', e => { if (lookId === null) { const t = e.changedTouches[0]; lookId = t.identifier; lx = t.clientX; ly = t.clientY; } }, { passive: true });
-  const hold = (id, on, off) => { const b = $(id); b.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); on(); }, { passive: false }); b.addEventListener('touchend', e => { e.preventDefault(); off && off(); }, { passive: false }); };
+  const hold = (id, on, off) => { const b = $(id); b.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); b.classList.add('down'); on(); }, { passive: false }); const up = e => { e.preventDefault(); b.classList.remove('down'); off && off(); }; b.addEventListener('touchend', up, { passive: false }); b.addEventListener('touchcancel', up, { passive: false }); };
   hold('tJump', () => mv.jump = true, () => mv.jump = false); hold('tDown', () => mv.down = true, () => mv.down = false);
-  hold('tAct', () => interact()); hold('tHit', () => primary()); hold('tPlace', () => secondary());
+  hold('tHit', () => { hitHeld = true; primary(); }, () => hitHeld = false); hold('tPlace', () => secondary());
+  $('prompt').addEventListener('click', () => interact());
+  $('bMenu').addEventListener('click', () => { sfx('click'); document.body.classList.remove('pal'); document.body.classList.toggle('menuopen'); });
+  document.querySelector('.tools').addEventListener('click', e => { if (e.target.closest('button')) closeMenu(); });
+  $('bBlock').addEventListener('click', () => { document.body.classList.remove('menuopen'); document.body.classList.toggle('pal'); });
+  $('bFly').addEventListener('click', () => { P.fly = !P.fly; $('bFly').classList.toggle('on', P.fly); document.body.classList.toggle('flying', P.fly); });
+  $('objBox').addEventListener('click', () => openLog());
 }
 
 function primary() { if (P.zone === 'creative') breakBlock(); else if (P.zone === 'arena') attack(); }
@@ -226,7 +241,7 @@ function updatePlayer(dt) {
   let fx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + mv.x, fz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + mv.z;
   if (anyUI()) fx = fz = 0;
   const len = Math.hypot(fx, fz); if (len > 1) { fx /= len; fz /= len; }
-  const sprint = keys.ShiftLeft && !P.fly, inWater = world.waterAt(P.pos.x, P.pos.y + .6, P.pos.z);
+  const sprint = (keys.ShiftLeft || (isTouch && Math.hypot(mv.x, mv.z) > .93)) && !P.fly, inWater = world.waterAt(P.pos.x, P.pos.y + .6, P.pos.z);
   let sp = (sprint ? 8.4 : 5.8) * speedMul(); if (inWater) sp *= .6; if (P.fly) sp = 11; if (P.boost > 0) sp *= 1.15;
   const s = Math.sin(P.yaw), c = Math.cos(P.yaw), wx = (fx * c + fz * s) * sp, wz = (-fx * s + fz * c) * sp;
   P.vel.x += (wx - P.vel.x) * Math.min(1, dt * 14); P.vel.z += (wz - P.vel.z) * Math.min(1, dt * 14);
@@ -326,9 +341,9 @@ function findNearest() {
     for (const g of GEMS) { const d = Math.hypot(g.x - P.pos.x, g.z - P.pos.z); if (d < Math.min(best, 3)) { best = d; nearest = { t: 'gem', g }; } }
   } else if (P.zone === 'arena' && cube.visible && cube.position.distanceTo(P.pos) < 3.2) nearest = { t: 'cube' };
   const hint = $('prompt');
-  if (nearest && !anyUI()) { hint.classList.remove('hidden'); hint.innerHTML = `<kbd>${isTouch ? '✋' : 'E'}</kbd> ${nearest.t === 'gem' ? 'Open chest' : nearest.t === 'cube' ? 'Power Cube' : 'Talk to ' + esc(nearest.n.name)}`; }
+  if (nearest && !anyUI()) { hint.classList.remove('hidden'); hint.innerHTML = `${isTouch ? '✋' : '<kbd>E</kbd>'} ${nearest.t === 'gem' ? 'Open chest' : nearest.t === 'cube' ? 'Power Cube' : 'Talk to ' + esc(nearest.n.name)}`; }
   else hint.classList.add('hidden');
-  $('tAct').classList.toggle('glow', !!nearest);
+  
 }
 function interact() {
   if (anyUI() || !nearest) return; openUI();
@@ -458,7 +473,7 @@ function buildHotbar() {
   $('hotbar').innerHTML = HOT.map((id, i) => `<button type="button" data-i="${i}" title="${BLOCK_NAMES[id]}" aria-label="${BLOCK_NAMES[id]}"><img alt="" src="${tileCss(id, atlas.canvas)}"></button>`).join('');
   $('hotbar').querySelectorAll('button').forEach(b => b.onclick = () => selectHot(+b.dataset.i)); selectHot(0);
 }
-function selectHot(i) { hotSel = i; $('hotbar').querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i)); $('hotbar').children[i]?.scrollIntoView({ inline: 'center', block: 'nearest' }); $('blockName').textContent = BLOCK_NAMES[HOT[i]]; }
+function selectHot(i) { hotSel = i; if (isTouch) { document.body.classList.remove('pal'); $('bBlock').innerHTML = `<img alt="" src="${tileCss(HOT[i], atlas.canvas)}">`; } $('hotbar').querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i)); $('hotbar').children[i]?.scrollIntoView({ inline: 'center', block: 'nearest' }); $('blockName').textContent = BLOCK_NAMES[HOT[i]]; }
 function talkCreative() {
   const n = solvedTotal(), left = creativeLeft(), bud = creativeBudget();
   if (n < MIN_TASKS) return dialog('🧱 Creative Island', 'Portal', `<p>Complete <b>${MIN_TASKS} missions</b> to unlock Creative Mode. You have <b>${n}</b>.</p>`, [{ t: 'OK' }]);
@@ -467,10 +482,10 @@ function talkCreative() {
     [{ t: left > 0 ? 'Enter and build' : 'No time left today', off: left <= 0, f: enterCreative }, { t: 'Later', c: 'ghost' }]);
 }
 function enterCreative() {
-  P.zone = 'creative'; P.fly = false; const c = ISLAND.creative; teleport(c.x + .5, c.y + 2, c.z + 6); document.body.classList.add('creative');
-  toast(isTouch ? 'Tap ✖ to remove and ➕ to place blocks.' : 'Left click: remove · Right click: place · F: fly', 'gold'); playMusic('Music_SweetTalk');
+  P.zone = 'creative'; P.fly = false; $('bFly').classList.remove('on'); document.body.classList.remove('flying'); const c = ISLAND.creative; teleport(c.x + .5, c.y + 2, c.z + 6); document.body.classList.add('creative');
+  toast(isTouch ? 'Aim with the dot. ➕ places, ✖ removes.' : 'Left click: remove · Right click: place · F: fly', 'gold'); playMusic('Music_SweetTalk');
 }
-function exitCreative(msg) { document.body.classList.remove('creative'); P.zone = 'world'; P.fly = false; teleport(CENTER + .5, 23, CENTER + 18); if (msg) toast(msg, 'warn'); touch(); saveCloud(true); }
+function exitCreative(msg) { document.body.classList.remove('creative', 'pal', 'flying'); P.zone = 'world'; P.fly = false; teleport(CENTER + .5, 23, CENTER + 18); if (msg) toast(msg, 'warn'); touch(); saveCloud(true); }
 const buildKey = (x, y, z) => `${x},${y},${z}`; let buildSet = new Map();
 function applyBuild() { for (const [x, y, z, id] of S.build) { world.set(x, y, z, id); buildSet.set(buildKey(x, y, z), id); } }
 const lookDir = () => new THREE.Vector3(-Math.sin(P.yaw) * Math.cos(P.pitch), Math.sin(P.pitch), -Math.cos(P.yaw) * Math.cos(P.pitch));
@@ -520,9 +535,9 @@ function attack() {
   const o = eyePos(), dir = new THREE.Vector3(); camera.getWorldDirection(dir); if (!P.fp) { dir.y = Math.max(dir.y, -.15); dir.normalize(); }
   if (w.ranged) { spawnShot(o, dir, w.color); send('shot', { o: [o.x, o.y, o.z], d: [dir.x, dir.y, dir.z], c: w.color }); }
   let target = null, best = 1e9;
-  const test = (pos, t) => { const to = new THREE.Vector3(pos.x - P.pos.x, pos.y - P.pos.y, pos.z - P.pos.z), l = to.length(); if (l > w.range) return; const flat = new THREE.Vector3(to.x, 0, to.z).normalize(), f = new THREE.Vector3(dir.x, 0, dir.z).normalize(), dot = flat.dot(f); if (dot < (w.ranged ? .96 : .55) && l > 1.2) return; if (l < best) { best = l; target = t; } };
+  const test = (pos, t) => { const to = new THREE.Vector3(pos.x - P.pos.x, pos.y - P.pos.y, pos.z - P.pos.z), l = to.length(); if (l > w.range) return; const flat = new THREE.Vector3(to.x, 0, to.z).normalize(), f = new THREE.Vector3(dir.x, 0, dir.z).normalize(), dot = flat.dot(f); if (dot < (w.ranged ? (isTouch ? .86 : .96) : (isTouch ? .15 : .55)) && l > 1.2) return; if (l < best) { best = l; target = t; } };
   bots.forEach(b => { if (b.dead <= 0) test(b.pos, { b }); }); peers.forEach(p => { if (!p.dead) test(p.pos, { p }); });
-  if (!target) return; const dmg = Math.round(w.dmg * (dmgBuff > 0 ? 2 : 1)); sfx('hit', .5); damageNum(target.b ? target.b.pos : target.p.pos, dmg);
+  if (!target) return; if (avatar) { const tp = target.b ? target.b.pos : target.p.pos; avatar.root.rotation.y = Math.atan2(tp.x - P.pos.x, tp.z - P.pos.z); } const dmg = Math.round(w.dmg * (dmgBuff > 0 ? 2 : 1)); sfx('hit', .5); damageNum(target.b ? target.b.pos : target.p.pos, dmg);
   if (target.b) { const b = target.b; b.hp -= dmg; b.a._hit = 1; b.a.oneShot('emote-no', 260); setTimeout(() => b.a._hit = 0, 260); if (b.hp <= 0) { b.dead = 3; b.a.play('die', true); gotKo(true); } }
   else send('hit', { to: target.p.id, dmg, by: profileName(), byId: NET.id });
 }
@@ -642,7 +657,7 @@ function hud() {
   $('hp').style.width = P.hp + '%'; $('hpN').textContent = P.hp; $('arenaInfo').textContent = `KOs: ${arenaScore}`;
 }
 let toastT = 0;
-function toast(t, cls = '') { const b = $('toasts'), d = document.createElement('div'); d.className = 'toast ' + cls; d.textContent = t; b.appendChild(d); while (b.children.length > 3) b.firstChild.remove(); setTimeout(() => d.remove(), 3600); }
+function toast(t, cls = '') { const b = $('toasts'), d = document.createElement('div'); d.className = 'toast ' + cls; d.textContent = t; b.appendChild(d); while (b.children.length > (isTouch ? 1 : 3)) b.firstChild.remove(); setTimeout(() => d.remove(), isTouch ? 2600 : 3600); }
 function float(t) { const d = document.createElement('div'); d.className = 'floaty'; d.textContent = t; $('fx').appendChild(d); setTimeout(() => d.remove(), 1500); }
 function damageNum(pos, n) { const v = new THREE.Vector3(pos.x, pos.y + 2, pos.z).project(camera); const d = document.createElement('div'); d.className = 'dnum'; d.style.left = ((v.x + 1) / 2 * innerWidth) + 'px'; d.style.top = ((1 - v.y) / 2 * innerHeight) + 'px'; d.textContent = n; $('fx').appendChild(d); setTimeout(() => d.remove(), 800); }
 
@@ -663,7 +678,7 @@ function loop() {
   avatar?.tick(dt);
   for (const n of NPCS) { const d = Math.hypot(n.a.root.position.x - P.pos.x, n.a.root.position.z - P.pos.z); const v = d < 62 && P.zone === 'world'; n.a.root.visible = v; if (v) { n.a.tick(dt, d < 34); n.m.position.y = 2.95 + Math.sin(performance.now() / 320) * .08; } }
   for (const g of GEMS) { const v = P.zone === 'world' && Math.hypot(g.x - P.pos.x, g.z - P.pos.z) < 60; g.g.visible = v; if (v) g.g.rotation.y += dt; }
-  updatePeers(dt); if (P.zone === 'arena') { updateBots(dt); updateCube(dt); P.cd = Math.max(0, P.cd - dt); P.inv = Math.max(0, P.inv - dt); if (dmgBuff > 0) dmgBuff -= dt; }
+  updatePeers(dt); if (P.zone === 'arena') { if (hitHeld && !anyUI()) attack(); updateBots(dt); updateCube(dt); P.cd = Math.max(0, P.cd - dt); P.inv = Math.max(0, P.inv - dt); if (dmgBuff > 0) dmgBuff -= dt; }
   for (let i = shots.length - 1; i >= 0; i--) { const s = shots[i]; s.m.position.addScaledVector(s.d, 46 * dt); s.t -= dt; if (s.t <= 0) { scene.remove(s.m); shots.splice(i, 1); } }
   if (P.zone === 'creative') { crTick += dt; if (crTick >= 1) { crTick -= 1; S.cr.used++; const l = creativeLeft(); $('crTime').textContent = fmt(l); $('crTime').classList.toggle('low', l <= 30); if (l === 60) toast('1 minute left!', 'warn'); if (l <= 0) exitCreative('⏰ Creative time is over. Solve more missions to earn more!'); } }
   findNearest(); sendPos(); if (P.zone === 'world') { beam.material.opacity = .28 + Math.sin(performance.now() / 400) * .1; }
@@ -692,6 +707,8 @@ async function start() {
   world.update(P.pos.x, P.pos.z, 2, 40); if (world.solidAt(P.pos.x, P.pos.y + .5, P.pos.z)) P.pos.y = world.topY(P.pos.x, P.pos.z) + .2;
   started = true; hud(); refreshMarkers(); refreshGates(); updateBeam(); playMusic('Music_SweetTalk');
   if (!isTouch) { lockPointer(); $('lockHint').classList.remove('hidden'); }
+  document.getElementById('eslt-note')?.remove();
+  if (isTouch) setTimeout(() => toast('Left thumb: move · Right thumb: look'), 1200);
   if (!S.seen) { S.seen = true; setTimeout(talkGuide, 500); }
   if ($('netOn').checked) connectWorld(); else setStatus('off');
   setInterval(() => { hudOnline(); if (party.code && !$('party').classList.contains('hidden')) renderParty(); }, 3000);
@@ -705,8 +722,8 @@ async function boot() {
   P.yaw = Math.PI; world.update(P.pos.x, P.pos.z, 3, 60); bar.style.width = '100%';
   camera.position.set(CENTER - 22, 40, CENTER + 42); camera.lookAt(CENTER, 24, CENTER);
   $('loading').classList.add('hidden'); $('menu').classList.remove('hidden');
-  $('name').value = me ? (me.first_name || me.name || '') : (S.name || ''); if (me) { $('name').disabled = true; $('who').innerHTML = `📊 Playing as <b>${esc(me.first_name || me.name)}</b> (${esc(me.section || '')}). Your teacher will see your progress.`; }
-  else { $('who').innerHTML = `⚠️ You are not logged in. <button type="button" class="linkbtn" id="loginB">Log in</button> so your teacher sees your progress.`; $('loginB').onclick = () => openLogin(); }
+  $('name').value = me ? (me.first_name || me.name || '') : (S.name || ''); if (me) { $('name').disabled = true; $('who').innerHTML = `<span id="esltStatus"></span>📊 Playing as <b>${esc(me.first_name || me.name)}</b> (${esc(me.section || '')}). Your teacher will see your progress.`; }
+  else { $('who').innerHTML = `<span id="esltStatus"></span>⚠️ You are not logged in. <button type="button" class="linkbtn" id="loginB">Log in</button> so your teacher sees your progress.`; $('loginB').onclick = () => openLogin(); }
   $('play').textContent = S.pts > 0 ? '▶ Continue' : '▶ Play'; renderChars(); $('play').onclick = () => { sfx('click'); start(); };
   $('bMute').onclick = toggleMute; $('bBag').onclick = () => openBag(); $('bLog').onclick = openLog; $('bMap').onclick = openMap; $('bParty').onclick = openParty; $('bChat').onclick = openChat; $('mini').onclick = openMap;
   $('crExit').onclick = () => exitCreative('Your build is saved.'); $('arExit').onclick = () => exitArena(); $('bCam').onclick = () => P.fp = !P.fp;
