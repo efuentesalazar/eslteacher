@@ -230,5 +230,5 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - **Party**: grupos de hasta 4 con código; cada integrante recibe pistas distintas y todos deben votar lo mismo. **Arena PvP** con armas, Power Cubes con preguntas y bots si nadie está conectado. **Tienda** con gorros, capas, mascotas, herramientas y armas.
 - **Modo creativo**: se desbloquea con 4 misiones. Cada unidad aporta hasta 2:30 según sus misiones resueltas (máximo 10:00 al día con las 32 resueltas).
 - **Panel docente**: `1° MEDIO/Terra_Lingua/panel.html` (misma clave de `profe.html`, con enlace en sus pestañas). Muestra 1°A HC y 1°B HC, avance por unidad, habilidades al primer intento, ficha por alumno y CSV.
-- Base de datos: tabla `eslt.tl_progress` y funciones `eslt_tl_load`, `eslt_tl_save`, `eslt_tl_teacher`. Solo guarda alumnos con sesión. El botón "Respaldo" del panel general aún no incluye esta tabla.
+- Base de datos: tabla `eslt.tl_progress` y funciones `eslt_tl_load`, `eslt_tl_save`, `eslt_tl_teacher`. Solo guarda alumnos con sesión. El botón "Respaldo" del panel general incluye este avance (`terra_lingua` en el archivo), también lo construido en el modo creativo.
 - Los ejercicios se editan en `1° MEDIO/Terra_Lingua/js/content.js` y la tienda en `js/items.js`. Para probar: `?debug`.

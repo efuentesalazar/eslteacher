@@ -566,17 +566,19 @@ $("backup").addEventListener("click", async () => {
     say("Preparando…");
     const meta = await call("meta");
     const out = { about: "Respaldo de eslteacher.cl (esquema eslt). No incluye claves ni RUT de los alumnos: se regeneran desde la nómina.",
-      version: 1, created: meta.created, counts: { students: meta.students, progress: meta.progress, reports: meta.reports, answers: meta.answers } };
+      version: 1, created: meta.created, counts: { students: meta.students, progress: meta.progress, reports: meta.reports, answers: meta.answers, terra_lingua: meta.terra_lingua } };
     out.students = (await call("students")).rows; say(`Alumnos: ${out.students.length}`);
     out.progress = (await call("progress")).rows;
     out.reports = await all("reports", "Reportes");
     out.answers = await all("answers", "Respuestas");
+    out.terra_lingua = await all("terra_lingua", "Terra Lingua");
+    if (out.terra_lingua.length !== meta.terra_lingua) console.warn("Terra Lingua cambió durante el respaldo", meta.terra_lingua, out.terra_lingua.length);
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: "application/json" }));
     a.download = `respaldo-eslteacher-${new Date().toISOString().slice(0, 10)}.json`;
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     try { localStorage.setItem(BK_KEY, new Date().toISOString()); } catch(e){}
-    alert(`Respaldo descargado: ${out.students.length} alumnos, ${out.reports.length} reportes y ${out.answers.length} respuestas.\n\nGuárdalo en tu carpeta privada (eslteacher-PRIVADO): tiene nombres de alumnos. No lo subas a GitHub ni lo compartas.`);
+    alert(`Respaldo descargado: ${out.students.length} alumnos, ${out.reports.length} reportes, ${out.answers.length} respuestas y ${out.terra_lingua.length} avances de Terra Lingua.\n\nGuárdalo en tu carpeta privada (eslteacher-PRIVADO): tiene nombres de alumnos. No lo subas a GitHub ni lo compartas.`);
   } catch(err){
     if (err.message === "session") expired(); else alert("No se pudo completar el respaldo. Revisa tu internet e inténtalo otra vez.");
   } finally { b.disabled = false; renderBackupBtn(); }
