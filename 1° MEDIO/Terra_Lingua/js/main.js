@@ -189,7 +189,7 @@ const keys = {}, mv = { x: 0, z: 0, jump: false, down: false };
 const hasTool = k => S.owned.map(itemById).filter(Boolean).find(i => i[k]);
 const speedMul = () => hasTool('speed')?.speed || 1, jumpMul = () => hasTool('jump')?.jump || 1;
 const anyUI = () => uiLock > 0 || activeQuiz || !$('quiz').classList.contains('hidden') || !$('quick').classList.contains('hidden') || !$('pquiz').classList.contains('hidden') || document.querySelector('.modal:not(.hidden)');
-function lockPointer() { try { const r = canvas.requestPointerLock?.(); r?.catch?.(() => { }); } catch (e) { } }
+function lockPointer() { } // ya no se captura el mouse: para mirar se mantiene presionado el botón izquierdo y se arrastra
 function openUI() { if (document.pointerLockElement) document.exitPointerLock(); }
 
 addEventListener('keydown', e => {
@@ -204,10 +204,20 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
-canvas.addEventListener('click', () => { if (started && !isTouch && !anyUI() && !document.pointerLockElement) lockPointer(); });
-document.addEventListener('pointerlockchange', () => $('lockHint').classList.toggle('hidden', !!document.pointerLockElement || !started || isTouch || !!anyUI()));
-document.addEventListener('mousemove', e => { if (document.pointerLockElement === canvas) { P.yaw -= e.movementX * .0024; P.pitch = Math.max(-1.45, Math.min(1.2, P.pitch - e.movementY * .0024)); } });
-canvas.addEventListener('mousedown', e => { if (!started || anyUI() || document.pointerLockElement !== canvas) return; if (e.button === 0) primary(); if (e.button === 2) secondary(); });
+// Mirar: mantener presionado el botón izquierdo y arrastrar. Clic corto (sin arrastrar): atacar, recolectar o quitar bloque. Clic derecho: poder o poner bloque.
+let drag = null;
+canvas.addEventListener('mousedown', e => {
+  if (!started || isTouch || anyUI()) return;
+  if (e.button === 0) { drag = { x: e.clientX, y: e.clientY, moved: 0 }; canvas.classList.add('dragging'); $('lockHint').classList.add('hidden'); }
+  if (e.button === 2) secondary();
+});
+addEventListener('mousemove', e => {
+  if (!drag) return; if (!(e.buttons & 1)) { endDrag(); return; }
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
+  P.yaw -= dx * .005; P.pitch = Math.max(-1.45, Math.min(1.2, P.pitch - dy * .005));
+});
+function endDrag(click) { if (!drag) return; const d = drag; drag = null; canvas.classList.remove('dragging'); if (click && d.moved < 6 && !anyUI()) primary(); }
+addEventListener('mouseup', e => { if (e.button === 0) endDrag(true); });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 addEventListener('wheel', e => { if (P.zone === 'creative' && !anyUI()) selectHot((hotSel + (e.deltaY > 0 ? 1 : -1) + HOT.length) % HOT.length); }, { passive: true });
 
@@ -854,7 +864,7 @@ async function start() {
   if (S.pos && S.pos[1] < 45) { const u = unitOf(S.pos[0], S.pos[2]); if (!u || unitOpen(u)) { P.pos.set(S.pos[0], S.pos[1] + .6, S.pos[2]); } }
   world.update(P.pos.x, P.pos.z, 2, 40); if (world.solidAt(P.pos.x, P.pos.y + .5, P.pos.z)) P.pos.y = world.topY(P.pos.x, P.pos.z) + .2;
   started = true; hud(); refreshMarkers(); refreshGates(); updateBeam(); playMusic('Music_SweetTalk');
-  if (!isTouch) { lockPointer(); $('lockHint').classList.remove('hidden'); }
+  if (!isTouch) { $('lockHint').classList.remove('hidden'); setTimeout(() => $('lockHint').classList.add('hidden'), 7000); }
   document.getElementById('eslt-note')?.remove();
   if (isTouch) setTimeout(() => toast('Left thumb: move · Right thumb: look'), 1200);
   if (!S.seen) { S.seen = true; setTimeout(talkGuide, 500); }
