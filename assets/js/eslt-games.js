@@ -7,6 +7,8 @@
   // Juegos "Worlds": lectura en 3 niveles (como el Simce) + lo que practican los cofres
   function LECTURA(cofres){ return { L: "Lectura: localizar", I: "Lectura: interpretar", R: "Lectura: reflexionar", C: cofres }; }
   window.ESLT_GAMES = {
+    "terra-lingua-1m": { name: "Terra Lingua · 1° medio (todo el año)", sections: ["1°A HC","1°B HC"],
+      skills: { VOC: "Vocabulario", GRAM: "Gramática", READ: "Comprensión lectora", LIST: "Comprensión auditiva", PRON: "Pronunciación", WF: "Formación de palabras", COOP: "Misiones colaborativas" } },
     "festival-quest-1m": { name: "Festival Quest · 1° medio", sections: ["1°A HC","1°B HC"],
       skills: { E: "Lectura explícita", I: "Lectura inferencial", V: "Vocabulario en contexto", L: "Uso del lenguaje", Q: "Question tags" } },
     "weather-heroes-5b": { name: "Weather Heroes · 5° básico", sections: ["5°A","5°B"],

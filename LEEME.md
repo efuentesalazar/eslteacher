@@ -223,3 +223,12 @@ Sube los archivos modificados a https://github.com/efuentesalazar/eslteacher (Ad
 - Niveles: "Journey" mezcla todo (Greenvale = 5° básico … Hollow Citadel = 3° medio); con un curso elegido, las preguntas son de ese curso con 25% de repaso del año anterior.
 - Habilidades en el panel: VOC vocabulario, GRAM gramática, READ lectura explícita, INF lectura inferencial, LIST comprensión auditiva (el juego lee en voz alta), ORD ordenar oraciones.
 - Las 252 preguntas y 12 lecturas se editan en `8° BASICO/Runeward/js/content.js` (por curso y unidad del programa). Datos del mundo (jefes, recetas, edificios, diálogos) en `js/data.js`. Captura en `assets/games/runeward.webp`. Créditos (Ninja Adventure, CC0) en `CREDITOS.md` del juego. Para probar: `?debug` deja funciones de prueba en la consola (`RW`).
+
+## Novedades (24-11-2026): Terra Lingua
+- **Terra Lingua** (1° medio, Unidades 1 a 4): mundo abierto de bloques original en `1° MEDIO/Terra_Lingua/` (id del panel `terra-lingua-1m`). Mapa de 512×512 con un centro y 4 regiones que se abren en orden: Worktown (Jobs), Scholar Woods (Education), Canvas Canyon (The Arts) y Fiesta Coast (Traditions).
+- Cada unidad tiene 8 misiones con NPC (vocabulario, 3 de gramática, formación de palabras, audición, pronunciación y lectura) y 1 misión en party. Al tercer error aparece la retroalimentación y la pregunta vuelve al final.
+- **Party**: grupos de hasta 4 con código; cada integrante recibe pistas distintas y todos deben votar lo mismo. **Arena PvP** con armas, Power Cubes con preguntas y bots si nadie está conectado. **Tienda** con gorros, capas, mascotas, herramientas y armas.
+- **Modo creativo**: se desbloquea con 4 misiones. Cada unidad aporta hasta 2:30 según sus misiones resueltas (máximo 10:00 al día con las 32 resueltas).
+- **Panel docente**: `1° MEDIO/Terra_Lingua/panel.html` (misma clave de `profe.html`, con enlace en sus pestañas). Muestra 1°A HC y 1°B HC, avance por unidad, habilidades al primer intento, ficha por alumno y CSV.
+- Base de datos: tabla `eslt.tl_progress` y funciones `eslt_tl_load`, `eslt_tl_save`, `eslt_tl_teacher`. Solo guarda alumnos con sesión. El botón "Respaldo" del panel general aún no incluye esta tabla.
+- Los ejercicios se editan en `1° MEDIO/Terra_Lingua/js/content.js` y la tienda en `js/items.js`. Para probar: `?debug`.

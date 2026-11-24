@@ -95,6 +95,7 @@
     VOCAB: "VOCAB", GRAM: "GRAM", WRITE: "WRITE", PRON: "SPEAK", CONV: "SPEAK" };
   const WORLDS = { L: "READ_EXP", I: "READ_INF", R: "READ_REF", C: "VOCAB" };
   const TIPOS = {
+    "terra-lingua-1m": { VOC: "VOCAB", GRAM: "GRAM", READ: "READ_EXP", LIST: "LISTEN", PRON: "PRON", WF: "VOCAB", COOP: "READ_INF" },
     "festival-quest-1m": { E: "READ_EXP", I: "READ_INF", V: "VOCAB", L: "GRAM", Q: "GRAM" },
     "weather-heroes-5b": { V: "VOCAB", A: "LISTEN", R: "READ_EXP", G: "GRAM", O: "WRITE", C: "WRITE" },
     "weather-worlds-5b": WORLDS,

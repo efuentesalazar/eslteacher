@@ -33,6 +33,7 @@ const COURSES = [
   { id:"1medio", num:"1°", level:"Medio", folder:"1° MEDIO", icon:"🎉",
     games:[
       { title:"Runeward", desc:"Pixel-art action RPG! Fight monsters, gather wood and stone, craft better gear and build your keep. Open Rune Locks with English, read Lore Stones and defeat six Word Guardians.", icon:"🛡️", unit:"Adventure", file:"../8° BASICO/Runeward/index.html?g=1m", shot:"runeward", isNew:true },
+      { title:"Terra Lingua", desc:"Block-building open world for the whole year! Cross 4 units, talk to NPCs, team up in parties, battle in the PvP arena and earn time to build in Creative Mode.", icon:"🧱", unit:"Units 1–4", file:"Terra_Lingua/index.html", shot:"terra-lingua", isNew:true },
       { title:"Festival Quest", desc:"3D open world! Bring back the 5 festival lanterns and help 10 festival friends on the roads: B1 readings, vocabulary, language in use and question tags. Story mode and online mode.", icon:"🏮", unit:"Unit 4", file:"Festival_Quest/index.html", shot:"festival-quest", isNew:true },
       { title:"Festival Worlds", desc:"Discover festivals around the world.", icon:"🎪", unit:"Unit 4", file:"Mundo_Unit4_Festival_Worlds.html", shot:"festival-worlds" },
       { title:"Festival Worlds 2", desc:"More festivals, more challenges!", icon:"🎆", unit:"Unit 4", file:"Festival_Worlds_2.html", shot:"festival-worlds-2", isNew:true },

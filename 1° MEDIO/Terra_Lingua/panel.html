@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Panel docente · Terra Lingua</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Lexend:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1226;--card:#191d38;--line:rgba(255,255,255,.13);--txt:#fff;--mut:#b6bbd6;--accent:#5fd3ff;--bar:#5fd3ff;--track:rgba(255,255,255,.1);--good:#58cc02;--warn:#ffc800;--bad:#ff6b5e}
+*{box-sizing:border-box;margin:0}body{min-height:100vh;background:var(--bg);color:var(--txt);font:400 14px/1.45 Lexend,system-ui,sans-serif}button,input,select{font:inherit;color:inherit}.hidden{display:none!important}
+.wrap{max-width:1420px;margin:0 auto;padding:22px 16px 60px}h1,h2{font-family:Fredoka,sans-serif;font-weight:600}h1{font-size:clamp(26px,3.5vw,36px)}h2{margin-bottom:10px;font-size:18px}.mut{color:var(--mut)}.num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.btn{min-height:42px;padding:8px 16px;border:0;border-radius:10px;background:var(--accent);color:#0b1020;font-weight:600;cursor:pointer}.btn.ghost{background:rgba(255,255,255,.08);color:#fff;box-shadow:inset 0 0 0 2px var(--line)}.btn:focus-visible,input:focus-visible,th button:focus-visible,.name:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input{min-height:42px;padding:8px 12px;border:2px solid var(--line);border-radius:10px;background:rgba(0,0,0,.25)}
+#gate{display:grid;min-height:100vh;place-items:center;padding:16px}#gate form{display:grid;gap:10px;width:min(360px,100%);padding:24px;border-radius:16px;background:var(--card);border-top:4px solid var(--accent)}#gmsg{min-height:20px;color:var(--warn);font-size:13px}
+header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end;margin-bottom:16px}.acts{display:flex;flex-wrap:wrap;gap:8px}.seg{display:inline-flex;padding:3px;border-radius:11px;background:rgba(255,255,255,.08)}.seg button{min-height:36px;padding:4px 16px;border:0;border-radius:8px;background:none;cursor:pointer;font-weight:600}.seg button.on{background:var(--accent);color:#0b1020}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:12px}.kpi,.card{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}.kpi span{display:block;color:var(--mut);font-size:12px}.kpi b{display:block;margin-top:2px;font:600 28px Fredoka,sans-serif}.kpi small{color:var(--mut);font-size:12px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px;margin-bottom:12px}.hb{display:grid;grid-template-columns:150px 1fr 74px;gap:9px;align-items:center;min-height:26px}.hb .tr{height:10px;border-radius:4px;background:var(--track);overflow:hidden}.hb .tr i{display:block;height:100%;border-radius:0 4px 4px 0;background:var(--bar)}.hb span:last-child{text-align:right;font-size:12px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:9px}.legend{display:flex;flex-wrap:wrap;gap:12px;margin-left:auto;color:var(--mut);font-size:12px}.legend i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:2px}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:center}th{position:sticky;top:0;z-index:1;background:#22274a;font-size:11px;color:var(--mut)}th button{padding:0;border:0;background:none;cursor:pointer;font-weight:600}th:nth-child(2),td:nth-child(2){position:sticky;left:0;background:var(--card);text-align:left}th:nth-child(2){z-index:2;background:#22274a}tbody tr:hover td{background:#232848}.name{padding:0;border:0;background:none;color:#fff;font-weight:500;text-align:left;cursor:pointer}.name:hover{text-decoration:underline}
+.mini{display:inline-block;width:46px;height:8px;border-radius:3px;background:var(--track);overflow:hidden;vertical-align:middle}.mini i{display:block;height:100%;background:var(--bar)}.cu{display:block;margin-top:1px;font-size:10px;color:var(--mut)}
+.st{display:inline-block;min-width:44px;padding:1px 5px;border-radius:5px;font:500 12px 'JetBrains Mono',monospace}.lv2{background:rgba(88,204,2,.24);box-shadow:inset 0 0 0 1px var(--good)}.lv1{background:rgba(255,200,0,.2);box-shadow:inset 0 0 0 1px var(--warn)}.lv0{background:rgba(255,107,94,.24);box-shadow:inset 0 0 0 1px var(--bad)}.none{color:#747a9a}.few{opacity:.62;box-shadow:inset 0 0 0 1px var(--line)}
+dialog{width:min(760px,calc(100% - 24px));max-height:calc(100vh - 24px);padding:0;border:1px solid var(--line);border-radius:14px;background:var(--card);color:#fff}dialog::backdrop{background:rgba(5,7,20,.72)}.dh{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}.db{padding:14px 16px}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}.chips span{padding:3px 9px;border-radius:7px;background:rgba(255,255,255,.08);font-size:12px}.ql{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px 12px;margin:4px 0 12px;font-size:12px}.ql .ok{color:#a9ef7c}.ql .no{color:var(--mut)}
+@media print{body{background:#fff;color:#000}.tools,.acts,#gate{display:none}.card,.kpi,.tw{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<div id="gate"><form id="gf"><h1>Panel docente</h1><p class="mut">Terra Lingua · 1° medio</p><label for="pw">Clave del Panel del profe</label><input id="pw" type="password" autocomplete="current-password" required><div id="gmsg" role="status"></div><button class="btn">Entrar</button></form></div>
+<div class="wrap hidden" id="app">
+  <header><div><h1>Terra Lingua · Panel docente</h1><p class="mut" id="stamp"></p></div>
+    <div class="acts"><div class="seg" role="group" aria-label="Curso"><button type="button" data-s="1°A HC" class="on">1°A HC</button><button type="button" data-s="1°B HC">1°B HC</button></div><button class="btn ghost" id="reload" type="button">↻ Actualizar</button><button class="btn ghost" id="csv" type="button">⬇ Excel (CSV)</button><a class="btn ghost" style="display:inline-flex;align-items:center;text-decoration:none" href="/profe.html">Panel general</a></div></header>
+  <section class="kpis" id="kpis"></section>
+  <section class="two"><div class="card"><h2>Alumnos que completaron cada unidad</h2><div id="chU"></div></div><div class="card"><h2>Logro por habilidad al primer intento</h2><div id="chS"></div></div></section>
+  <div class="tools"><input id="q" type="search" placeholder="Buscar alumno…" aria-label="Buscar alumno"><label><input type="checkbox" id="only"> Solo quienes han jugado</label>
+    <div class="legend"><span><i style="background:var(--good)"></i>Logrado ≥ 75%</span><span><i style="background:var(--warn)"></i>En proceso 50–74%</span><span><i style="background:var(--bad)"></i>Por lograr &lt; 50%</span><span>Atenuado: menos de 5 respuestas</span></div></div>
+  <div class="tw"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+</div>
+<dialog id="dlg"><div class="dh"><h2 id="dT" style="margin:0"></h2><button class="btn ghost" id="dX" type="button" aria-label="Cerrar">✕</button></div><div class="db" id="dB"></div></dialog>
+<script type="module">
+import { UNITS } from './js/content.js';
+const DB='https://tlihbmgokuhvppbchvrz.supabase.co', KEY='sb_publishable_nGgOCuUUuXKK7gx957LYhg_Jf2V4TJC';
+const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SK=[['VOC','Vocabulario'],['GRAM','Gramática'],['READ','Lectura'],['LIST','Audición'],['PRON','Pronunciación'],['WF','Formación de palabras'],['COOP','Colaborativo']];
+const ss={get:k=>{try{return sessionStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}};
+const rpc=async(f,a)=>{const r=await fetch(`${DB}/rest/v1/rpc/${f}`,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(a)});if(!r.ok)throw new Error(r.status);return r.json()};
+let section='1°A HC', rows=[], sort={k:'list',d:1};
+const when=t=>{if(!t)return'—';const m=(Date.now()-new Date(t))/6e4;if(m<2)return'ahora';if(m<60)return`hace ${Math.round(m)} min`;if(m<1440)return`hace ${Math.round(m/60)} h`;const d=Math.round(m/1440);return d===1?'ayer':`hace ${d} días`};
+const mins=s=>s?`${Math.round(s/60)} min`:'—';
+const lvl=(ok,n)=>!n?'none':n<5?'few':ok/n>=.75?'lv2':ok/n>=.5?'lv1':'lv0';
+const stat=c=>{if(!c||!c.n)return'<span class="st none">—</span>';const p=Math.round(c.ok/c.n*100);return`<span class="st ${lvl(c.ok,c.n)}" title="${c.ok} de ${c.n} preguntas correctas al primer intento">${p}%</span>`};
+const shape=s=>{const d=s.data||{},u=d.units||{};const sk=s.skills||{};let ok=0,n=0;Object.values(sk).forEach(x=>{ok+=x.ok;n+=x.n});return{...s,d,u,sk,ok,n,acc:n?ok/n:-1,pts:s.points||0,lv:d.lvl||(s.points?1:0),solved:d.solved||0,party:d.partyDone||0,time:d.time||0,last:s.updated_at||s.last_answer,played:!!(s.points||s.total)}};
+function curUnit(r){for(const u of UNITS){if((r.u[u.id]||0)<8)return u.id}return 5}
+async function load(){
+  const t=ss.get('eslt_teacher');if(!t)return showGate();
+  try{const r=await rpc('eslt_tl_teacher',{p_token:t,p_section:section});if(!r.ok){ss.set('eslt_teacher',null);return showGate('Tu sesión venció. Entra otra vez.')}
+    rows=r.students.map(shape);$('gate').classList.add('hidden');$('app').classList.remove('hidden');$('stamp').textContent=`${section} · actualizado ${new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})}`;render()}
+  catch(e){showGate('No se pudo conectar. Revisa tu internet.')}
+}
+function showGate(m){$('app').classList.add('hidden');$('gate').classList.remove('hidden');$('gmsg').textContent=m||''}
+$('gf').onsubmit=async e=>{e.preventDefault();$('gmsg').textContent='Entrando…';try{const r=await rpc('eslt_teacher_login',{p_password:$('pw').value});if(r.ok){ss.set('eslt_teacher',r.token);$('pw').value='';load()}else $('gmsg').textContent=r.error==='locked'?'Demasiados intentos. Espera 15 minutos.':'Clave incorrecta.'}catch(x){$('gmsg').textContent='No se pudo conectar.'}};
+function render(){
+  const pl=rows.filter(r=>r.played),tot=rows.length,avg=(a)=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0,okT=pl.reduce((s,r)=>s+r.ok,0),nT=pl.reduce((s,r)=>s+r.n,0),act=rows.filter(r=>r.last&&Date.now()-new Date(r.last)<6048e5).length;
+  $('kpis').innerHTML=[['Han jugado',`${pl.length}<small> / ${tot}</small>`,`${tot-pl.length} sin empezar`],['Activos esta semana',act,'últimos 7 días'],['Misiones promedio',`${avg(pl.map(r=>r.solved)).toFixed(1)}<small> / 32</small>`,'entre quienes jugaron'],['Logro al primer intento',nT?Math.round(okT/nT*100)+'%':'—',`${nT} preguntas`],['Tiempo promedio',mins(avg(pl.map(r=>r.time))),'jugando activamente']].map(([a,b,c])=>`<div class="kpi"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+  $('chU').innerHTML=UNITS.map(u=>{const n=rows.filter(r=>(r.u[u.id]||0)>=8).length;return`<div class="hb" title="${n} de ${tot} alumnos completaron la Unidad ${u.id}"><span>U${u.id} ${['Jobs','Education','The Arts','Traditions'][u.id-1]}</span><span class="tr"><i style="width:${tot?n/tot*100:0}%"></i></span><span class="num">${n} / ${tot}</span></div>`}).join('');
+  $('chS').innerHTML=SK.map(([k,l])=>{let o=0,n=0;rows.forEach(r=>{if(r.sk[k]){o+=r.sk[k].ok;n+=r.sk[k].n}});return`<div class="hb" title="${o} de ${n} correctas al primer intento"><span>${l}</span><span class="tr"><i style="width:${n?o/n*100:0}%"></i></span><span class="num">${n?Math.round(o/n*100)+'%':'—'}</span></div>`}).join('');
+  table();
+}
+const COLS=[['list','N°'],['name','Alumno'],['cur','Va en'],['u1','U1'],['u2','U2'],['u3','U3'],['u4','U4'],['solved','Misiones'],['party','Party'],['pts','Puntos'],['lv','Nivel'],['acc','Logro'],...SK.map(([k,l])=>['s'+k,l.slice(0,5)+(l.length>5?'.':'')]),['time','Tiempo'],['last','Última vez']];
+const val=(r,k)=>k==='list'?(r.list_no??999):k==='name'?r.name:k==='cur'?curUnit(r):/^u\d/.test(k)?(r.u[k[1]]||0):k[0]==='s'&&k!=='solved'?(r.sk[k.slice(1)]?r.sk[k.slice(1)].ok/r.sk[k.slice(1)].n:-1):k==='last'?(r.last?+new Date(r.last):0):r[k];
+function table(){
+  const q=$('q').value.trim().toLowerCase();let l=rows.filter(r=>(!q||r.name.toLowerCase().includes(q))&&(!$('only').checked||r.played));
+  l=[...l].sort((a,b)=>{const x=val(a,sort.k),y=val(b,sort.k);return(typeof x==='string'?x.localeCompare(y,'es'):x-y)*sort.d});
+  $('th').innerHTML='<tr>'+COLS.map(([k,t])=>`<th scope="col"><button type="button" data-k="${k}">${t}${sort.k===k?(sort.d>0?' ▲':' ▼'):''}</button></th>`).join('')+'</tr>';
+  $('th').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;sort=sort.k===k?{k,d:-sort.d}:{k,d:['name','list','cur'].includes(k)?1:-1};table()});
+  $('tb').innerHTML=l.map(r=>{const c=curUnit(r);return`<tr><td class="num">${r.list_no??''}</td><td><button type="button" class="name" data-id="${r.id}">${esc(r.name)}</button></td><td>${!r.played?'<span class="mut">Sin empezar</span>':c>4?'🏆 Terminó':'Unidad '+c}</td>${[1,2,3,4].map(u=>{const n=r.u[u]||0;return`<td title="Unidad ${u}: ${n} de 8 misiones"><span class="mini"><i style="width:${n/8*100}%"></i></span><span class="cu num">${n}/8</span></td>`}).join('')}<td class="num">${r.solved}/32</td><td class="num">${r.party}/4</td><td class="num">${r.pts}</td><td class="num">${r.lv||'—'}</td><td>${stat({ok:r.ok,n:r.n})}</td>${SK.map(([k])=>`<td>${stat(r.sk[k])}</td>`).join('')}<td class="num">${mins(r.time)}</td><td>${when(r.last)}</td></tr>`}).join('')||`<tr><td colspan="${COLS.length}" class="mut" style="padding:24px">Aún no hay alumnos para mostrar.</td></tr>`;
+  $('tb').querySelectorAll('.name').forEach(b=>b.onclick=()=>detail(b.dataset.id));
+}
+function detail(id){
+  const r=rows.find(x=>x.id===id);if(!r)return;const done=r.d.done||{};$('dT').textContent=r.name;
+  const today=new Date().toLocaleDateString('en-CA'),crUsed=r.d.cr&&r.d.cr.d===today?r.d.cr.used:0;
+  const weak=SK.filter(([k])=>r.sk[k]&&r.sk[k].n>=5&&r.sk[k].ok/r.sk[k].n<.6).map(x=>x[1]);
+  $('dB').innerHTML=`<div class="chips"><span>Nivel ${r.lv||0}</span><span>${r.pts} puntos</span><span>${r.solved}/32 misiones</span><span>${r.party}/4 party</span><span>${mins(r.time)} jugando</span><span>${r.d.kos||0} KOs en arena</span><span>${r.blocks} bloques construidos</span><span>Creativo hoy: ${Math.floor(crUsed/60)}:${String(crUsed%60).padStart(2,'0')}</span></div>
+  ${weak.length?`<p style="margin-bottom:12px"><b>Conviene reforzar:</b> ${weak.join(', ')}.</p>`:''}
+  <h2>Habilidades al primer intento</h2>${SK.map(([k,l])=>{const c=r.sk[k];return`<div class="hb"><span>${l}</span><span class="tr"><i style="width:${c&&c.n?c.ok/c.n*100:0}%"></i></span><span class="num">${c&&c.n?`${c.ok}/${c.n}`:'—'}</span></div>`}).join('')}
+  <h2 style="margin-top:14px">Misiones</h2>${UNITS.map(u=>`<b>Unidad ${u.id}: ${esc(u.name)}</b><div class="ql">${[...u.quests,{...u.party,icon:'👥'}].map(q=>{const x=done[q.id];return`<span class="${x?'ok':'no'}">${x?'✓':'○'} ${esc(q.title)}${x&&x.n?` · ${x.f}/${x.n}`:''}</span>`}).join('')}</div>`).join('')}`;
+  $('dlg').showModal();
+}
+$('dX').onclick=()=>$('dlg').close();$('q').oninput=table;$('only').onchange=table;$('reload').onclick=load;
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{section=b.dataset.s;document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x===b));load()});
+$('csv').onclick=()=>{const head=['N°','Alumno','Curso','U1','U2','U3','U4','Misiones','Party','Puntos','Nivel','Logro %',...SK.map(x=>x[1]+' %'),'Minutos','Última vez'];const cell=v=>{let s=String(v??'');if(/^[=+\-@]/.test(s))s="'"+s;return`"${s.replace(/"/g,'""')}"`};const pc=c=>c&&c.n?Math.round(c.ok/c.n*100):'';
+  const body=rows.map(r=>[r.list_no,r.name,section,r.u[1]||0,r.u[2]||0,r.u[3]||0,r.u[4]||0,r.solved,r.party,r.pts,r.lv,r.n?Math.round(r.ok/r.n*100):'',...SK.map(([k])=>pc(r.sk[k])),Math.round(r.time/60),r.last?new Date(r.last).toLocaleString('es-CL'):''].map(cell).join(';'));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+[head.map(cell).join(';'),...body].join('\r\n')],{type:'text/csv'}));a.download=`terra-lingua-${section.replace(/[^\w]/g,'')}-${new Date().toLocaleDateString('en-CA')}.csv`;a.click();URL.revokeObjectURL(a.href)};
+if(ss.get('eslt_teacher'))load();
+</script>
+</body>
+</html>
