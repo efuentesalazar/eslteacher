@@ -39,7 +39,8 @@ const IMG_LIST = [
   ...Object.keys(MOBS).filter(m => !MOBS[m].chr).map(n => 'mon/' + n),
   ...BOSSES.map(b => 'boss/' + b.id),
   ...['wood', 'stone', 'fiber', 'iron', 'gold', 'crystal', 'gem', 'potion', 'coin', 'chest', 'bigchest', 'meat', 'scroll', 'sword', 'sword2', 'bigsword', 'katana', 'bow', 'bow2', 'wand', 'tome', 'anvil'].map(n => 'items/' + n),
-  'ui/heart', 'ui/emote'
+  'ui/heart', 'ui/emote',
+  'tiles/floordetail', ...['plant', 'ripple', 'ripplepurple', 'leaf', 'leafpink', 'snow', 'ember', 'fog', 'raylight'].map(n => 'amb/' + n)
 ];
 function loadImages(onProgress) {
   let done = 0;
@@ -227,6 +228,17 @@ function tileRect(sheet, tx, ty, ctx, dx, dy) { ctx.drawImage(IMG['tiles/' + she
 // 4-bit autotile: N=1 E=2 S=4 W=8 → offset in the blob (3x3 + thin lines + single)
 const AUTO = { 0: [3, 3], 1: [3, 2], 4: [3, 0], 5: [3, 1], 2: [0, 3], 8: [2, 3], 10: [1, 3], 6: [0, 0], 12: [2, 0], 3: [0, 2], 9: [2, 2], 14: [1, 0], 7: [0, 1], 13: [2, 1], 11: [1, 2], 15: [1, 1] };
 function mask(L, x, y) { const g = (a, b) => inMap(a, b) ? L[idx(a, b)] : 1; return (g(x, y - 1) ? 1 : 0) | (g(x + 1, y) ? 2 : 0) | (g(x, y + 1) ? 4 : 0) | (g(x - 1, y) ? 8 : 0); }
+/* ---------- ground polish: floordetail overlays + light/dark variation (baked, zero per-frame cost) ---------- */
+const nShade = makeNoise(77);
+const imgOK = k => { const im = IMG[k]; return im && im.complete && im.naturalWidth ? im : null; };
+function fdraw(g, c, r, dx, dy) { const im = imgOK('tiles/floordetail'); if (im) g.drawImage(im, c * T, r * T, T, T, dx, dy, T, T); }
+function groundDetail(g, x, y, z, dx, dy) {
+  const d1 = hash2(x * 3 + 11, y * 5 + 7), d2 = hash2(x * 5 + 3, y * 7 + 13);
+  if (z <= 1) { if (d1 < .16) { if (d2 < .19) fdraw(g, 5 + Math.min(2, d2 / .19 * 3 | 0), 2, dx, dy); else fdraw(g, Math.min(4, (d2 - .19) / .81 * 5 | 0), 2, dx, dy); } }
+  else if (z === 3) { if (d1 < .14) { if (d2 < .15) fdraw(g, 5 + Math.min(2, d2 / .15 * 3 | 0), 3, dx, dy); else fdraw(g, Math.min(4, (d2 - .15) / .85 * 5 | 0), 3, dx, dy); } }
+  else if (z === 2) { if (d1 < .006) fdraw(g, 13 + (d2 * 2 | 0), 0, dx, dy); else if (d1 < .1) fdraw(g, 3 + Math.min(4, d2 * 5 | 0), 0, dx, dy); }
+  else { if (d1 < .008) fdraw(g, 13 + (d2 * 2 | 0), 0, dx, dy); else if (d1 < .08) fdraw(g, 0, 1, dx, dy); }
+}
 function getChunk(cx, cy) {
   const key = cx + ',' + cy; let c = chunks.get(key); if (c) return c;
   c = document.createElement('canvas'); c.width = c.height = CH * T; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
@@ -244,11 +256,26 @@ function getChunk(cx, cy) {
       }
       tileRect('floor', Z.path[0] + o[0], Z.path[1] + o[1], g, dx, dy);
     }
-    else if (W.decor[i] >= 0 && Z.decor.length) { const s = SPR[pick2(Z.decor, x, y)]; g.drawImage(IMG['tiles/' + s[0]], s[1] * T, s[2] * T, T, T, dx, dy, T, T); }
+    // (static decor on zones 0/1 is replaced by the animated swaying plants drawn in drawEnvAnim)
+    if (!W.water[i] && !W.path[i] && W.decor[i] < 0) groundDetail(g, x, y, W.zone[i], dx, dy);
   }
-  if (cy * CH + CH > 0) { // citadel tint
+  { // low-frequency light/dark variation, grass shore shadow, citadel tint
     g.globalCompositeOperation = 'source-atop';
-    for (let ty = 0; ty < CH; ty++) for (let tx = 0; tx < CH; tx++) { const x = cx * CH + tx, y = cy * CH + ty; if (inMap(x, y) && W.zone[idx(x, y)] === 5) { g.fillStyle = 'rgba(90,10,60,.28)'; g.fillRect(tx * T, ty * T, T, T); } }
+    // smooth shade map at 4 px resolution, upscaled with smoothing so no tile-sized steps show
+    const Q = 4, SN = CH * Q, sc = document.createElement('canvas'); sc.width = sc.height = SN; const sg = sc.getContext('2d'), im = sg.createImageData(SN, SN);
+    for (let py = 0; py < SN; py++) for (let px = 0; px < SN; px++) {
+      const fx = cx * CH + px / Q, fy = cy * CH + py / Q, x = fx | 0, y = fy | 0; if (!inMap(x, y)) continue; const i = idx(x, y); if (W.water[i]) continue;
+      const d = clamp((nShade(fx / 9 + 3.7, fy / 9 + 1.3) - .5) * 3, -1, 1), a = Math.abs(d) * .08 * (W.path[i] ? .5 : 1), o = (py * SN + px) * 4;
+      if (d < 0) im.data.set([0, 0, 0, a * 255], o); else im.data.set([255, 255, 220, a * 255], o);
+    }
+    sg.putImageData(im, 0, 0); g.imageSmoothingEnabled = true; g.drawImage(sc, 0, 0, CH * T, CH * T); g.imageSmoothingEnabled = false;
+    for (let ty = 0; ty < CH; ty++) for (let tx = 0; tx < CH; tx++) {
+      const x = cx * CH + tx, y = cy * CH + ty; if (!inMap(x, y)) continue; const i = idx(x, y), z = W.zone[i];
+      if (!W.water[i]) {
+        if (z === 0 && !W.path[i] && inMap(x, y + 1) && W.water[idx(x, y + 1)]) { g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(tx * T, ty * T + T - 3, T, 3); }
+      }
+      if (z === 5) { g.fillStyle = 'rgba(90,10,60,.28)'; g.fillRect(tx * T, ty * T, T, T); }
+    }
     g.globalCompositeOperation = 'source-over';
   }
   chunks.set(key, c); return c;
@@ -381,7 +408,7 @@ function special() {
 }
 function hurtMob(m, dmg, kx, ky, crit) {
   if (m.isBoss) { if (m.shield) { addText(m.x, m.y - 40, 'SHIELD', '#ffe27a'); return; } }
-  m.hp -= dmg; m.flash = .12; m.kx += kx; m.ky += ky; sfx(crit ? 'hit2' : 'hit', .45);
+  m.hp -= dmg; m.flash = .12; m.kx += kx; m.ky += ky; sfx(crit ? 'hit2' : 'hit', .45); hitSparks(m.x, m.y - (m.isBoss ? 14 : 6));
   addText(m.x, m.y - (m.isBoss ? 40 : 18), Math.round(dmg) + (crit ? '!' : ''), crit ? '#ffd35a' : '#ffffff');
   if (m.hp <= 0) killMob(m);
   else if (m.isBoss) checkShield();
@@ -477,7 +504,7 @@ function die() {
 }
 function killMob(m) {
   if (m.isBoss) { bossDefeated(); return; }
-  m.dead = true; partBurst(m.x, m.y - 6, 'fx/smoke', 1, true);
+  m.dead = true; partBurst(m.x, m.y - 6, 'fx/smoke', 1, true); rings.push({ x: m.x, y: m.y - 6, t: 0 });
   addXp(ZSTAT.xp[m.z]);
   const gz = ZSTAT.gold[m.z]; for (let i = 0; i < 1 + (Math.random() * 2 | 0); i++) dropItem(m.x, m.y, 'coin', gz);
   if (Math.random() < .05) dropItem(m.x, m.y, 'potion');
@@ -889,12 +916,43 @@ function partBurst(x, y, img, n, single) {
 function addText(x, y, s, color) { texts.push({ x, y, s, color, t: 0 }); }
 function toast(s, big) { const d = document.createElement('div'); d.className = 'toast' + (big ? ' big' : ''); d.textContent = s; $('toasts').appendChild(d); setTimeout(() => d.remove(), big ? 3200 : 2600); while ($('toasts').children.length > 4) $('toasts').firstChild.remove(); }
 
+/* ============================== Ambient particles + hit sparks (graphics polish) ============================== */
+const AMB_MAX = 45, AMB_RATE = [2.2, 3, 6, 3.5, 3.5, 4]; // spawns per second, by zone
+const AMB_FR = { leaf: 6, leafpink: 6, snow: 7, ember: 7 };
+let amb = [], ambAcc = 0, sparks = [], rings = [];
+function spawnAmb(z, vw, vh) {
+  const x = camX - 8 + Math.random() * (vw + 16), y = camY - 8 + Math.random() * (vh + 16), ph = Math.random() * 6.28, R = Math.random();
+  let k, vx, vy, life;
+  if (z <= 1) { k = z === 1 && R < .6 ? 'leafpink' : 'leaf'; vx = 6 + Math.random() * 8; vy = 7 + Math.random() * 7; life = 7 + Math.random() * 5; }
+  else if (z === 2) { k = 'dust'; vx = 35 + Math.random() * 30; vy = 1 + Math.random() * 3; life = 2.5 + Math.random() * 2; }
+  else if (z === 3) { k = 'snow'; vx = -4 + Math.random() * 10; vy = 14 + Math.random() * 12; life = 6 + Math.random() * 4; }
+  else { k = z === 4 ? 'ember' : 'mote'; vx = -3 + Math.random() * 6; vy = -(7 + Math.random() * 9); life = 5 + Math.random() * 4; }
+  amb.push({ k, x, y, vx, vy, t: 0, life, ph });
+}
+function updateAmb(dt, z) {
+  if (!VW) return; const vw = VW / SC, vh = VH / SC;
+  for (const p of amb) {
+    p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.k === 'leaf' || p.k === 'leafpink') { p.x += Math.sin(p.t * 2 + p.ph) * 8 * dt; p.y += Math.cos(p.t * 2 + p.ph) * 3 * dt; }
+    else if (p.k === 'snow') p.x += Math.sin(p.t * 1.5 + p.ph) * 6 * dt;
+    else if (p.k === 'ember' || p.k === 'mote') p.x += Math.sin(p.t * 2.5 + p.ph) * 5 * dt;
+  }
+  amb = amb.filter(p => p.t < p.life && p.x > camX - 40 && p.x < camX + vw + 40 && p.y > camY - 40 && p.y < camY + vh + 40);
+  ambAcc = Math.min(3, ambAcc + dt * AMB_RATE[z]);
+  while (ambAcc >= 1) { ambAcc--; if (amb.length < AMB_MAX) spawnAmb(z, vw, vh); }
+}
+function hitSparks(x, y) {
+  const n = 4 + (Math.random() * 3 | 0);
+  for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = 40 + Math.random() * 50; sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, t: 0, life: .2 + Math.random() * .1, c: i % 2 ? '#fff' : '#ffe27a' }); }
+  if (sparks.length > 60) sparks.splice(0, sparks.length - 60);
+}
+
 /* ============================== Update ============================== */
 let shake = 0, spawnT = 0, raidT = 0, wasNight = false, saveT = 0, lastSafe = null, lockMsgT = 0, hudDirty = true, hudT = 0;
 const DAY = 360;
 function nightLevel() { const t = S.time % DAY; if (t < 255) return 0; if (t < 275) return (t - 255) / 20; if (t < 345) return 1; return 1 - (t - 345) / 15; }
 function update(dt) {
-  gameTime += dt;
+  gameTime += dt; updateAmb(dt, P ? zoneOf(P.x, P.y) : 0);
   if (paused || !P) return;
   S.time += dt; S.played += dt; saveT += dt;
   if (saveT > 20) { saveT = 0; save(); }
@@ -997,6 +1055,8 @@ function update(dt) {
   // ---- fx
   for (const p of parts) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * dt; }
   parts = parts.filter(p => p.t < p.life);
+  for (const p of sparks) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 150 * dt; } sparks = sparks.filter(p => p.t < p.life);
+  for (const r of rings) r.t += dt; rings = rings.filter(r => r.t < .25);
   for (const f of fx) f.t += dt; fx = fx.filter(f => f.t < f.dur);
   for (const t of texts) { t.t += dt; t.y -= 22 * dt; } texts = texts.filter(t => t.t < .9);
   for (const o of W.objs) if (o.shake > 0) o.shake -= dt;
@@ -1071,9 +1131,19 @@ function resize() {
   VW = innerWidth; VH = innerHeight; cv.width = VW; cv.height = VH;
   SC = Math.max(2, Math.floor(Math.min(VW / (T * 20), VH / (T * 11.5))));
   if (VW < 700 || VH < 450) SC = 2;
-  ctx.imageSmoothingEnabled = false; lightCv.width = VW; lightCv.height = VH;
+  ctx.imageSmoothingEnabled = false; lightCv.width = VW; lightCv.height = VH; buildAtmCache();
 }
 const lightCv = document.createElement('canvas'), lctx = lightCv.getContext('2d');
+let vigCv = null, cloudCv = null; // cached vignette + cloud-shadow sprite (rebuilt in resize)
+function buildAtmCache() {
+  if (!VW || !VH) return;
+  vigCv = document.createElement('canvas'); vigCv.width = VW; vigCv.height = VH; const v = vigCv.getContext('2d');
+  const gr = v.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * .35, VW / 2, VH / 2, Math.hypot(VW, VH) / 2);
+  gr.addColorStop(0, 'rgba(10,5,20,0)'); gr.addColorStop(1, 'rgba(10,5,20,.38)'); v.fillStyle = gr; v.fillRect(0, 0, VW, VH);
+  const w = 240 * SC, h = 110 * SC; cloudCv = document.createElement('canvas'); cloudCv.width = w; cloudCv.height = h; const c = cloudCv.getContext('2d');
+  c.translate(w / 2, h / 2); c.scale(1, h / w); const cg = c.createRadialGradient(0, 0, 0, 0, 0, w / 2);
+  cg.addColorStop(0, 'rgba(0,0,30,.10)'); cg.addColorStop(.6, 'rgba(0,0,30,.07)'); cg.addColorStop(1, 'rgba(0,0,30,0)'); c.fillStyle = cg; c.fillRect(-w / 2, -w / 2, w, w);
+}
 addEventListener('resize', resize);
 const screenToWorld = (sx, sy) => [sx / SC + camX, sy / SC + camY];
 function drawSpr(name, wx, wy, alpha, shakeX) {
@@ -1104,6 +1174,7 @@ function render() {
     ctx.drawImage(getChunk(cx, cy), Math.round((cx * CH * T - camX) * SC), Math.round((cy * CH * T - camY) * SC), CH * T * SC, CH * T * SC);
   }
   const tx0 = Math.max(0, Math.floor(camX / T) - 2), tx1 = Math.min(MAP_W - 1, Math.ceil((camX + vw) / T) + 2), ty0 = Math.max(0, Math.floor(camY / T) - 1), ty1 = Math.min(MAP_H - 1, Math.ceil((camY + vh) / T) + 3);
+  drawEnvAnim(tx0, tx1, ty0, ty1);
   // build ghost
   if (buildMode) {
     const [gx, gy] = ghostTile(); const ok = demolish ? builds.some(b => b.x === gx && b.y === gy) : canPlace(gx, gy);
@@ -1141,6 +1212,7 @@ function render() {
   // walls of silence (locked zones)
   ctx.fillStyle = 'rgba(40,10,70,.55)';
   for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (W.zone[idx(x, y)] > S.runes) ctx.fillRect(Math.floor((x * T - camX) * SC), Math.floor((y * T - camY) * SC), Math.ceil(T * SC) + 1, Math.ceil(T * SC) + 1);
+  drawAmb(); drawSparks();
   // night
   const nl = Math.max(nightLevel() * .68, zoneOf(P.x, P.y) === 5 ? .35 : 0);
   if (nl > .01) {
@@ -1152,6 +1224,7 @@ function render() {
     for (const p of projs) if (p.img === 'fx/fireball') light(p.x, p.y, 24);
     ctx.drawImage(lightCv, 0, 0);
   }
+  drawAtmos(zoneOf(P.x, P.y));
   // floating text
   ctx.font = `${Math.max(12, 5 * SC)}px Pixel, monospace`; ctx.textAlign = 'center';
   for (const t of texts) { ctx.globalAlpha = 1 - t.t / .9; ctx.fillStyle = '#000'; ctx.fillText(t.s, (t.x - camX) * SC + 2, (t.y - camY) * SC + 2); ctx.fillStyle = t.color; ctx.fillText(t.s, (t.x - camX) * SC, (t.y - camY) * SC); }
@@ -1165,7 +1238,15 @@ function drawObj(o) {
   if (o.kind === 'chest') { const done = S.chests[o.ref]; const im = IMG['items/bigchest']; shadow(wx, wy - 2, 7); ctx.drawImage(im, done ? 16 : 0, 0, 16, 14, (wx - 8 - camX) * SC, (wy - 15 - camY) * SC, 16 * SC, 14 * SC); if (!done) sparkle(wx, wy - 14); return; }
   if (o.kind === 'lore') { drawSpr(S.lore[o.ref] ? 'loreDone' : 'loreStone', wx, wy); if (!S.lore[o.ref]) sparkle(wx, wy - 18); return; }
   if (o.kind === 'tree' || o.kind === 'cactus' || o.kind === 'deco' && SPR[o.spr] && SPR[o.spr][3] === 2) shadow(wx, wy - 2, 8);
-  drawSpr(o.spr, wx, wy, null, sx);
+  if (o.kind === 'tree') drawTree(o, wx, wy, sx); else drawSpr(o.spr, wx, wy, null, sx);
+}
+/* ---------- wind sway: canopy row shifts by whole world pixels, trunk row stays ---------- */
+function drawTree(o, wx, wy, sx) {
+  const s = SPR[o.spr]; if (!s || s[4] !== 2) { drawSpr(o.spr, wx, wy, null, sx); return; }
+  const im = IMG['tiles/' + s[0]], w = s[3] * T, x = Math.round((wx - w / 2 - camX + sx) * SC), y = Math.round((wy - 2 * T - camY) * SC);
+  const sw = Math.round(Math.sin(gameTime * 1.6 + o.x * .7 + o.y * .3) * .9) * SC;
+  ctx.drawImage(im, s[1] * T, s[2] * T, w, T, x + sw, y, w * SC, T * SC);
+  ctx.drawImage(im, s[1] * T, s[2] * T + T, w, T, x, y + T * SC, w * SC, T * SC);
 }
 function sparkle(wx, wy) { const a = .5 + Math.sin(gameTime * 4) * .5; ctx.fillStyle = `rgba(255,240,150,${a})`; const s = SC; ctx.fillRect((wx - camX) * SC - s, (wy - camY - 4 - a * 3) * SC - s, 2 * s, 2 * s); }
 function drawBuild(b) {
@@ -1212,6 +1293,87 @@ function drawMap(c, s) {
   dot(72, 71, '#6ad1ff', s * 1.6);
   if (P) dot(P.x / T, P.y / T, (gameTime * 3 | 0) % 2 ? '#fff' : '#ff0', s * 1.6);
 }
+/* ---------- animated environment layer: water ripples + swaying plants (visible tiles only) ---------- */
+function drawEnvAnim(tx0, tx1, ty0, ty1) {
+  const rip = imgOK('amb/ripple'), ripP = imgOK('amb/ripplepurple') || rip, pl = imgOK('amb/plant'); if (!rip && !pl) return;
+  const sz = T * SC;
+  for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) {
+    const i = idx(x, y), z = W.zone[i];
+    if (W.water[i]) {
+      if (!rip || !ZONES[z].water || x < 1 || y < 1 || x >= MAP_W - 1 || y >= MAP_H - 1) continue;
+      const h = hash2(x * 5 + 9, y * 3 + 4); if (h >= .12) continue;
+      if (!(W.water[i - 1] && W.water[i + 1] && W.water[i - MAP_W] && W.water[i + MAP_W])) continue;
+      ctx.drawImage(z === 5 ? ripP : rip, (((gameTime * 4 + h / .12 * 4) | 0) % 4) * T, 0, T, T, Math.round((x * T - camX) * SC), Math.round((y * T - camY) * SC), sz, sz);
+    } else if (pl && z <= 1 && !W.path[i]) {
+      const h = hash2(x * 11 + 5, y * 3 + 9);
+      if (W.decor[i] < 0 && (W.solid[i] || W.objAt[i] >= 0 || h >= .025)) continue;
+      ctx.drawImage(pl, (((gameTime * 5 + h * 40) | 0) % 4) * T, 0, T, T, Math.round((x * T - camX) * SC), Math.round((y * T - camY) * SC), sz, sz);
+    }
+  }
+}
+/* ---------- ambient particles + hit sparks + death rings ---------- */
+function drawAmb() {
+  for (const p of amb) {
+    const a = Math.min(1, p.t / .8, (p.life - p.t) / 1.2); if (a <= 0) continue;
+    const sx = Math.round((p.x - camX) * SC), sy = Math.round((p.y - camY) * SC);
+    if (p.k === 'dust') { ctx.fillStyle = `rgba(236,205,150,${(a * .55).toFixed(2)})`; ctx.fillRect(sx, sy, 2 * SC, SC); continue; }
+    if (p.k === 'mote') { ctx.fillStyle = `rgba(196,120,255,${(a * (.35 + .35 * Math.sin(gameTime * 9 + p.ph))).toFixed(2)})`; ctx.fillRect(sx, sy, 2 * SC, 2 * SC); continue; }
+    const im = imgOK('amb/' + p.k); if (!im) continue; const n = AMB_FR[p.k], fw = im.width / n;
+    const fr = (p.k === 'leaf' || p.k === 'leafpink' ? p.t * 7 + p.ph : p.k === 'snow' ? p.t * 4 + p.ph : p.t * 8 + p.ph) | 0;
+    ctx.globalAlpha = a * (p.k === 'ember' ? .6 + .4 * Math.sin(gameTime * 14 + p.ph) : .9);
+    ctx.drawImage(im, (fr % n) * fw, 0, fw, im.height, sx, sy, fw * SC, im.height * SC);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawSparks() {
+  for (const p of sparks) { ctx.globalAlpha = 1 - p.t / p.life; ctx.fillStyle = p.c; ctx.fillRect(Math.round((p.x - camX) * SC), Math.round((p.y - camY) * SC), SC, SC); }
+  if (rings.length) { ctx.strokeStyle = '#fff'; ctx.lineWidth = SC; for (const r of rings) { const u = r.t / .25; ctx.globalAlpha = 1 - u; ctx.beginPath(); ctx.arc((r.x - camX) * SC, (r.y - camY) * SC, (3 + u * 11) * SC, 0, 7); ctx.stroke(); } }
+  ctx.globalAlpha = 1;
+}
+/* ---------- atmosphere overlays: fog, light rays, cloud shadows, vignette, zone colour grade ---------- */
+const ATM = { fog: 0, ray: 0, cloud: 0, g: [255, 220, 150, 0] }; let atmT = 0;
+const FOG_T = [0, 0, 0, .10, .18, .25];
+const GRADE_T = [[255, 220, 150, .08], [120, 200, 140, .07], [255, 170, 80, .08], [170, 210, 255, .08], [255, 120, 60, .06], [170, 80, 200, .10]];
+const RAYS = [[0, 72], [78, 140], [149, 206]];
+function drawAtmos(z) {
+  const dt = Math.min(.1, gameTime - atmT), k = 1 - Math.exp(-dt * 1.5); atmT = gameTime;
+  const nl = nightLevel(), day = nl < .3 ? 1 - nl / .3 : 0, vw = VW / SC, vh = VH / SC;
+  ATM.fog += (FOG_T[z] - ATM.fog) * k; ATM.ray += ((z === 1 ? day : 0) - ATM.ray) * k; ATM.cloud += ((z === 0 || z === 2 ? day : 0) - ATM.cloud) * k;
+  const gt = GRADE_T[z]; for (let j = 0; j < 4; j++) ATM.g[j] += (gt[j] - ATM.g[j]) * k;
+  // (a) fog, tiled, parallax 0.5 + slow drift
+  const fog = ATM.fog > .004 && imgOK('amb/fog');
+  if (fog) {
+    const fw = 320 * SC, fh = 180 * SC, ox = -Math.round(((camX * .5 + gameTime * 5) * SC) % fw), oy = -Math.round(((camY * .5 + gameTime * 1.5) * SC) % fh);
+    ctx.globalAlpha = ATM.fog; for (let x = ox; x < VW; x += fw) for (let y = oy; y < VH; y += fh) ctx.drawImage(fog, x, y, fw, fh); ctx.globalAlpha = 1;
+  }
+  // (b) light rays (Whisperwood, daytime), anchored in world space
+  const rays = ATM.ray > .01 && imgOK('amb/raylight');
+  if (rays) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (let cj = Math.floor((camY - 110) / 80); cj <= Math.floor((camY + vh) / 80); cj++) for (let ci = Math.floor((camX - 80) / 110); ci <= Math.floor((camX + vw) / 110); ci++) {
+      const h = hash2(ci * 19 + 7, cj * 23 + 3); if (h > .35) continue;
+      const r = RAYS[(h * 1000 | 0) % 3], wx = ci * 110 + hash2(ci, cj * 3 + 1) * 40, wy = cj * 80 + hash2(ci * 5 + 2, cj) * 30 - 20;
+      ctx.globalAlpha = .12 * ATM.ray * (.7 + .3 * Math.sin(gameTime * .7 + h * 40));
+      ctx.drawImage(rays, r[0], 0, r[1] - r[0], 102, Math.round((wx - camX) * SC), Math.round((wy - camY) * SC), (r[1] - r[0]) * SC, 102 * SC);
+    }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  }
+  // (c) cloud shadows (Greenvale / Dunes, daytime): one drifting cloud per 640x480 world cell, fading in/out as it crosses
+  if (ATM.cloud > .01 && cloudCv) {
+    const CW = 640, CHt = 480;
+    for (let cj = Math.floor((camY - 200) / CHt); cj <= Math.floor((camY + vh + 100) / CHt); cj++) for (let ci = Math.floor((camX - 300) / CW); ci <= Math.floor((camX + vw + 300) / CW); ci++) {
+      const h = hash2(ci * 13 + 3, cj * 17 + 5); if (h > .8) continue;
+      const ph = ((gameTime * 3 + h * CW) % CW) / CW, wx = ci * CW + ph * CW, wy = cj * CHt + hash2(ci + 9, cj * 5) * CHt;
+      ctx.globalAlpha = ATM.cloud * Math.sin(ph * Math.PI);
+      ctx.drawImage(cloudCv, Math.round((wx - camX) * SC - cloudCv.width / 2), Math.round((wy - camY) * SC - cloudCv.height / 2));
+    }
+    ctx.globalAlpha = 1;
+  }
+  // (d) vignette
+  if (vigCv) ctx.drawImage(vigCv, 0, 0);
+  // (e) per-zone colour grade (eased between zones)
+  if (ATM.g[3] > .003) { ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = `rgba(${ATM.g[0] | 0},${ATM.g[1] | 0},${ATM.g[2] | 0},${ATM.g[3].toFixed(3)})`; ctx.fillRect(0, 0, VW, VH); ctx.globalCompositeOperation = 'source-over'; }
+}
 let miniT = 0;
 function drawMini() { if (gameTime - miniT < .3) return; miniT = gameTime; drawMap($('mini'), 1); }
 // title background: a slow pan over the world
@@ -1224,6 +1386,7 @@ function renderTitleBg() {
   for (let y = Math.floor(camY / T); y <= Math.ceil((camY + vh) / T) + 2 && y < MAP_H; y++) for (let x = Math.max(0, Math.floor(camX / T) - 1); x <= Math.ceil((camX + vw) / T) + 1 && x < MAP_W; x++) { const oi = W.objAt[idx(x, y)]; if (oi >= 0 && !W.objs[oi].gone && W.objs[oi].drawnF !== frameN) { W.objs[oi].drawnF = frameN; list.push(W.objs[oi]); } }
   list.sort((a, b) => a.y - b.y);
   const S0 = S; S = S || { chests: {}, lore: {} }; list.forEach(drawObj); S = S0;
+  drawAmb();
 }
 
 /* ============================== HUD ============================== */
@@ -1313,7 +1476,7 @@ function credits() {
 let last = performance.now();
 function loop(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now; frameN++;
-  try { if (started) update(dt); else gameTime += dt; render(); } catch (e) { console.error(e); }
+  try { if (started) update(dt); else { gameTime += dt; updateAmb(dt, 0); } render(); } catch (e) { console.error(e); }
   requestAnimationFrame(loop);
 }
 async function boot() {
